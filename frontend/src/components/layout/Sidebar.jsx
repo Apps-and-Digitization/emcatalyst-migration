@@ -1,7 +1,7 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, CalendarDays, FileText, Users, Building2,
-  BarChart3, ShoppingCart, Megaphone, Shield, LogOut, ChevronRight, Database
+  BarChart3, ShoppingCart, Megaphone, Shield, LogOut, ChevronRight, Database, ClipboardList
 } from 'lucide-react'
 import useAuthStore from '../../store/authStore'
 import clsx from 'clsx'
@@ -12,6 +12,7 @@ const navItems = [
   { label: 'Approvals',        path: '/approvals',       icon: FileText },
   { label: 'Vendors',          path: '/vendors',         icon: Building2 },
   { label: 'Promotional',      path: '/promotional',     icon: Megaphone },
+  { label: 'BRS',              path: '/brs',             icon: ClipboardList },
   { label: 'Masters',          path: '/masters',         icon: Database },
   { label: 'Reports',          path: '/reports',         icon: BarChart3 },
   { label: 'Access Mgmt',      path: '/access',          icon: Shield },

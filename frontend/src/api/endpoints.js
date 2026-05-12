@@ -127,6 +127,62 @@ export const masterApi = {
   updateSponsorshipType: (id, data) => api.put(`/master/sponsorship-types/${id}`, null, { params: data }),
 }
 
+// BRS Module
+export const brsApi = {
+  dashboard: () => api.get('/brs/dashboard'),
+  list: (params) => api.get('/brs/', { params }),
+  create: (data) => api.post('/brs/', data),
+  get: (id) => api.get(`/brs/${id}`),
+  update: (id, data) => api.put(`/brs/${id}`, data),
+  submit: (id) => api.post(`/brs/${id}/submit`),
+  approveL1: (id, remarks) => api.post(`/brs/${id}/approve-l1`, null, { params: { remarks } }),
+  approveL2: (id, remarks) => api.post(`/brs/${id}/approve-l2`, null, { params: { remarks } }),
+  approveCompliance: (id, remarks) => api.post(`/brs/${id}/approve-compliance`, null, { params: { remarks } }),
+  reject: (id, reason) => api.post(`/brs/${id}/reject`, null, { params: { reason } }),
+  sendSurveyLink: (id) => api.post(`/brs/${id}/send-survey-link`),
+  verifyCoord: (id, remarks) => api.post(`/brs/${id}/verify-coord`, null, { params: { remarks } }),
+  triggerVendorCreation: (id) => api.post(`/brs/${id}/trigger-vendor-creation`),
+  markVendorCreated: (id, vendor_id) => api.post(`/brs/${id}/mark-vendor-created`, null, { params: { vendor_id } }),
+  postFinance: (id, remarks) => api.post(`/brs/${id}/post-finance`, null, { params: { remarks } }),
+  markPaid: (id, remarks) => api.post(`/brs/${id}/mark-paid`, null, { params: { remarks } }),
+  completeSurvey: (id) => api.post(`/brs/${id}/complete-survey`),
+  uploadPan: (id, formData) => api.post(`/brs/${id}/upload-pan`, formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  // Survey Builder
+  listSurveys: () => api.get('/brs/surveys'),
+  createSurvey: (data) => api.post('/brs/surveys', null, { params: data }),
+  getSurvey: (id) => api.get(`/brs/surveys/${id}`),
+  updateSurvey: (id, data) => api.put(`/brs/surveys/${id}`, null, { params: data }),
+  addQuestion: (surveyId, data) => {
+    const params = {
+      question_text: data.question_text,
+      question_type: data.question_type,
+      is_required: data.is_required,
+      min_duration_seconds: data.min_duration_seconds,
+      video_url: data.video_url,
+    }
+    const url = new URL(`http://x/brs/surveys/${surveyId}/questions`)
+    Object.entries(params).forEach(([k, v]) => v != null && url.searchParams.set(k, v))
+    if (data.options?.length) data.options.forEach(o => url.searchParams.append('options', o))
+    return api.post(`/brs/surveys/${surveyId}/questions?${url.searchParams.toString()}`)
+  },
+  updateQuestion: (surveyId, questionId, data) => {
+    const url = new URL(`http://x/brs/surveys/${surveyId}/questions/${questionId}`)
+    Object.entries(data).forEach(([k, v]) => {
+      if (v != null && k !== 'options') url.searchParams.set(k, v)
+    })
+    if (data.options?.length) data.options.forEach(o => url.searchParams.append('options', o))
+    return api.put(`/brs/surveys/${surveyId}/questions/${questionId}?${url.searchParams.toString()}`)
+  },
+  deleteQuestion: (surveyId, questionId) => api.delete(`/brs/surveys/${surveyId}/questions/${questionId}`),
+  // Doctor Portal (public)
+  portalGet: (token) => api.get(`/brs/portal/${token}`),
+  portalUpdateDetails: (token, data) => api.post(`/brs/portal/${token}/update-details`, data),
+  portalSendOtp: (token) => api.post(`/brs/portal/${token}/send-otp`),
+  portalStartSurvey: (token) => api.post(`/brs/portal/${token}/start-survey`),
+  portalSubmitSurvey: (token, data) => api.post(`/brs/portal/${token}/submit-survey`, data),
+  portalSign: (token, data) => api.post(`/brs/portal/${token}/sign`, data),
+}
+
 // Event Agreements (nested under events)
 export const eventAgreementsApi = {
   list: (eventId) => api.get(`/events/${eventId}/agreements`),

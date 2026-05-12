@@ -24,3 +24,7 @@ from app.models.master import (
     MasterTherapeutic, MasterState,
     MasterBrand, MasterMeal, MasterCity, MasterSponsorshipType
 )
+from app.models.brs import (
+    BrsApplication, BrsSurvey, BrsSurveyQuestion,
+    BrsAuditTrail, BrsOtp, BrsStatus, BrsQuestionType
+)

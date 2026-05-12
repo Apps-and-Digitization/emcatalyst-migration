@@ -22,6 +22,11 @@ import UserManagement from './pages/users/UserManagement'
 import PromotionalList from './pages/promotional/PromotionalList'
 import PromotionalForm from './pages/promotional/PromotionalForm'
 import Masters from './pages/masters/Masters'
+import BrsList from './pages/brs/BrsList'
+import BrsForm from './pages/brs/BrsForm'
+import BrsDetail from './pages/brs/BrsDetail'
+import SurveyBuilder from './pages/brs/SurveyBuilder'
+import SurveyPortal from './pages/brs/SurveyPortal'
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 30_000 } },
@@ -58,7 +63,13 @@ export default function App() {
               <Route path="promotional" element={<PromotionalList />} />
               <Route path="promotional/new" element={<PromotionalForm />} />
               <Route path="masters" element={<Masters />} />
+              <Route path="brs" element={<BrsList />} />
+              <Route path="brs/new" element={<BrsForm />} />
+              <Route path="brs/survey-builder" element={<SurveyBuilder />} />
+              <Route path="brs/:id" element={<BrsDetail />} />
             </Route>
+            {/* Public doctor portal — no auth required */}
+            <Route path="/brs/survey/:token" element={<SurveyPortal />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </ErrorBoundary>
