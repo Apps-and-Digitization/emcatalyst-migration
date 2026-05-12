@@ -55,10 +55,12 @@ class BrsApplication(Base):
     new_doctor_phone = Column(String(20))
     new_doctor_speciality = Column(String(200))
     new_doctor_city = Column(String(100))
-    pan_number = Column(String(20))
-    bank_name = Column(String(200))
-    bank_account_no = Column(String(50))
-    ifsc_code = Column(String(20))
+    # Survey timing
+    survey_duration_days = Column(Integer, default=7)
+    survey_deadline_at = Column(DateTime)
+
+    # Bulk request reference
+    bulk_request_id = Column(Integer, ForeignKey("brs_bulk_requests.id"), nullable=True)
 
     # Survey link (tokenized doctor portal)
     survey_token = Column(String(100), unique=True, index=True)
@@ -107,6 +109,7 @@ class BrsApplication(Base):
     hcp_doctor = relationship("HcpDoctor")
     vendor = relationship("Vendor")
     survey = relationship("BrsSurvey", foreign_keys=[survey_id])
+    bulk_request = relationship("BrsBulkRequest", back_populates="applications")
     audit_trail = relationship("BrsAuditTrail", back_populates="application",
                                order_by="BrsAuditTrail.created_at", cascade="all, delete-orphan")
     otp_records = relationship("BrsOtp", back_populates="application", cascade="all, delete-orphan")
@@ -177,3 +180,48 @@ class BrsOtp(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     application = relationship("BrsApplication", back_populates="otp_records")
+
+
+class BrsBulkRequest(Base):
+    __tablename__ = "brs_bulk_requests"
+
+    id = Column(Integer, primary_key=True, index=True)
+    bulk_code = Column(String(50), unique=True, index=True)
+    survey_title = Column(String(500), nullable=False)
+    survey_id = Column(Integer, ForeignKey("brs_surveys.id"), nullable=True)
+    therapeutic_area = Column(String(200))
+    brand = Column(String(200))
+    topic = Column(Text)
+    honorarium_amount = Column(Numeric(12, 2))
+    survey_duration_days = Column(Integer, default=7)
+    mode = Column(String(20), default="Online")
+    division_id = Column(Integer, ForeignKey("divisions.id"), nullable=True)
+    cost_center = Column(String(20))
+    company_code = Column(String(10))
+    remarks = Column(Text)
+    initiator_id = Column(Integer, ForeignKey("users.id"))
+    status = Column(String(50), default="Draft")
+    total_doctors = Column(Integer, default=0)
+    sent_count = Column(Integer, default=0)
+    completed_count = Column(Integer, default=0)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    initiator = relationship("User")
+    survey = relationship("BrsSurvey")
+    applications = relationship("BrsApplication", back_populates="bulk_request")
+
+
+class DoctorPortalSession(Base):
+    __tablename__ = "doctor_portal_sessions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String(200), index=True, nullable=False)
+    hcp_doctor_id = Column(Integer, ForeignKey("hcp_doctors.id"), nullable=True)
+    otp_code = Column(String(10), nullable=False)
+    expires_at = Column(DateTime, nullable=False)
+    used = Column(Boolean, default=False)
+    session_token = Column(String(200), unique=True, nullable=True, index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    hcp_doctor = relationship("HcpDoctor")

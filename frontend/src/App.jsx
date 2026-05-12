@@ -26,8 +26,12 @@ import Masters from './pages/masters/Masters'
 import BrsList from './pages/brs/BrsList'
 import BrsForm from './pages/brs/BrsForm'
 import BrsDetail from './pages/brs/BrsDetail'
+import BrsBulkList from './pages/brs/BrsBulkList'
+import BrsBulkForm from './pages/brs/BrsBulkForm'
+import BrsBulkDetail from './pages/brs/BrsBulkDetail'
 import SurveyBuilder from './pages/brs/SurveyBuilder'
 import SurveyPortal from './pages/brs/SurveyPortal'
+import DoctorPortalLogin from './pages/brs/DoctorPortalLogin'
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 30_000 } },
@@ -68,10 +72,14 @@ export default function App() {
               <Route path="brs" element={<BrsList />} />
               <Route path="brs/new" element={<BrsForm />} />
               <Route path="brs/survey-builder" element={<SurveyBuilder />} />
+              <Route path="brs/bulk" element={<BrsBulkList />} />
+              <Route path="brs/bulk/new" element={<BrsBulkForm />} />
+              <Route path="brs/bulk/:id" element={<BrsBulkDetail />} />
               <Route path="brs/:id" element={<BrsDetail />} />
             </Route>
             {/* Public doctor portal — no auth required */}
             <Route path="/brs/survey/:token" element={<SurveyPortal />} />
+            <Route path="/doctor-portal" element={<DoctorPortalLogin />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </ErrorBoundary>

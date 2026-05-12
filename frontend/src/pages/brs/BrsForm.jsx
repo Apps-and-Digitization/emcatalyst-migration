@@ -19,7 +19,7 @@ export default function BrsForm() {
     brand: '',
     topic: '',
     mode: 'Online',
-    survey_duration_minutes: 30,
+    survey_duration_days: 7,
     honorarium_amount: '',
     division_id: '',
     cost_center: '',
@@ -32,10 +32,6 @@ export default function BrsForm() {
     new_doctor_phone: '',
     new_doctor_speciality: '',
     new_doctor_city: '',
-    pan_number: '',
-    bank_name: '',
-    bank_account_no: '',
-    ifsc_code: '',
   })
 
   const { data: therapeutics = [] } = useQuery({
@@ -82,23 +78,15 @@ export default function BrsForm() {
       is_new_doctor: doctorMode === 'new',
       hcp_doctor_id: doctorMode === 'mcl' ? selectedDoctor?.id : null,
       honorarium_amount: form.honorarium_amount ? parseFloat(form.honorarium_amount) : null,
-      survey_duration_minutes: parseInt(form.survey_duration_minutes) || 30,
+      survey_duration_days: parseInt(form.survey_duration_days) || 7,
       division_id: form.division_id ? parseInt(form.division_id) : null,
       survey_id: form.survey_id ? parseInt(form.survey_id) : null,
-      pan_number: doctorMode === 'mcl' ? (selectedDoctor?.pan_number || form.pan_number) : form.pan_number,
     }
     createMutation.mutate(payload)
   }
 
   const selectDoctor = (d) => {
     setSelectedDoctor(d)
-    setForm(f => ({
-      ...f,
-      pan_number: d.pan_number || '',
-      bank_name: d.bank_name || '',
-      bank_account_no: d.account_number || '',
-      ifsc_code: d.ifsc_code || '',
-    }))
     setShowDoctorResults(false)
     setDoctorSearch(d.full_name || d.first_name || '')
   }
@@ -166,10 +154,10 @@ export default function BrsForm() {
                 placeholder="Describe the survey topic and research objectives…" />
             </div>
             <div>
-              <label className="label">Survey Duration (minutes)</label>
-              <input className="input" type="number" min={5} max={180}
-                value={form.survey_duration_minutes}
-                onChange={e => set('survey_duration_minutes', e.target.value)} />
+              <label className="label">Survey Duration (days)</label>
+              <input className="input" type="number" min={1} max={90}
+                value={form.survey_duration_days}
+                onChange={e => set('survey_duration_days', e.target.value)} />
             </div>
             <div>
               <label className="label">Honorarium Amount (₹)</label>
@@ -289,32 +277,8 @@ export default function BrsForm() {
           )}
         </div>
 
-        {/* KYC / Bank Details */}
-        <div className="card p-6">
-          <h3 className="font-semibold text-gray-800 mb-4 border-b pb-2">KYC & Bank Details</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="label">PAN Number</label>
-              <input className="input uppercase" value={form.pan_number}
-                maxLength={10}
-                onChange={e => set('pan_number', e.target.value.toUpperCase())} />
-            </div>
-            <div>
-              <label className="label">Bank Name</label>
-              <input className="input" value={form.bank_name}
-                onChange={e => set('bank_name', e.target.value)} />
-            </div>
-            <div>
-              <label className="label">Bank Account No</label>
-              <input className="input" value={form.bank_account_no}
-                onChange={e => set('bank_account_no', e.target.value)} />
-            </div>
-            <div>
-              <label className="label">IFSC Code</label>
-              <input className="input uppercase" value={form.ifsc_code}
-                onChange={e => set('ifsc_code', e.target.value.toUpperCase())} />
-            </div>
-          </div>
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-700">
+          <strong>Note:</strong> KYC details (PAN, bank account, IFSC) will be collected directly from the doctor via the secure survey portal link. The doctor can view and update their saved profile when they receive the link.
         </div>
 
         <div className="flex gap-3 justify-end">

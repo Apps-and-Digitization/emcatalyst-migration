@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import {
   Plus, Search, ClipboardList, CheckCircle, Clock, PenLine,
-  ChevronLeft, ChevronRight, FileText
+  ChevronLeft, ChevronRight, FileText, Users
 } from 'lucide-react'
 import { brsApi } from '../../api/endpoints'
 import PageHeader from '../../components/ui/PageHeader'
@@ -69,6 +69,10 @@ export default function BrsList() {
             <button className="btn-secondary flex items-center gap-2"
               onClick={() => navigate('/brs/survey-builder')}>
               <FileText size={16} /> Survey Builder
+            </button>
+            <button className="btn-secondary flex items-center gap-2"
+              onClick={() => navigate('/brs/bulk')}>
+              <Users size={16} /> Bulk BRS
             </button>
             <button className="btn-primary flex items-center gap-2"
               onClick={() => navigate('/brs/new')}>

@@ -26,5 +26,6 @@ from app.models.master import (
 )
 from app.models.brs import (
     BrsApplication, BrsSurvey, BrsSurveyQuestion,
-    BrsAuditTrail, BrsOtp, BrsStatus, BrsQuestionType
+    BrsAuditTrail, BrsOtp, BrsStatus, BrsQuestionType,
+    BrsBulkRequest, DoctorPortalSession
 )

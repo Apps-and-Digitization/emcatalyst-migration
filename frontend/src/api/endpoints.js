@@ -180,13 +180,23 @@ export const brsApi = {
     return api.put(`/brs/surveys/${surveyId}/questions/${questionId}?${url.searchParams.toString()}`)
   },
   deleteQuestion: (surveyId, questionId) => api.delete(`/brs/surveys/${surveyId}/questions/${questionId}`),
-  // Doctor Portal (public)
+  // Doctor Portal — survey token flow (public)
   portalGet: (token) => api.get(`/brs/portal/${token}`),
   portalUpdateDetails: (token, data) => api.post(`/brs/portal/${token}/update-details`, data),
   portalSendOtp: (token) => api.post(`/brs/portal/${token}/send-otp`),
   portalStartSurvey: (token) => api.post(`/brs/portal/${token}/start-survey`),
   portalSubmitSurvey: (token, data) => api.post(`/brs/portal/${token}/submit-survey`, data),
   portalSign: (token, data) => api.post(`/brs/portal/${token}/sign`, data),
+  // Doctor Portal — OTP login & profile
+  doctorPortalSendOtp: (email) => api.post('/brs/doctor-portal/send-otp', null, { params: { email } }),
+  doctorPortalVerifyOtp: (email, otp) => api.post('/brs/doctor-portal/verify-otp', null, { params: { email, otp } }),
+  doctorPortalProfile: (sessionToken) => api.get('/brs/doctor-portal/profile', { params: { session_token: sessionToken } }),
+  doctorPortalUpdateProfile: (sessionToken, data) => api.put('/brs/doctor-portal/profile', data, { params: { session_token: sessionToken } }),
+  // Bulk BRS
+  bulkList: (params) => api.get('/brs/bulk/', { params }),
+  bulkCreate: (data) => api.post('/brs/bulk/', data),
+  bulkGet: (id) => api.get(`/brs/bulk/${id}`),
+  bulkSubmit: (id) => api.post(`/brs/bulk/${id}/submit`),
 }
 
 // Event Agreements (nested under events)

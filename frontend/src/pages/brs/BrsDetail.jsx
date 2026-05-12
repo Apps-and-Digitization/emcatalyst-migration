@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'react-hot-toast'
 import {
   ArrowLeft, CheckCircle, XCircle, Send, Link2, Building2,
-  DollarSign, FileCheck, Eye, Copy, Clock, User, ChevronDown, ChevronUp
+  DollarSign, FileCheck, Eye, Copy, Clock, User, ChevronDown, ChevronUp, FileText
 } from 'lucide-react'
 import { brsApi } from '../../api/endpoints'
 import PageHeader from '../../components/ui/PageHeader'
@@ -59,6 +59,31 @@ function Stepper({ currentStatus }) {
           </div>
         ))}
       </div>
+    </div>
+  )
+}
+
+function AgreementSection({ text }) {
+  const [expanded, setExpanded] = useState(false)
+  return (
+    <div className="card p-5 mb-6 border-blue-200">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <FileText size={16} className="text-blue-600" />
+          <h4 className="font-semibold text-gray-800">Expert Services Agreement</h4>
+          <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">Preview</span>
+        </div>
+        <button className="text-xs text-blue-600 flex items-center gap-1"
+          onClick={() => setExpanded(v => !v)}>
+          {expanded ? <><ChevronUp size={14} /> Collapse</> : <><ChevronDown size={14} /> View Agreement</>}
+        </button>
+      </div>
+      <p className="text-xs text-gray-500">This agreement will be sent to the doctor after compliance approval for review and digital signature.</p>
+      {expanded && (
+        <pre className="mt-4 text-xs text-gray-700 font-serif bg-gray-50 border rounded-lg p-4 max-h-96 overflow-y-auto whitespace-pre-wrap leading-relaxed">
+          {text}
+        </pre>
+      )}
     </div>
   )
 }
@@ -348,16 +373,11 @@ export default function BrsDetail() {
         </div>
       </div>
 
-      {/* Bank Details */}
-      {(app.bank_name || app.bank_account_no) && (
-        <div className="card p-5 mb-6">
-          <h4 className="font-semibold text-gray-800 mb-3">Bank Details</h4>
-          <dl className="grid grid-cols-3 gap-4 text-sm">
-            <div><dt className="text-gray-500 text-xs">Bank Name</dt><dd className="font-medium">{app.bank_name || '—'}</dd></div>
-            <div><dt className="text-gray-500 text-xs">Account No</dt><dd className="font-mono text-xs">{app.bank_account_no || '—'}</dd></div>
-            <div><dt className="text-gray-500 text-xs">IFSC</dt><dd className="font-mono text-xs">{app.ifsc_code || '—'}</dd></div>
-          </dl>
-        </div>
+      {/* Agreement Preview (only after compliance approval) */}
+      {['Pending HCP Form', 'Pending Survey', 'Pending Sign', 'Survey Completed',
+        'Pending Coord. Verification', 'Pending Vendor Creation', 'Pending Finance', 'Posted', 'Paid'
+      ].includes(app.status) && app.agreement_text && (
+        <AgreementSection text={app.agreement_text} />
       )}
 
       {/* Signature status */}

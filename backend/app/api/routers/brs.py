@@ -12,10 +12,10 @@ import base64
 
 from app.db.base import get_db
 from app.api.deps import get_current_user
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.models.brs import (
     BrsApplication, BrsStatus, BrsSurvey, BrsSurveyQuestion,
-    BrsQuestionType, BrsAuditTrail, BrsOtp
+    BrsQuestionType, BrsAuditTrail, BrsOtp, BrsBulkRequest, DoctorPortalSession
 )
 from app.models.master import HcpDoctor
 from app.core.email import send_brs_survey_link, send_vendor_creation_notification
@@ -339,6 +339,8 @@ def create_application(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
+    if current_user.role == UserRole.ADMINISTRATOR:
+        raise HTTPException(403, "System administrators cannot initiate BRS applications. Please use a field user account.")
     app = BrsApplication(
         brs_code=_generate_brs_code(db),
         survey_title=data["survey_title"],
@@ -346,7 +348,7 @@ def create_application(
         brand=data.get("brand"),
         topic=data.get("topic"),
         mode=data.get("mode", "Online"),
-        survey_duration_minutes=data.get("survey_duration_minutes", 30),
+        survey_duration_days=data.get("survey_duration_days", 7),
         honorarium_amount=data.get("honorarium_amount"),
         division_id=data.get("division_id"),
         cost_center=data.get("cost_center"),
@@ -359,11 +361,8 @@ def create_application(
         new_doctor_phone=data.get("new_doctor_phone"),
         new_doctor_speciality=data.get("new_doctor_speciality"),
         new_doctor_city=data.get("new_doctor_city"),
-        pan_number=data.get("pan_number"),
-        bank_name=data.get("bank_name"),
-        bank_account_no=data.get("bank_account_no"),
-        ifsc_code=data.get("ifsc_code"),
         survey_id=data.get("survey_id"),
+        bulk_request_id=data.get("bulk_request_id"),
         initiator_id=current_user.id,
         status=BrsStatus.DRAFT
     )
@@ -403,7 +402,8 @@ def get_application(app_id: int, db: Session = Depends(get_db),
         "id": a.id, "brs_code": a.brs_code,
         "survey_title": a.survey_title, "therapeutic_area": a.therapeutic_area,
         "brand": a.brand, "topic": a.topic, "mode": a.mode,
-        "survey_duration_minutes": a.survey_duration_minutes,
+        "survey_duration_days": a.survey_duration_days or 7,
+        "survey_deadline_at": a.survey_deadline_at.isoformat() if a.survey_deadline_at else None,
         "honorarium_amount": float(a.honorarium_amount or 0),
         "division_id": a.division_id, "cost_center": a.cost_center,
         "company_code": a.company_code, "remarks": a.remarks,
@@ -427,6 +427,8 @@ def get_application(app_id: int, db: Session = Depends(get_db),
         "vendor_id": a.vendor_id,
         "vendor_creation_notified_at": a.vendor_creation_notified_at.isoformat() if a.vendor_creation_notified_at else None,
         "rejection_reason": a.rejection_reason,
+        "bulk_request_id": a.bulk_request_id,
+        "agreement_text": _default_agreement(a),
         "created_at": a.created_at.isoformat() if a.created_at else None,
         "initiator": {
             "id": a.initiator.id,
@@ -592,6 +594,7 @@ def send_survey_link(app_id: int, db: Session = Depends(get_db),
     a.survey_token = token
     a.survey_link_sent_at = datetime.utcnow()
     a.agreement_sent_at = datetime.utcnow()
+    a.survey_deadline_at = datetime.utcnow() + timedelta(days=a.survey_duration_days or 7)
     a.updated_at = datetime.utcnow()
 
     doc = _get_doctor_display(a)
@@ -768,12 +771,13 @@ def portal_get(token: str, db: Session = Depends(get_db)):
         "survey_title": a.survey_title,
         "honorarium_amount": float(a.honorarium_amount or 0),
         "mode": a.mode,
-        "survey_duration_minutes": a.survey_duration_minutes,
+        "survey_duration_days": a.survey_duration_days or 7,
+        "survey_deadline_at": a.survey_deadline_at.isoformat() if a.survey_deadline_at else None,
         "doctor": doc,
-        "pan_number": a.pan_number,
-        "bank_name": a.bank_name,
-        "bank_account_no": a.bank_account_no,
-        "ifsc_code": a.ifsc_code,
+        "pan_number": a.hcp_doctor.pan_number if a.hcp_doctor else a.pan_number,
+        "bank_name": a.hcp_doctor.bank_name if a.hcp_doctor else a.bank_name,
+        "bank_account_no": a.hcp_doctor.account_number if a.hcp_doctor else a.bank_account_no,
+        "ifsc_code": a.hcp_doctor.ifsc_code if a.hcp_doctor else a.ifsc_code,
         "survey": survey_data,
         "survey_responses": a.survey_responses,
         "agreement_signed": bool(a.agreement_signed_at),
@@ -788,11 +792,25 @@ def portal_update_details(token: str, data: dict, db: Session = Depends(get_db))
         raise HTTPException(404, "Invalid link")
     if a.status != BrsStatus.PENDING_HCP_FORM:
         raise HTTPException(400, "Details already submitted")
-    allowed = ["pan_number", "bank_name", "bank_account_no", "ifsc_code",
-               "new_doctor_name", "new_doctor_speciality", "new_doctor_city"]
-    for k, v in data.items():
-        if k in allowed:
-            setattr(a, k, v)
+    pan = data.get("pan_number", "")
+    bank_name = data.get("bank_name", "")
+    bank_account_no = data.get("bank_account_no", "")
+    ifsc_code = data.get("ifsc_code", "")
+
+    # Save KYC to HcpDoctor profile for future use
+    if a.hcp_doctor_id and a.hcp_doctor:
+        d = a.hcp_doctor
+        if pan: d.pan_number = pan
+        if bank_name: d.bank_name = bank_name
+        if bank_account_no: d.account_number = bank_account_no
+        if ifsc_code: d.ifsc_code = ifsc_code
+    else:
+        # New doctor — store on application
+        for k, v in data.items():
+            if k in ["pan_number", "bank_name", "bank_account_no", "ifsc_code",
+                     "new_doctor_name", "new_doctor_speciality", "new_doctor_city"]:
+                setattr(a, k, v)
+
     a.hcp_form_submitted_at = datetime.utcnow()
     old = a.status
     a.status = BrsStatus.PENDING_SURVEY
@@ -1022,3 +1040,262 @@ def _num_to_words(n: float) -> str:
     if n > 0:
         parts.append(_below_thousand(n))
     return " ".join(parts)
+
+
+# ─────────────────────────────────────────────
+#  Doctor Portal — OTP Login & Profile
+# ─────────────────────────────────────────────
+
+@router.post("/doctor-portal/send-otp")
+def doctor_portal_send_otp(email: str, db: Session = Depends(get_db)):
+    doctor = db.query(HcpDoctor).filter(HcpDoctor.email == email, HcpDoctor.is_active == True).first()
+    otp = "".join([str(random.randint(0, 9)) for _ in range(6)])
+    expires = datetime.utcnow() + timedelta(minutes=10)
+    session = DoctorPortalSession(
+        email=email,
+        hcp_doctor_id=doctor.id if doctor else None,
+        otp_code=otp,
+        expires_at=expires,
+    )
+    db.add(session)
+    db.commit()
+    import logging
+    logging.getLogger("brs").info(f"[DEV] Doctor portal OTP for {email}: {otp}")
+    return {"ok": True, "_dev_otp": otp, "doctor_found": doctor is not None}
+
+
+@router.post("/doctor-portal/verify-otp")
+def doctor_portal_verify_otp(email: str, otp: str, db: Session = Depends(get_db)):
+    session = (db.query(DoctorPortalSession)
+               .filter(DoctorPortalSession.email == email,
+                       DoctorPortalSession.otp_code == otp,
+                       DoctorPortalSession.used == False,
+                       DoctorPortalSession.expires_at > datetime.utcnow())
+               .order_by(DoctorPortalSession.created_at.desc())
+               .first())
+    if not session:
+        raise HTTPException(400, "Invalid or expired OTP")
+    token = secrets.token_urlsafe(40)
+    session.session_token = token
+    session.used = True
+    db.commit()
+    return {"session_token": token, "email": email,
+            "doctor_found": session.hcp_doctor_id is not None}
+
+
+@router.get("/doctor-portal/profile")
+def doctor_portal_profile(session_token: str, db: Session = Depends(get_db)):
+    session = db.query(DoctorPortalSession).filter(
+        DoctorPortalSession.session_token == session_token).first()
+    if not session:
+        raise HTTPException(401, "Invalid session")
+    d = session.hcp_doctor
+    if not d:
+        return {"email": session.email, "found": False}
+    return {
+        "found": True,
+        "id": d.id, "email": d.email,
+        "full_name": d.full_name or f"{d.first_name or ''} {d.last_name or ''}".strip(),
+        "first_name": d.first_name, "last_name": d.last_name,
+        "mobile_number": d.mobile_number,
+        "qualification": d.qualification,
+        "doctor_type": d.doctor_type,
+        "city": d.city, "state": d.state,
+        "address": d.address,
+        "pan_number": d.pan_number or "",
+        "bank_name": d.bank_name or "",
+        "account_number": d.account_number or "",
+        "ifsc_code": d.ifsc_code or "",
+        "name_as_per_bank": d.name_as_per_bank or "",
+        "mci_reg_number": d.mci_reg_number or "",
+        "is_registered_under_gst": d.is_registered_under_gst,
+        "pending_surveys": _get_doctor_pending_surveys(d.id, db),
+    }
+
+
+@router.put("/doctor-portal/profile")
+def doctor_portal_update_profile(session_token: str, data: dict, db: Session = Depends(get_db)):
+    session = db.query(DoctorPortalSession).filter(
+        DoctorPortalSession.session_token == session_token).first()
+    if not session or not session.hcp_doctor_id:
+        raise HTTPException(401, "Invalid session or no doctor profile found")
+    d = session.hcp_doctor
+    allowed = ["pan_number", "bank_name", "account_number", "ifsc_code",
+               "name_as_per_bank", "mobile_number", "address", "city", "state"]
+    for k, v in data.items():
+        if k in allowed and v is not None:
+            setattr(d, k, v)
+    db.commit()
+    return {"ok": True}
+
+
+def _get_doctor_pending_surveys(hcp_doctor_id: int, db: Session) -> list:
+    apps = (db.query(BrsApplication)
+            .filter(BrsApplication.hcp_doctor_id == hcp_doctor_id,
+                    BrsApplication.status.in_([
+                        BrsStatus.PENDING_HCP_FORM, BrsStatus.PENDING_SURVEY,
+                        BrsStatus.PENDING_SIGN
+                    ]))
+            .all())
+    return [{"brs_code": a.brs_code, "survey_title": a.survey_title,
+             "status": a.status, "token": a.survey_token,
+             "deadline_at": a.survey_deadline_at.isoformat() if a.survey_deadline_at else None}
+            for a in apps]
+
+
+# ─────────────────────────────────────────────
+#  Bulk BRS Requests
+# ─────────────────────────────────────────────
+
+def _generate_bulk_code(db: Session) -> str:
+    from datetime import date
+    prefix = f"BRSB{date.today().strftime('%Y%m')}"
+    last = (db.query(BrsBulkRequest)
+            .filter(BrsBulkRequest.bulk_code.like(f"{prefix}%"))
+            .order_by(desc(BrsBulkRequest.bulk_code)).first())
+    seq = int(last.bulk_code[len(prefix):]) + 1 if last and last.bulk_code else 1
+    return f"{prefix}{seq:04d}"
+
+
+@router.get("/bulk/")
+def list_bulk_requests(
+    skip: int = 0, limit: int = 50,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    reqs = db.query(BrsBulkRequest).order_by(desc(BrsBulkRequest.created_at)).offset(skip).limit(limit).all()
+    return [
+        {
+            "id": r.id, "bulk_code": r.bulk_code,
+            "survey_title": r.survey_title, "brand": r.brand,
+            "honorarium_amount": float(r.honorarium_amount or 0),
+            "total_doctors": r.total_doctors, "sent_count": r.sent_count,
+            "completed_count": r.completed_count, "status": r.status,
+            "initiator_name": f"{r.initiator.first_name} {r.initiator.last_name}" if r.initiator else None,
+            "created_at": r.created_at.isoformat() if r.created_at else None,
+        }
+        for r in reqs
+    ]
+
+
+@router.post("/bulk/")
+def create_bulk_request(data: dict, db: Session = Depends(get_db),
+                        current_user: User = Depends(get_current_user)):
+    if current_user.role == UserRole.ADMINISTRATOR:
+        raise HTTPException(403, "System administrators cannot initiate BRS applications.")
+    doctors = data.pop("doctors", [])
+    bulk = BrsBulkRequest(
+        bulk_code=_generate_bulk_code(db),
+        survey_title=data["survey_title"],
+        survey_id=data.get("survey_id"),
+        therapeutic_area=data.get("therapeutic_area"),
+        brand=data.get("brand"),
+        topic=data.get("topic"),
+        honorarium_amount=data.get("honorarium_amount"),
+        survey_duration_days=data.get("survey_duration_days", 7),
+        mode=data.get("mode", "Online"),
+        division_id=data.get("division_id"),
+        cost_center=data.get("cost_center"),
+        company_code=data.get("company_code"),
+        remarks=data.get("remarks"),
+        initiator_id=current_user.id,
+        status="Draft",
+        total_doctors=len(doctors),
+    )
+    db.add(bulk)
+    db.flush()
+
+    created_apps = []
+    for doc in doctors:
+        hcp_id = doc.get("hcp_doctor_id")
+        app = BrsApplication(
+            brs_code=_generate_brs_code(db),
+            survey_title=bulk.survey_title,
+            therapeutic_area=bulk.therapeutic_area,
+            brand=bulk.brand,
+            topic=bulk.topic,
+            mode=bulk.mode,
+            survey_duration_days=bulk.survey_duration_days,
+            honorarium_amount=bulk.honorarium_amount,
+            division_id=bulk.division_id,
+            cost_center=bulk.cost_center,
+            company_code=bulk.company_code,
+            remarks=bulk.remarks,
+            survey_id=bulk.survey_id,
+            hcp_doctor_id=hcp_id if hcp_id else None,
+            is_new_doctor=not bool(hcp_id),
+            new_doctor_name=doc.get("name") if not hcp_id else None,
+            new_doctor_email=doc.get("email") if not hcp_id else None,
+            new_doctor_phone=doc.get("phone") if not hcp_id else None,
+            new_doctor_speciality=doc.get("speciality") if not hcp_id else None,
+            new_doctor_city=doc.get("city") if not hcp_id else None,
+            bulk_request_id=bulk.id,
+            initiator_id=current_user.id,
+            status=BrsStatus.DRAFT,
+        )
+        db.add(app)
+        db.flush()
+        _add_audit(db, app.id, "Created (Bulk)", "", BrsStatus.DRAFT, current_user.id)
+        created_apps.append(app.brs_code)
+
+    db.commit()
+    return {"id": bulk.id, "bulk_code": bulk.bulk_code,
+            "total_doctors": len(doctors), "brs_codes": created_apps}
+
+
+@router.get("/bulk/{bulk_id}")
+def get_bulk_request(bulk_id: int, db: Session = Depends(get_db),
+                     current_user: User = Depends(get_current_user)):
+    bulk = db.query(BrsBulkRequest).filter(BrsBulkRequest.id == bulk_id).first()
+    if not bulk:
+        raise HTTPException(404, "Bulk request not found")
+    apps = db.query(BrsApplication).filter(BrsApplication.bulk_request_id == bulk_id).all()
+    return {
+        "id": bulk.id, "bulk_code": bulk.bulk_code,
+        "survey_title": bulk.survey_title,
+        "brand": bulk.brand, "therapeutic_area": bulk.therapeutic_area,
+        "honorarium_amount": float(bulk.honorarium_amount or 0),
+        "survey_duration_days": bulk.survey_duration_days,
+        "total_doctors": bulk.total_doctors,
+        "sent_count": bulk.sent_count,
+        "completed_count": bulk.completed_count,
+        "status": bulk.status,
+        "initiator_name": f"{bulk.initiator.first_name} {bulk.initiator.last_name}" if bulk.initiator else None,
+        "created_at": bulk.created_at.isoformat() if bulk.created_at else None,
+        "doctors": [
+            {
+                "id": a.id, "brs_code": a.brs_code,
+                "doctor": _get_doctor_display(a),
+                "status": a.status,
+                "survey_link_sent_at": a.survey_link_sent_at.isoformat() if a.survey_link_sent_at else None,
+                "survey_completed_at": a.survey_completed_at.isoformat() if a.survey_completed_at else None,
+                "agreement_signed_at": a.agreement_signed_at.isoformat() if a.agreement_signed_at else None,
+                "survey_deadline_at": a.survey_deadline_at.isoformat() if a.survey_deadline_at else None,
+            }
+            for a in apps
+        ]
+    }
+
+
+@router.post("/bulk/{bulk_id}/submit")
+def submit_bulk_request(bulk_id: int, db: Session = Depends(get_db),
+                        current_user: User = Depends(get_current_user)):
+    """Submit all draft applications in the bulk request for L1 approval."""
+    bulk = db.query(BrsBulkRequest).filter(BrsBulkRequest.id == bulk_id).first()
+    if not bulk:
+        raise HTTPException(404, "Bulk request not found")
+    apps = db.query(BrsApplication).filter(
+        BrsApplication.bulk_request_id == bulk_id,
+        BrsApplication.status == BrsStatus.DRAFT).all()
+    initiator = db.query(User).filter(User.id == current_user.id).first()
+    l1 = db.query(User).filter(User.id == initiator.manager_id).first() if initiator and initiator.manager_id else None
+    l2 = db.query(User).filter(User.id == l1.manager_id).first() if l1 and l1.manager_id else None
+    for a in apps:
+        if l1: a.l1_approver_id = l1.id
+        if l2: a.l2_approver_id = l2.id
+        a.status = BrsStatus.PENDING_L1
+        a.updated_at = datetime.utcnow()
+        _add_audit(db, a.id, "Submitted (Bulk)", BrsStatus.DRAFT, BrsStatus.PENDING_L1, current_user.id)
+    bulk.status = "Pending L1"
+    db.commit()
+    return {"submitted": len(apps), "status": "Pending L1"}
