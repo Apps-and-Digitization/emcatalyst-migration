@@ -68,8 +68,11 @@ def _get_doctor_display(app: BrsApplication) -> dict:
     if app.hcp_doctor:
         d = app.hcp_doctor
         return {
-            "name": d.name, "email": d.email, "phone": d.mobile_no,
-            "speciality": d.speciality, "city": d.city
+            "name": d.full_name or f"{d.first_name or ''} {d.last_name or ''}".strip(),
+            "email": d.email,
+            "phone": d.mobile_number,
+            "speciality": d.qualification or d.doctor_type,
+            "city": d.city
         }
     return {
         "name": app.new_doctor_name, "email": app.new_doctor_email,

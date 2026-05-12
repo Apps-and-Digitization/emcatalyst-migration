@@ -96,11 +96,11 @@ export default function BrsForm() {
       ...f,
       pan_number: d.pan_number || '',
       bank_name: d.bank_name || '',
-      bank_account_no: d.bank_account_no || '',
+      bank_account_no: d.account_number || '',
       ifsc_code: d.ifsc_code || '',
     }))
     setShowDoctorResults(false)
-    setDoctorSearch(d.name)
+    setDoctorSearch(d.full_name || d.first_name || '')
   }
 
   return (
@@ -243,8 +243,8 @@ export default function BrsForm() {
                       <button key={d.id} type="button"
                         className="w-full text-left px-4 py-2.5 hover:bg-blue-50 text-sm"
                         onClick={() => selectDoctor(d)}>
-                        <span className="font-medium">{d.name}</span>
-                        <span className="text-gray-400 ml-2">• {d.speciality || 'General'} • {d.city || '—'}</span>
+                        <span className="font-medium">{d.full_name || d.first_name}</span>
+                        <span className="text-gray-400 ml-2">• {d.qualification || d.doctor_type || 'Doctor'} • {d.city || '—'}</span>
                       </button>
                     ))}
                   </div>
@@ -252,9 +252,9 @@ export default function BrsForm() {
               </div>
               {selectedDoctor && (
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm">
-                  <p className="font-semibold text-blue-800">{selectedDoctor.name}</p>
-                  <p className="text-blue-600">{selectedDoctor.speciality} • {selectedDoctor.city}</p>
-                  <p className="text-blue-500 text-xs mt-1">{selectedDoctor.email} • {selectedDoctor.mobile_no}</p>
+                  <p className="font-semibold text-blue-800">{selectedDoctor.full_name || selectedDoctor.first_name}</p>
+                  <p className="text-blue-600">{selectedDoctor.qualification || selectedDoctor.doctor_type || '—'} • {selectedDoctor.city || '—'}</p>
+                  <p className="text-blue-500 text-xs mt-1">{selectedDoctor.email || '—'} • {selectedDoctor.mobile_number || '—'}</p>
                 </div>
               )}
             </div>
