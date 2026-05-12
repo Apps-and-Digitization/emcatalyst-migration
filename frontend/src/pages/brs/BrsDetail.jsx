@@ -67,7 +67,7 @@ export default function BrsDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
   const qc = useQueryClient()
-  const [remarksModal, setRemarksModal] = useState(null) // { action, label }
+  const [remarksModal, setRemarksModal] = useState(null) // { fn, label }
   const [remarks, setRemarks] = useState('')
   const [surveyLink, setSurveyLink] = useState('')
   const [showAudit, setShowAudit] = useState(false)
@@ -79,23 +79,53 @@ export default function BrsDetail() {
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ['brs', id] })
 
-  const action = (fn, successMsg) => useMutation({
-    mutationFn: fn,
-    onSuccess: () => { toast.success(successMsg); invalidate() },
-    onError: (e) => toast.error(e.response?.data?.detail || 'Action failed'),
-  })
+  const onSuccess = (msg) => () => { toast.success(msg); invalidate() }
+  const onError = (e) => toast.error(e.response?.data?.detail || 'Action failed')
 
-  const submitMut = action(() => brsApi.submit(id), 'Submitted for L1 approval')
-  const appL1Mut = action(() => brsApi.approveL1(id, remarks), 'L1 Approved')
-  const appL2Mut = action(() => brsApi.approveL2(id, remarks), 'L2 Approved')
-  const appCompMut = action(() => brsApi.approveCompliance(id, remarks), 'Compliance Approved')
-  const rejectMut = action(() => brsApi.reject(id, remarks), 'Returned to Draft')
-  const coordMut = action(() => brsApi.verifyCoord(id, remarks), 'Coordinator verified')
-  const vendorNotifyMut = action(() => brsApi.triggerVendorCreation(id), 'Vendor creation notification sent')
-  const vendorCreatedMut = action(() => brsApi.markVendorCreated(id), 'Vendor linked')
-  const financeMut = action(() => brsApi.postFinance(id, remarks), 'Posted to Finance')
-  const paidMut = action(() => brsApi.markPaid(id, remarks), 'Marked as Paid')
-  const completeMut = action(() => brsApi.completeSurvey(id), 'Moved to Coord. Verification')
+  const submitMut = useMutation({
+    mutationFn: () => brsApi.submit(id),
+    onSuccess: onSuccess('Submitted for L1 approval'), onError,
+  })
+  const appL1Mut = useMutation({
+    mutationFn: () => brsApi.approveL1(id, remarks),
+    onSuccess: onSuccess('L1 Approved'), onError,
+  })
+  const appL2Mut = useMutation({
+    mutationFn: () => brsApi.approveL2(id, remarks),
+    onSuccess: onSuccess('L2 Approved'), onError,
+  })
+  const appCompMut = useMutation({
+    mutationFn: () => brsApi.approveCompliance(id, remarks),
+    onSuccess: onSuccess('Compliance Approved'), onError,
+  })
+  const rejectMut = useMutation({
+    mutationFn: () => brsApi.reject(id, remarks),
+    onSuccess: onSuccess('Returned to Draft'), onError,
+  })
+  const coordMut = useMutation({
+    mutationFn: () => brsApi.verifyCoord(id, remarks),
+    onSuccess: onSuccess('Coordinator verified'), onError,
+  })
+  const vendorNotifyMut = useMutation({
+    mutationFn: () => brsApi.triggerVendorCreation(id),
+    onSuccess: onSuccess('Vendor creation notification sent'), onError,
+  })
+  const vendorCreatedMut = useMutation({
+    mutationFn: () => brsApi.markVendorCreated(id),
+    onSuccess: onSuccess('Vendor linked'), onError,
+  })
+  const financeMut = useMutation({
+    mutationFn: () => brsApi.postFinance(id, remarks),
+    onSuccess: onSuccess('Posted to Finance'), onError,
+  })
+  const paidMut = useMutation({
+    mutationFn: () => brsApi.markPaid(id, remarks),
+    onSuccess: onSuccess('Marked as Paid'), onError,
+  })
+  const completeMut = useMutation({
+    mutationFn: () => brsApi.completeSurvey(id),
+    onSuccess: onSuccess('Moved to Coord. Verification'), onError,
+  })
 
   const sendLinkMut = useMutation({
     mutationFn: () => brsApi.sendSurveyLink(id),
@@ -104,16 +134,16 @@ export default function BrsDetail() {
       setSurveyLink(res.data.survey_link)
       invalidate()
     },
-    onError: (e) => toast.error(e.response?.data?.detail || 'Failed to send link'),
+    onError,
   })
 
-  const openAction = (actionFn, label) => {
+  const openAction = (mut, label) => {
     setRemarks('')
-    setRemarksModal({ fn: actionFn, label })
+    setRemarksModal({ mut, label })
   }
 
   const confirmAction = () => {
-    remarksModal.fn.mutate()
+    remarksModal.mut.mutate()
     setRemarksModal(null)
   }
 
@@ -122,7 +152,6 @@ export default function BrsDetail() {
 
   const doctor = app.doctor || {}
   const isRejectable = !['Paid', 'Posted', 'Draft'].includes(app.status)
-  const hasSignature = app.has_signature
 
   return (
     <div className="p-8 max-w-5xl mx-auto">
@@ -155,7 +184,7 @@ export default function BrsDetail() {
       <div className="card p-4 mb-6 flex flex-wrap gap-2">
         {app.status === 'Draft' && (
           <button className="btn-primary flex items-center gap-2 text-sm"
-            onClick={() => submitMut.mutate()}>
+            onClick={() => submitMut.mutate()} disabled={submitMut.isPending}>
             <Send size={15} /> Submit for Approval
           </button>
         )}
@@ -185,7 +214,7 @@ export default function BrsDetail() {
         )}
         {app.status === 'Survey Completed' && (
           <button className="btn-primary bg-teal-600 hover:bg-teal-700 flex items-center gap-2 text-sm"
-            onClick={() => completeMut.mutate()}>
+            onClick={() => completeMut.mutate()} disabled={completeMut.isPending}>
             <FileCheck size={15} /> Move to Coord. Verification
           </button>
         )}
@@ -202,7 +231,7 @@ export default function BrsDetail() {
               <Building2 size={15} /> Notify MDM Team
             </button>
             <button className="btn-primary bg-amber-600 hover:bg-amber-700 flex items-center gap-2 text-sm"
-              onClick={() => vendorCreatedMut.mutate()}>
+              onClick={() => vendorCreatedMut.mutate()} disabled={vendorCreatedMut.isPending}>
               <CheckCircle size={15} /> Mark Vendor Created
             </button>
           </>
@@ -227,7 +256,7 @@ export default function BrsDetail() {
         )}
       </div>
 
-      {/* Survey Link display */}
+      {/* Survey Link */}
       {(surveyLink || app.survey_link_sent_at) && (
         <div className="card p-4 mb-6 bg-blue-50 border-blue-200">
           <div className="flex items-center gap-2 mb-2">
@@ -253,9 +282,8 @@ export default function BrsDetail() {
         </div>
       )}
 
-      {/* Main Info Grid */}
+      {/* Info Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        {/* Survey Info */}
         <div className="card p-5 lg:col-span-2">
           <h4 className="font-semibold text-gray-800 mb-3">Survey Details</h4>
           <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
@@ -275,7 +303,6 @@ export default function BrsDetail() {
           </dl>
         </div>
 
-        {/* Doctor Info */}
         <div className="card p-5">
           <div className="flex items-center gap-2 mb-3">
             <User size={16} className="text-gray-500" />
@@ -306,14 +333,14 @@ export default function BrsDetail() {
       )}
 
       {/* Signature status */}
-      {(app.agreement_signed_at || hasSignature) && (
+      {app.agreement_signed_at && (
         <div className="card p-5 mb-6 bg-green-50 border-green-200">
           <div className="flex items-center gap-3">
             <CheckCircle size={20} className="text-green-600" />
             <div>
               <p className="font-semibold text-green-800 text-sm">Agreement Digitally Signed</p>
               <p className="text-green-600 text-xs">
-                Signed on {app.agreement_signed_at ? new Date(app.agreement_signed_at).toLocaleString() : '—'}
+                Signed on {new Date(app.agreement_signed_at).toLocaleString()}
                 {app.signature_otp_verified && ' · OTP Verified'}
               </p>
             </div>

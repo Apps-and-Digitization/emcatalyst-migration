@@ -402,7 +402,21 @@ export default function SurveyBuilder() {
         }
       />
 
-      {isLoading ? <LoadingSpinner /> : (
+      {isLoading ? <LoadingSpinner /> : surveys.length === 0 ? (
+        <div className="card p-12 text-center">
+          <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
+            <FileText size={28} className="text-blue-400" />
+          </div>
+          <h3 className="font-semibold text-gray-700 mb-2">No Survey Templates Yet</h3>
+          <p className="text-sm text-gray-500 mb-6 max-w-xs mx-auto">
+            Create your first survey template to start sending Bona Fide Research Surveys to doctors.
+          </p>
+          <button className="btn-primary inline-flex items-center gap-2"
+            onClick={() => setShowNewSurvey(true)}>
+            <Plus size={16} /> Create First Survey
+          </button>
+        </div>
+      ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {surveys.map(s => (
             <div key={s.id} className="card p-5 hover:shadow-md transition-shadow">
@@ -432,7 +446,8 @@ export default function SurveyBuilder() {
             </div>
           ))}
         </div>
-      )}
+      )
+      }
 
       {showNewSurvey && (
         <Modal title="Create New Survey" onClose={() => setShowNewSurvey(false)}>

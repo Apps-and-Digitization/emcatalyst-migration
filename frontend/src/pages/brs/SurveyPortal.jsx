@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { toast } from 'react-hot-toast'
@@ -230,28 +230,33 @@ export default function SurveyPortal() {
   const [otpExpired, setOtpExpired] = useState(false)
   const [devOtp, setDevOtp] = useState(null)
 
-  const { isLoading: loadingPortal } = useQuery({
+  const { data: rawPortal, isLoading: loadingPortal, isError: portalLoadError } = useQuery({
     queryKey: ['brs-portal', token],
     queryFn: () => brsApi.portalGet(token).then(r => r.data),
-    onSuccess: (data) => {
-      setPortalData(data)
+    retry: false,
+  })
+
+  useEffect(() => {
+    if (rawPortal) {
+      setPortalData(rawPortal)
       setHcpForm({
-        pan_number: data.pan_number || '',
-        bank_name: data.bank_name || '',
-        bank_account_no: data.bank_account_no || '',
-        ifsc_code: data.ifsc_code || '',
+        pan_number: rawPortal.pan_number || '',
+        bank_name: rawPortal.bank_name || '',
+        bank_account_no: rawPortal.bank_account_no || '',
+        ifsc_code: rawPortal.ifsc_code || '',
       })
-      // Determine initial phase
-      const s = data.status
+      const s = rawPortal.status
       if (s === 'Pending HCP Form') setPhase('hcp_form')
       else if (s === 'Pending Survey') setPhase('agreement')
       else if (s === 'Pending Sign') setPhase('sign')
       else if (s === 'Survey Completed') setPhase('completed')
       else setPhase('error')
-    },
-    onError: () => setPhase('error'),
-    retry: false,
-  })
+    }
+  }, [rawPortal])
+
+  useEffect(() => {
+    if (portalLoadError) setPhase('error')
+  }, [portalLoadError])
 
   const hcpFormMut = useMutation({
     mutationFn: () => brsApi.portalUpdateDetails(token, hcpForm),
