@@ -487,19 +487,31 @@ export default function SurveyPortal() {
             <div
               ref={agreementRef}
               onScroll={handleAgreementScroll}
-              className="h-72 overflow-y-auto border border-gray-200 rounded-xl p-4 text-sm text-gray-700 whitespace-pre-wrap font-mono leading-relaxed bg-gray-50"
+              className="h-96 overflow-y-auto border border-gray-200 rounded-xl p-5 text-sm text-gray-800 whitespace-pre-wrap leading-7 bg-white shadow-inner"
+              style={{ fontFamily: 'Georgia, serif' }}
             >
               {survey?.agreement_template || 'Agreement loading…'}
             </div>
+            <label className="flex items-start gap-3 mt-4 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={agreementScrolled}
+                onChange={e => setAgreementScrolled(e.target.checked)}
+                className="mt-1 w-4 h-4 text-blue-600"
+              />
+              <span className="text-sm text-gray-700">
+                I have read and understood the above Expert Services Agreement and agree to all its terms and conditions.
+              </span>
+            </label>
             <button
-              className={`w-full font-semibold py-3 rounded-xl mt-4 transition-colors
+              className={`w-full font-semibold py-3 rounded-xl mt-3 transition-colors
                 ${agreementScrolled
                   ? 'bg-[#003087] hover:bg-blue-900 text-white cursor-pointer'
                   : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
               disabled={!agreementScrolled}
               onClick={handleStartSurvey}
             >
-              I have read and agree — Start Survey →
+              Agree &amp; Proceed to Survey →
             </button>
           </div>
         )}

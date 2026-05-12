@@ -83,6 +83,12 @@ export const accessApi = {
   listCostCenters: (division_id) => api.get('/access/cost-centers', { params: { division_id } }),
   createCostCenter: (data) => api.post('/access/cost-centers', null, { params: data }),
   listFunctions: () => api.get('/access/functions'),
+  // Hierarchy
+  myChain: () => api.get('/access/hierarchy/my-chain'),
+  myTeam: () => api.get('/access/hierarchy/team'),
+  userChain: (employeeId) => api.get(`/access/hierarchy/user/${employeeId}`),
+  hierarchyTree: (rootEmployeeId, depth = 3) => api.get('/access/hierarchy/tree', { params: { root_employee_id: rootEmployeeId, depth } }),
+  searchEmployees: (q, limit = 20) => api.get('/access/hierarchy/search', { params: { q, limit } }),
 }
 
 // Promotional

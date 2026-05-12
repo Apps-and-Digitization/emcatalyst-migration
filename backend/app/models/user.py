@@ -136,6 +136,7 @@ class User(Base):
     cost_center_id = Column(Integer, ForeignKey("cost_centers.id"), nullable=True)
     function_id = Column(Integer, ForeignKey("functions.id"), nullable=True)
     territory_id = Column(Integer, ForeignKey("territories.id"), nullable=True)
+    manager_id = Column(Integer, ForeignKey("users.id"), nullable=True)
 
     role = Column(Enum(UserRole), default=UserRole.USER)
     is_active = Column(Boolean, default=True)
@@ -147,3 +148,4 @@ class User(Base):
     cost_center = relationship("CostCenter", back_populates="users")
     groups = relationship("UserGroup", secondary="user_group_members", back_populates="members")
     events_initiated = relationship("Event", foreign_keys="Event.initiator_id", back_populates="initiator")
+    manager = relationship("User", foreign_keys=[manager_id], remote_side="User.id", backref="direct_reports")

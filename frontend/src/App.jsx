@@ -19,6 +19,7 @@ import AgreementForm from './pages/agreements/AgreementForm'
 import Reports from './pages/reports/Reports'
 import AccessManagement from './pages/access/AccessManagement'
 import UserManagement from './pages/users/UserManagement'
+import HierarchyView from './pages/users/HierarchyView'
 import PromotionalList from './pages/promotional/PromotionalList'
 import PromotionalForm from './pages/promotional/PromotionalForm'
 import Masters from './pages/masters/Masters'
@@ -60,6 +61,7 @@ export default function App() {
               <Route path="reports" element={<Reports />} />
               <Route path="access" element={<AccessManagement />} />
               <Route path="users" element={<UserManagement />} />
+              <Route path="hierarchy" element={<HierarchyView />} />
               <Route path="promotional" element={<PromotionalList />} />
               <Route path="promotional/new" element={<PromotionalForm />} />
               <Route path="masters" element={<Masters />} />

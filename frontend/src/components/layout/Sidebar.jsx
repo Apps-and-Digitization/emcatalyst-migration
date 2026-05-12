@@ -1,7 +1,7 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, CalendarDays, FileText, Users, Building2,
-  BarChart3, ShoppingCart, Megaphone, Shield, LogOut, ChevronRight, Database, ClipboardList
+  BarChart3, ShoppingCart, Megaphone, Shield, LogOut, ChevronRight, Database, ClipboardList, GitBranch
 } from 'lucide-react'
 import useAuthStore from '../../store/authStore'
 import clsx from 'clsx'
@@ -17,6 +17,7 @@ const navItems = [
   { label: 'Reports',          path: '/reports',         icon: BarChart3 },
   { label: 'Access Mgmt',      path: '/access',          icon: Shield },
   { label: 'Users',            path: '/users',           icon: Users },
+  { label: 'Hierarchy',        path: '/hierarchy',       icon: GitBranch },
 ]
 
 export default function Sidebar() {

@@ -320,6 +320,34 @@ export default function BrsDetail() {
         </div>
       </div>
 
+      {/* Approval Chain */}
+      <div className="card p-5 mb-6">
+        <h4 className="font-semibold text-gray-800 mb-3">Approval Chain</h4>
+        <div className="flex flex-wrap items-stretch gap-3">
+          {[
+            { label: 'Initiator', data: app.initiator, color: 'border-blue-400 bg-blue-50', badge: 'bg-blue-100 text-blue-700' },
+            { label: 'L1 Manager', data: app.l1_approver, color: 'border-indigo-400 bg-indigo-50', badge: 'bg-indigo-100 text-indigo-700' },
+            { label: 'L2 Manager', data: app.l2_approver, color: 'border-purple-400 bg-purple-50', badge: 'bg-purple-100 text-purple-700' },
+          ].map(({ label, data, color, badge }) => (
+            <div key={label} className={`flex-1 min-w-[160px] border-l-4 rounded-r-xl p-3 ${color}`}>
+              <span className={`text-xs font-semibold px-2 py-0.5 rounded ${badge}`}>{label}</span>
+              {data ? (
+                <div className="mt-2">
+                  <p className="font-semibold text-gray-900 text-sm">{data.name}</p>
+                  <p className="text-xs text-gray-500 mt-0.5">{data.designation || '—'}</p>
+                  <p className="text-xs text-gray-400 font-mono mt-0.5">{data.employee_id}</p>
+                  {data.approved_at && (
+                    <p className="text-xs text-green-600 mt-1">✓ Approved {new Date(data.approved_at).toLocaleDateString()}</p>
+                  )}
+                </div>
+              ) : (
+                <p className="text-xs text-gray-400 mt-2">Not assigned</p>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* Bank Details */}
       {(app.bank_name || app.bank_account_no) && (
         <div className="card p-5 mb-6">

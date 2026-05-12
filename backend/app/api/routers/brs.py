@@ -428,8 +428,26 @@ def get_application(app_id: int, db: Session = Depends(get_db),
         "vendor_creation_notified_at": a.vendor_creation_notified_at.isoformat() if a.vendor_creation_notified_at else None,
         "rejection_reason": a.rejection_reason,
         "created_at": a.created_at.isoformat() if a.created_at else None,
-        "initiator": {"id": a.initiator.id,
-                      "name": f"{a.initiator.first_name} {a.initiator.last_name}"} if a.initiator else None,
+        "initiator": {
+            "id": a.initiator.id,
+            "name": f"{a.initiator.first_name} {a.initiator.last_name}",
+            "designation": a.initiator.designation_title,
+            "employee_id": a.initiator.employee_id,
+        } if a.initiator else None,
+        "l1_approver": {
+            "id": a.l1_approver.id,
+            "name": f"{a.l1_approver.first_name} {a.l1_approver.last_name or ''}".strip(),
+            "designation": a.l1_approver.designation_title,
+            "employee_id": a.l1_approver.employee_id,
+            "approved_at": a.l1_approved_at.isoformat() if a.l1_approved_at else None,
+        } if a.l1_approver else None,
+        "l2_approver": {
+            "id": a.l2_approver.id,
+            "name": f"{a.l2_approver.first_name} {a.l2_approver.last_name or ''}".strip(),
+            "designation": a.l2_approver.designation_title,
+            "employee_id": a.l2_approver.employee_id,
+            "approved_at": a.l2_approved_at.isoformat() if a.l2_approved_at else None,
+        } if a.l2_approver else None,
         "audit_trail": [
             {
                 "action": t.action, "from_status": t.from_status,
@@ -475,11 +493,28 @@ def submit_application(app_id: int, db: Session = Depends(get_db),
     if a.status != BrsStatus.DRAFT:
         raise HTTPException(400, "Application not in Draft")
     old = a.status
+
+    # Auto-assign L1 and L2 from the initiator's manager chain
+    initiator = db.query(User).filter(User.id == current_user.id).first()
+    l1 = db.query(User).filter(User.id == initiator.manager_id).first() if initiator and initiator.manager_id else None
+    l2 = db.query(User).filter(User.id == l1.manager_id).first() if l1 and l1.manager_id else None
+
+    if l1:
+        a.l1_approver_id = l1.id
+    if l2:
+        a.l2_approver_id = l2.id
+
     a.status = BrsStatus.PENDING_L1
     a.updated_at = datetime.utcnow()
-    _add_audit(db, a.id, "Submitted for L1 Approval", old, BrsStatus.PENDING_L1, current_user.id)
+    _add_audit(db, a.id, "Submitted for L1 Approval", old, BrsStatus.PENDING_L1, current_user.id,
+               f"L1: {l1.first_name + ' ' + (l1.last_name or '') if l1 else 'unassigned'}, "
+               f"L2: {l2.first_name + ' ' + (l2.last_name or '') if l2 else 'unassigned'}")
     db.commit()
-    return {"status": a.status}
+    return {
+        "status": a.status,
+        "l1_approver": f"{l1.first_name} {l1.last_name or ''} ({l1.designation_title or ''})".strip() if l1 else None,
+        "l2_approver": f"{l2.first_name} {l2.last_name or ''} ({l2.designation_title or ''})".strip() if l2 else None,
+    }
 
 
 @router.post("/{app_id}/approve-l1")
@@ -902,59 +937,88 @@ def complete_survey(app_id: int, db: Session = Depends(get_db),
 def _default_agreement(a: BrsApplication) -> str:
     doc = _get_doctor_display(a)
     name = doc.get("name", "Doctor")
-    return f"""BONA FIDE RESEARCH SURVEY AGREEMENT
+    city = doc.get("city") or a.new_doctor_city or ""
+    brand = a.brand or "the product"
+    field = a.therapeutic_area or (a.topic[:80] if a.topic else "") or "the mentioned therapeutic area"
+    amount = float(a.honorarium_amount or 0)
+    amount_fmt = f"{amount:,.0f}"
+    amount_words = _num_to_words(amount)
+    pan = a.pan_number or "__________________________"
+    date_str = datetime.utcnow().strftime("%d %B %Y")
 
-This agreement is entered into between:
+    return f"""EXPERT SERVICES AGREEMENT (Survey)
 
-Emcure Pharmaceuticals Ltd. ("Emcure")
-AND
-Dr. {name} ("Investigator")
+DR. {name}
+Address: {city}
+Place / HQ: {city}
 
-TERMS AND CONDITIONS:
+Dear Dr. {name},
 
-1. NATURE OF ENGAGEMENT
-The Investigator agrees to participate in a Bona Fide Research Survey titled:
-"{a.survey_title}"
+We wish to seek your expert advice on usage of {brand} and its combination in different age group of patients and in furtherance to our discussion in this regard, we are pleased to appoint you as an Expert representing Emcure Pharmaceuticals Limited (hereinafter referred to as 'Emcure / Company'). You are requested to perform the following activities as an 'Expert' (hereinafter referred to as 'purpose')
 
-This engagement is for legitimate medical research purposes as defined under applicable guidelines.
+Advise and update the Company on developments and issues in the field of {field}, in form of written opinions or expert survey reports. Emcure reserves the right to publish any lecture/talk given by you in such scientific congresses/conferences / meetings / seminars in any medical journals, make CDs and/or DVDs and you shall allow the Company to distribute copies of your printed lecture series and/or CDs/DVDs to the doctors in India, post your approval. The 'period' for your services shall begin on the date you sign this Agreement and shall continue for a period of one (1) year or such earlier period as the Company may deem appropriate to end your services, if in the Company's opinion you have adequately fulfilled your service ('Term'). On expiry of the Term, this Agreement shall stand expired unless renewed mutually by both parties. Emcure retains the right to terminate this Agreement without cause, by giving a ten (10) days written intimation to you.
 
-2. HONORARIUM
-Emcure agrees to pay an honorarium of INR {float(a.honorarium_amount or 0):,.0f}/- (Rupees {_num_to_words(float(a.honorarium_amount or 0))}) upon completion of the survey, subject to deduction of applicable taxes (TDS).
+i. In exchange for you acting as our Expert in accordance with this Agreement, Emcure will pay you by cheque or e-transfer (in your name only) into your nominated account a onetime service fee INR {amount_fmt}/- (INR {amount_words} Only) ('fees') for rendering expert services to the Company. Emcure will make such payment subject to necessary statutory deductions of withholding tax at the prevailing rates as per The Income Tax Act, 1961 and necessary certificate for the same will be provided to you. Unpublished, except for information that is already known to you (as evidenced by written records) or is or becomes public knowledge through no fault of your own. You also agree not to disclose any confidential or proprietary information to the Company.
 
-3. OBLIGATIONS OF INVESTIGATOR
-The Investigator agrees to:
-a) Complete the survey in good faith with accurate responses
-b) Devote adequate time (minimum {a.survey_duration_minutes} minutes) to the survey
-c) Provide all required KYC documents (PAN card, bank details)
+ii. Any fees, payments, reimbursements shall be inclusive of lecture preparation, presentation, presentation preparation, meeting preparation and meeting participation, minutes review, follow-up time and review of conclusions that the Company may require you to perform. The fees, payments, reimbursements are inclusive of indirect tax, if any, travel time compensation and preparation time compensation, unless mentioned separately herein. You will be responsible for all other taxes relating to such payments. Emcure will pay and organize directly or reimburse your conference registration fees incurred by you only in case you are acting as a speaker. Emcure does not permit sponsorship of any accompanying person. Reimbursements of any expense is strictly subject to production of original receipts and other evidence of payment and written pre approval of Emcure. Submission of pan card copy, RTGS details in prescribed format are essential for processing any payments.
 
-4. CONFIDENTIALITY
-All survey responses and related information shall be kept confidential by Emcure and used solely for internal research and medical affairs purposes.
+The following shall be an integral part of the deliverable to be provided by you to the Company:
+i. Your opinion/surveys on the topics for which your expert advice has been sought for under this Agreement on your letter head.
 
-5. COMPLIANCE
-This engagement complies with:
-- MCI Code of Ethics
-- UCPMP guidelines
-- Applicable Indian tax laws
+Emcure confirms that your responsibilities as Emcure's Expert are in no way linked to or dependent on your prescribing or promoting Emcure's products. Further you acknowledge that your appointment as our Expert is only for rendering your expert advice on the above mentioned subjects. Payments and reimbursements under this Agreement strictly carry no obligation to promote any product and it is not with the intention to induce, influence or reward the past, present or future prescribing, supply, purchasing or recommending of any Emcure or its affiliates products (including formulary recommendations.).
 
-6. DECLARATION
-I, Dr. {name}, declare that:
-- The information provided by me is true and accurate
-- I am participating in this survey voluntarily
-- I understand that the honorarium is subject to applicable tax deductions
+You further agree to immediately notify Emcure should you be so debarred, excluded, disqualified or restricted, or should a penalty or action be initiated against you by Medical Council of India or any other regulatory or judicial body, at any time during the term of this Agreement and during the twelve (12) months following the expiration or termination of the Agreement.
 
-By digitally signing this agreement, I confirm my acceptance of all terms and conditions.
+You agree to fulfill all the obligations under this Agreement in accordance with any professional standards, applicable laws and regulations. Further it shall be your responsibility for obtaining written approvals, if any, from your principal, e.g. hospital.
 
-Date: {datetime.utcnow().strftime('%d %B %Y')}
-"""
+By signing below, you agree not to use or disclose to third parties any confidential information which you will have access to during the course of providing service for so long as it remains unpublished, except for information that is already known to you or is or becomes public knowledge through no fault of our own. You also agree not to disclose any confidential or proprietary information to the Company.
+
+During the period of this Agreement, any documentation and data (i) disclosed by the Company to you, or (ii) of which you would become aware or (iii) that you may create within the scope and during the performance of this agreement and (iv) any invention or improvements relating to intellectual property concerning the purpose mentioned hereinabove shall be the sole and exclusive property of Emcure.
+
+You confirm that you have no conflict of interest which would prevent you from acting as an Expert in accordance with this Agreement and that you have obtained all necessary employer/governmental consents. You further agree to notify Emcure in writing as soon as possible if you become aware of conflict of interest during the period of this Agreement.
+
+This Agreement is governed by and constructed in accordance with laws of India. Any dispute arising out of this Agreement shall be decided by arbitration under the Arbitration and Conciliation Act, 1996 at Pune.
+
+────────────────────────────────────────────────────────
+                 EMCURE PHARMACEUTICALS LTD.
+────────────────────────────────────────────────────────
+Please sign this document as receipt and acceptance of this Agreement.
+
+Agree to and accepted by the Expert
+
+Signed: ______________________     Date: {date_str}
+Print Name: Dr. {name}
+PAN NO: {pan}
+────────────────────────────────────────────────────────"""
 
 
 def _num_to_words(n: float) -> str:
-    """Very basic number to words for agreement template."""
     n = int(n)
     if n == 0:
         return "Zero"
-    if n < 1000:
-        return str(n)
-    if n < 100000:
-        return f"{n // 1000} Thousand {n % 1000}" if n % 1000 else f"{n // 1000} Thousand"
-    return str(n)
+    ones = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine",
+            "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen",
+            "Seventeen", "Eighteen", "Nineteen"]
+    tens_w = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"]
+
+    def _below_hundred(x):
+        return ones[x] if x < 20 else tens_w[x // 10] + (" " + ones[x % 10] if x % 10 else "")
+
+    def _below_thousand(x):
+        if x < 100:
+            return _below_hundred(x)
+        return ones[x // 100] + " Hundred" + (" " + _below_hundred(x % 100) if x % 100 else "")
+
+    parts = []
+    if n >= 10000000:
+        parts.append(_below_thousand(n // 10000000) + " Crore")
+        n %= 10000000
+    if n >= 100000:
+        parts.append(_below_thousand(n // 100000) + " Lakh")
+        n %= 100000
+    if n >= 1000:
+        parts.append(_below_thousand(n // 1000) + " Thousand")
+        n %= 1000
+    if n > 0:
+        parts.append(_below_thousand(n))
+    return " ".join(parts)

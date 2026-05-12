@@ -449,8 +449,7 @@ export default function SurveyBuilder() {
       )
       }
 
-      {showNewSurvey && (
-        <Modal title="Create New Survey" onClose={() => setShowNewSurvey(false)}>
+      <Modal open={showNewSurvey} title="Create New Survey" onClose={() => setShowNewSurvey(false)}>
           <div className="p-5 space-y-4">
             <div>
               <label className="label">Survey Title <span className="text-red-500">*</span></label>
@@ -475,8 +474,7 @@ export default function SurveyBuilder() {
               </button>
             </div>
           </div>
-        </Modal>
-      )}
+      </Modal>
     </div>
   )
 }
