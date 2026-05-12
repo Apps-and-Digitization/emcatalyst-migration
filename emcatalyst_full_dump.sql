@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict RdmaMG8gYyWgjgy9XDK0miHqXgrkd1G87GtgMOHdHVIOVDLc9cATphGfQrYAXoh
+\restrict FlnEYtoYTp9vgIyVS7fn8Np1JkzMDEPvOYoxeBFxg44npEnEYFDGjVT3w403JIT
 
 -- Dumped from database version 18.3
 -- Dumped by pg_dump version 18.3
@@ -20,7 +20,7 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
--- Name: agreementstatus; Type: TYPE; Schema: public; Owner: -
+-- Name: agreementstatus; Type: TYPE; Schema: public; Owner: emcatalyst
 --
 
 CREATE TYPE public.agreementstatus AS ENUM (
@@ -34,8 +34,10 @@ CREATE TYPE public.agreementstatus AS ENUM (
 );
 
 
+ALTER TYPE public.agreementstatus OWNER TO emcatalyst;
+
 --
--- Name: brsquestiontype; Type: TYPE; Schema: public; Owner: -
+-- Name: brsquestiontype; Type: TYPE; Schema: public; Owner: emcatalyst
 --
 
 CREATE TYPE public.brsquestiontype AS ENUM (
@@ -47,8 +49,10 @@ CREATE TYPE public.brsquestiontype AS ENUM (
 );
 
 
+ALTER TYPE public.brsquestiontype OWNER TO emcatalyst;
+
 --
--- Name: brsstatus; Type: TYPE; Schema: public; Owner: -
+-- Name: brsstatus; Type: TYPE; Schema: public; Owner: emcatalyst
 --
 
 CREATE TYPE public.brsstatus AS ENUM (
@@ -68,8 +72,10 @@ CREATE TYPE public.brsstatus AS ENUM (
 );
 
 
+ALTER TYPE public.brsstatus OWNER TO emcatalyst;
+
 --
--- Name: eventstatus; Type: TYPE; Schema: public; Owner: -
+-- Name: eventstatus; Type: TYPE; Schema: public; Owner: emcatalyst
 --
 
 CREATE TYPE public.eventstatus AS ENUM (
@@ -83,8 +89,10 @@ CREATE TYPE public.eventstatus AS ENUM (
 );
 
 
+ALTER TYPE public.eventstatus OWNER TO emcatalyst;
+
 --
--- Name: invoicestatus; Type: TYPE; Schema: public; Owner: -
+-- Name: invoicestatus; Type: TYPE; Schema: public; Owner: emcatalyst
 --
 
 CREATE TYPE public.invoicestatus AS ENUM (
@@ -101,8 +109,10 @@ CREATE TYPE public.invoicestatus AS ENUM (
 );
 
 
+ALTER TYPE public.invoicestatus OWNER TO emcatalyst;
+
 --
--- Name: promotionalstatus; Type: TYPE; Schema: public; Owner: -
+-- Name: promotionalstatus; Type: TYPE; Schema: public; Owner: emcatalyst
 --
 
 CREATE TYPE public.promotionalstatus AS ENUM (
@@ -117,8 +127,10 @@ CREATE TYPE public.promotionalstatus AS ENUM (
 );
 
 
+ALTER TYPE public.promotionalstatus OWNER TO emcatalyst;
+
 --
--- Name: userrole; Type: TYPE; Schema: public; Owner: -
+-- Name: userrole; Type: TYPE; Schema: public; Owner: emcatalyst
 --
 
 CREATE TYPE public.userrole AS ENUM (
@@ -135,12 +147,14 @@ CREATE TYPE public.userrole AS ENUM (
 );
 
 
+ALTER TYPE public.userrole OWNER TO emcatalyst;
+
 SET default_tablespace = '';
 
 SET default_table_access_method = heap;
 
 --
--- Name: agreement_documents; Type: TABLE; Schema: public; Owner: -
+-- Name: agreement_documents; Type: TABLE; Schema: public; Owner: emcatalyst
 --
 
 CREATE TABLE public.agreement_documents (
@@ -155,8 +169,10 @@ CREATE TABLE public.agreement_documents (
 );
 
 
+ALTER TABLE public.agreement_documents OWNER TO emcatalyst;
+
 --
--- Name: agreement_documents_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: agreement_documents_id_seq; Type: SEQUENCE; Schema: public; Owner: emcatalyst
 --
 
 CREATE SEQUENCE public.agreement_documents_id_seq
@@ -168,15 +184,17 @@ CREATE SEQUENCE public.agreement_documents_id_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.agreement_documents_id_seq OWNER TO emcatalyst;
+
 --
--- Name: agreement_documents_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: agreement_documents_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: emcatalyst
 --
 
 ALTER SEQUENCE public.agreement_documents_id_seq OWNED BY public.agreement_documents.id;
 
 
 --
--- Name: agreements; Type: TABLE; Schema: public; Owner: -
+-- Name: agreements; Type: TABLE; Schema: public; Owner: emcatalyst
 --
 
 CREATE TABLE public.agreements (
@@ -207,8 +225,10 @@ CREATE TABLE public.agreements (
 );
 
 
+ALTER TABLE public.agreements OWNER TO emcatalyst;
+
 --
--- Name: agreements_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: agreements_id_seq; Type: SEQUENCE; Schema: public; Owner: emcatalyst
 --
 
 CREATE SEQUENCE public.agreements_id_seq
@@ -220,15 +240,17 @@ CREATE SEQUENCE public.agreements_id_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.agreements_id_seq OWNER TO emcatalyst;
+
 --
--- Name: agreements_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: agreements_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: emcatalyst
 --
 
 ALTER SEQUENCE public.agreements_id_seq OWNED BY public.agreements.id;
 
 
 --
--- Name: audit_history; Type: TABLE; Schema: public; Owner: -
+-- Name: audit_history; Type: TABLE; Schema: public; Owner: emcatalyst
 --
 
 CREATE TABLE public.audit_history (
@@ -246,8 +268,10 @@ CREATE TABLE public.audit_history (
 );
 
 
+ALTER TABLE public.audit_history OWNER TO emcatalyst;
+
 --
--- Name: audit_history_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: audit_history_id_seq; Type: SEQUENCE; Schema: public; Owner: emcatalyst
 --
 
 CREATE SEQUENCE public.audit_history_id_seq
@@ -259,15 +283,17 @@ CREATE SEQUENCE public.audit_history_id_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.audit_history_id_seq OWNER TO emcatalyst;
+
 --
--- Name: audit_history_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: audit_history_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: emcatalyst
 --
 
 ALTER SEQUENCE public.audit_history_id_seq OWNED BY public.audit_history.id;
 
 
 --
--- Name: brs_applications; Type: TABLE; Schema: public; Owner: -
+-- Name: brs_applications; Type: TABLE; Schema: public; Owner: emcatalyst
 --
 
 CREATE TABLE public.brs_applications (
@@ -323,12 +349,17 @@ CREATE TABLE public.brs_applications (
     pan_document_path character varying(500),
     survey_id integer,
     created_at timestamp with time zone DEFAULT now(),
-    updated_at timestamp with time zone
+    updated_at timestamp with time zone,
+    survey_duration_days integer DEFAULT 7,
+    survey_deadline_at timestamp without time zone,
+    bulk_request_id integer
 );
 
 
+ALTER TABLE public.brs_applications OWNER TO emcatalyst;
+
 --
--- Name: brs_applications_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: brs_applications_id_seq; Type: SEQUENCE; Schema: public; Owner: emcatalyst
 --
 
 CREATE SEQUENCE public.brs_applications_id_seq
@@ -340,15 +371,17 @@ CREATE SEQUENCE public.brs_applications_id_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.brs_applications_id_seq OWNER TO emcatalyst;
+
 --
--- Name: brs_applications_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: brs_applications_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: emcatalyst
 --
 
 ALTER SEQUENCE public.brs_applications_id_seq OWNED BY public.brs_applications.id;
 
 
 --
--- Name: brs_audit_trail; Type: TABLE; Schema: public; Owner: -
+-- Name: brs_audit_trail; Type: TABLE; Schema: public; Owner: emcatalyst
 --
 
 CREATE TABLE public.brs_audit_trail (
@@ -363,8 +396,10 @@ CREATE TABLE public.brs_audit_trail (
 );
 
 
+ALTER TABLE public.brs_audit_trail OWNER TO emcatalyst;
+
 --
--- Name: brs_audit_trail_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: brs_audit_trail_id_seq; Type: SEQUENCE; Schema: public; Owner: emcatalyst
 --
 
 CREATE SEQUENCE public.brs_audit_trail_id_seq
@@ -376,15 +411,70 @@ CREATE SEQUENCE public.brs_audit_trail_id_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.brs_audit_trail_id_seq OWNER TO emcatalyst;
+
 --
--- Name: brs_audit_trail_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: brs_audit_trail_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: emcatalyst
 --
 
 ALTER SEQUENCE public.brs_audit_trail_id_seq OWNED BY public.brs_audit_trail.id;
 
 
 --
--- Name: brs_otps; Type: TABLE; Schema: public; Owner: -
+-- Name: brs_bulk_requests; Type: TABLE; Schema: public; Owner: emcatalyst
+--
+
+CREATE TABLE public.brs_bulk_requests (
+    id integer NOT NULL,
+    bulk_code character varying(50),
+    survey_title character varying(500) NOT NULL,
+    survey_id integer,
+    therapeutic_area character varying(200),
+    brand character varying(200),
+    topic text,
+    honorarium_amount numeric(12,2),
+    survey_duration_days integer,
+    mode character varying(20),
+    division_id integer,
+    cost_center character varying(20),
+    company_code character varying(10),
+    remarks text,
+    initiator_id integer,
+    status character varying(50),
+    total_doctors integer,
+    sent_count integer,
+    completed_count integer,
+    created_at timestamp with time zone DEFAULT now(),
+    updated_at timestamp with time zone
+);
+
+
+ALTER TABLE public.brs_bulk_requests OWNER TO emcatalyst;
+
+--
+-- Name: brs_bulk_requests_id_seq; Type: SEQUENCE; Schema: public; Owner: emcatalyst
+--
+
+CREATE SEQUENCE public.brs_bulk_requests_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.brs_bulk_requests_id_seq OWNER TO emcatalyst;
+
+--
+-- Name: brs_bulk_requests_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: emcatalyst
+--
+
+ALTER SEQUENCE public.brs_bulk_requests_id_seq OWNED BY public.brs_bulk_requests.id;
+
+
+--
+-- Name: brs_otps; Type: TABLE; Schema: public; Owner: emcatalyst
 --
 
 CREATE TABLE public.brs_otps (
@@ -398,8 +488,10 @@ CREATE TABLE public.brs_otps (
 );
 
 
+ALTER TABLE public.brs_otps OWNER TO emcatalyst;
+
 --
--- Name: brs_otps_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: brs_otps_id_seq; Type: SEQUENCE; Schema: public; Owner: emcatalyst
 --
 
 CREATE SEQUENCE public.brs_otps_id_seq
@@ -411,15 +503,17 @@ CREATE SEQUENCE public.brs_otps_id_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.brs_otps_id_seq OWNER TO emcatalyst;
+
 --
--- Name: brs_otps_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: brs_otps_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: emcatalyst
 --
 
 ALTER SEQUENCE public.brs_otps_id_seq OWNED BY public.brs_otps.id;
 
 
 --
--- Name: brs_survey_questions; Type: TABLE; Schema: public; Owner: -
+-- Name: brs_survey_questions; Type: TABLE; Schema: public; Owner: emcatalyst
 --
 
 CREATE TABLE public.brs_survey_questions (
@@ -436,8 +530,10 @@ CREATE TABLE public.brs_survey_questions (
 );
 
 
+ALTER TABLE public.brs_survey_questions OWNER TO emcatalyst;
+
 --
--- Name: brs_survey_questions_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: brs_survey_questions_id_seq; Type: SEQUENCE; Schema: public; Owner: emcatalyst
 --
 
 CREATE SEQUENCE public.brs_survey_questions_id_seq
@@ -449,15 +545,17 @@ CREATE SEQUENCE public.brs_survey_questions_id_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.brs_survey_questions_id_seq OWNER TO emcatalyst;
+
 --
--- Name: brs_survey_questions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: brs_survey_questions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: emcatalyst
 --
 
 ALTER SEQUENCE public.brs_survey_questions_id_seq OWNED BY public.brs_survey_questions.id;
 
 
 --
--- Name: brs_surveys; Type: TABLE; Schema: public; Owner: -
+-- Name: brs_surveys; Type: TABLE; Schema: public; Owner: emcatalyst
 --
 
 CREATE TABLE public.brs_surveys (
@@ -474,8 +572,10 @@ CREATE TABLE public.brs_surveys (
 );
 
 
+ALTER TABLE public.brs_surveys OWNER TO emcatalyst;
+
 --
--- Name: brs_surveys_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: brs_surveys_id_seq; Type: SEQUENCE; Schema: public; Owner: emcatalyst
 --
 
 CREATE SEQUENCE public.brs_surveys_id_seq
@@ -487,15 +587,17 @@ CREATE SEQUENCE public.brs_surveys_id_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.brs_surveys_id_seq OWNER TO emcatalyst;
+
 --
--- Name: brs_surveys_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: brs_surveys_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: emcatalyst
 --
 
 ALTER SEQUENCE public.brs_surveys_id_seq OWNED BY public.brs_surveys.id;
 
 
 --
--- Name: cme_event_reports; Type: TABLE; Schema: public; Owner: -
+-- Name: cme_event_reports; Type: TABLE; Schema: public; Owner: emcatalyst
 --
 
 CREATE TABLE public.cme_event_reports (
@@ -516,8 +618,10 @@ CREATE TABLE public.cme_event_reports (
 );
 
 
+ALTER TABLE public.cme_event_reports OWNER TO emcatalyst;
+
 --
--- Name: cme_event_reports_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: cme_event_reports_id_seq; Type: SEQUENCE; Schema: public; Owner: emcatalyst
 --
 
 CREATE SEQUENCE public.cme_event_reports_id_seq
@@ -529,15 +633,17 @@ CREATE SEQUENCE public.cme_event_reports_id_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.cme_event_reports_id_seq OWNER TO emcatalyst;
+
 --
--- Name: cme_event_reports_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: cme_event_reports_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: emcatalyst
 --
 
 ALTER SEQUENCE public.cme_event_reports_id_seq OWNED BY public.cme_event_reports.id;
 
 
 --
--- Name: company_codes; Type: TABLE; Schema: public; Owner: -
+-- Name: company_codes; Type: TABLE; Schema: public; Owner: emcatalyst
 --
 
 CREATE TABLE public.company_codes (
@@ -550,8 +656,10 @@ CREATE TABLE public.company_codes (
 );
 
 
+ALTER TABLE public.company_codes OWNER TO emcatalyst;
+
 --
--- Name: company_codes_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: company_codes_id_seq; Type: SEQUENCE; Schema: public; Owner: emcatalyst
 --
 
 CREATE SEQUENCE public.company_codes_id_seq
@@ -563,15 +671,17 @@ CREATE SEQUENCE public.company_codes_id_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.company_codes_id_seq OWNER TO emcatalyst;
+
 --
--- Name: company_codes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: company_codes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: emcatalyst
 --
 
 ALTER SEQUENCE public.company_codes_id_seq OWNED BY public.company_codes.id;
 
 
 --
--- Name: cost_centers; Type: TABLE; Schema: public; Owner: -
+-- Name: cost_centers; Type: TABLE; Schema: public; Owner: emcatalyst
 --
 
 CREATE TABLE public.cost_centers (
@@ -584,8 +694,10 @@ CREATE TABLE public.cost_centers (
 );
 
 
+ALTER TABLE public.cost_centers OWNER TO emcatalyst;
+
 --
--- Name: cost_centers_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: cost_centers_id_seq; Type: SEQUENCE; Schema: public; Owner: emcatalyst
 --
 
 CREATE SEQUENCE public.cost_centers_id_seq
@@ -597,15 +709,17 @@ CREATE SEQUENCE public.cost_centers_id_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.cost_centers_id_seq OWNER TO emcatalyst;
+
 --
--- Name: cost_centers_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: cost_centers_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: emcatalyst
 --
 
 ALTER SEQUENCE public.cost_centers_id_seq OWNED BY public.cost_centers.id;
 
 
 --
--- Name: designations; Type: TABLE; Schema: public; Owner: -
+-- Name: designations; Type: TABLE; Schema: public; Owner: emcatalyst
 --
 
 CREATE TABLE public.designations (
@@ -616,8 +730,10 @@ CREATE TABLE public.designations (
 );
 
 
+ALTER TABLE public.designations OWNER TO emcatalyst;
+
 --
--- Name: designations_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: designations_id_seq; Type: SEQUENCE; Schema: public; Owner: emcatalyst
 --
 
 CREATE SEQUENCE public.designations_id_seq
@@ -629,15 +745,17 @@ CREATE SEQUENCE public.designations_id_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.designations_id_seq OWNER TO emcatalyst;
+
 --
--- Name: designations_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: designations_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: emcatalyst
 --
 
 ALTER SEQUENCE public.designations_id_seq OWNED BY public.designations.id;
 
 
 --
--- Name: deviation_reports; Type: TABLE; Schema: public; Owner: -
+-- Name: deviation_reports; Type: TABLE; Schema: public; Owner: emcatalyst
 --
 
 CREATE TABLE public.deviation_reports (
@@ -656,8 +774,10 @@ CREATE TABLE public.deviation_reports (
 );
 
 
+ALTER TABLE public.deviation_reports OWNER TO emcatalyst;
+
 --
--- Name: deviation_reports_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: deviation_reports_id_seq; Type: SEQUENCE; Schema: public; Owner: emcatalyst
 --
 
 CREATE SEQUENCE public.deviation_reports_id_seq
@@ -669,15 +789,17 @@ CREATE SEQUENCE public.deviation_reports_id_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.deviation_reports_id_seq OWNER TO emcatalyst;
+
 --
--- Name: deviation_reports_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: deviation_reports_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: emcatalyst
 --
 
 ALTER SEQUENCE public.deviation_reports_id_seq OWNED BY public.deviation_reports.id;
 
 
 --
--- Name: divisions; Type: TABLE; Schema: public; Owner: -
+-- Name: divisions; Type: TABLE; Schema: public; Owner: emcatalyst
 --
 
 CREATE TABLE public.divisions (
@@ -694,8 +816,10 @@ CREATE TABLE public.divisions (
 );
 
 
+ALTER TABLE public.divisions OWNER TO emcatalyst;
+
 --
--- Name: divisions_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: divisions_id_seq; Type: SEQUENCE; Schema: public; Owner: emcatalyst
 --
 
 CREATE SEQUENCE public.divisions_id_seq
@@ -707,15 +831,57 @@ CREATE SEQUENCE public.divisions_id_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.divisions_id_seq OWNER TO emcatalyst;
+
 --
--- Name: divisions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: divisions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: emcatalyst
 --
 
 ALTER SEQUENCE public.divisions_id_seq OWNED BY public.divisions.id;
 
 
 --
--- Name: document_types; Type: TABLE; Schema: public; Owner: -
+-- Name: doctor_portal_sessions; Type: TABLE; Schema: public; Owner: emcatalyst
+--
+
+CREATE TABLE public.doctor_portal_sessions (
+    id integer NOT NULL,
+    email character varying(200) NOT NULL,
+    hcp_doctor_id integer,
+    otp_code character varying(10) NOT NULL,
+    expires_at timestamp without time zone NOT NULL,
+    used boolean,
+    session_token character varying(200),
+    created_at timestamp with time zone DEFAULT now()
+);
+
+
+ALTER TABLE public.doctor_portal_sessions OWNER TO emcatalyst;
+
+--
+-- Name: doctor_portal_sessions_id_seq; Type: SEQUENCE; Schema: public; Owner: emcatalyst
+--
+
+CREATE SEQUENCE public.doctor_portal_sessions_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.doctor_portal_sessions_id_seq OWNER TO emcatalyst;
+
+--
+-- Name: doctor_portal_sessions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: emcatalyst
+--
+
+ALTER SEQUENCE public.doctor_portal_sessions_id_seq OWNED BY public.doctor_portal_sessions.id;
+
+
+--
+-- Name: document_types; Type: TABLE; Schema: public; Owner: emcatalyst
 --
 
 CREATE TABLE public.document_types (
@@ -727,8 +893,10 @@ CREATE TABLE public.document_types (
 );
 
 
+ALTER TABLE public.document_types OWNER TO emcatalyst;
+
 --
--- Name: document_types_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: document_types_id_seq; Type: SEQUENCE; Schema: public; Owner: emcatalyst
 --
 
 CREATE SEQUENCE public.document_types_id_seq
@@ -740,15 +908,17 @@ CREATE SEQUENCE public.document_types_id_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.document_types_id_seq OWNER TO emcatalyst;
+
 --
--- Name: document_types_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: document_types_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: emcatalyst
 --
 
 ALTER SEQUENCE public.document_types_id_seq OWNED BY public.document_types.id;
 
 
 --
--- Name: enumerations; Type: TABLE; Schema: public; Owner: -
+-- Name: enumerations; Type: TABLE; Schema: public; Owner: emcatalyst
 --
 
 CREATE TABLE public.enumerations (
@@ -761,8 +931,10 @@ CREATE TABLE public.enumerations (
 );
 
 
+ALTER TABLE public.enumerations OWNER TO emcatalyst;
+
 --
--- Name: enumerations_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: enumerations_id_seq; Type: SEQUENCE; Schema: public; Owner: emcatalyst
 --
 
 CREATE SEQUENCE public.enumerations_id_seq
@@ -774,15 +946,17 @@ CREATE SEQUENCE public.enumerations_id_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.enumerations_id_seq OWNER TO emcatalyst;
+
 --
--- Name: enumerations_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: enumerations_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: emcatalyst
 --
 
 ALTER SEQUENCE public.enumerations_id_seq OWNED BY public.enumerations.id;
 
 
 --
--- Name: event_agreements; Type: TABLE; Schema: public; Owner: -
+-- Name: event_agreements; Type: TABLE; Schema: public; Owner: emcatalyst
 --
 
 CREATE TABLE public.event_agreements (
@@ -803,8 +977,10 @@ CREATE TABLE public.event_agreements (
 );
 
 
+ALTER TABLE public.event_agreements OWNER TO emcatalyst;
+
 --
--- Name: event_agreements_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: event_agreements_id_seq; Type: SEQUENCE; Schema: public; Owner: emcatalyst
 --
 
 CREATE SEQUENCE public.event_agreements_id_seq
@@ -816,15 +992,17 @@ CREATE SEQUENCE public.event_agreements_id_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.event_agreements_id_seq OWNER TO emcatalyst;
+
 --
--- Name: event_agreements_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: event_agreements_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: emcatalyst
 --
 
 ALTER SEQUENCE public.event_agreements_id_seq OWNED BY public.event_agreements.id;
 
 
 --
--- Name: event_costs; Type: TABLE; Schema: public; Owner: -
+-- Name: event_costs; Type: TABLE; Schema: public; Owner: emcatalyst
 --
 
 CREATE TABLE public.event_costs (
@@ -843,8 +1021,10 @@ CREATE TABLE public.event_costs (
 );
 
 
+ALTER TABLE public.event_costs OWNER TO emcatalyst;
+
 --
--- Name: event_costs_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: event_costs_id_seq; Type: SEQUENCE; Schema: public; Owner: emcatalyst
 --
 
 CREATE SEQUENCE public.event_costs_id_seq
@@ -856,15 +1036,17 @@ CREATE SEQUENCE public.event_costs_id_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.event_costs_id_seq OWNER TO emcatalyst;
+
 --
--- Name: event_costs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: event_costs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: emcatalyst
 --
 
 ALTER SEQUENCE public.event_costs_id_seq OWNED BY public.event_costs.id;
 
 
 --
--- Name: event_doctors; Type: TABLE; Schema: public; Owner: -
+-- Name: event_doctors; Type: TABLE; Schema: public; Owner: emcatalyst
 --
 
 CREATE TABLE public.event_doctors (
@@ -888,8 +1070,10 @@ CREATE TABLE public.event_doctors (
 );
 
 
+ALTER TABLE public.event_doctors OWNER TO emcatalyst;
+
 --
--- Name: event_doctors_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: event_doctors_id_seq; Type: SEQUENCE; Schema: public; Owner: emcatalyst
 --
 
 CREATE SEQUENCE public.event_doctors_id_seq
@@ -901,15 +1085,17 @@ CREATE SEQUENCE public.event_doctors_id_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.event_doctors_id_seq OWNER TO emcatalyst;
+
 --
--- Name: event_doctors_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: event_doctors_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: emcatalyst
 --
 
 ALTER SEQUENCE public.event_doctors_id_seq OWNED BY public.event_doctors.id;
 
 
 --
--- Name: event_document_types; Type: TABLE; Schema: public; Owner: -
+-- Name: event_document_types; Type: TABLE; Schema: public; Owner: emcatalyst
 --
 
 CREATE TABLE public.event_document_types (
@@ -921,8 +1107,10 @@ CREATE TABLE public.event_document_types (
 );
 
 
+ALTER TABLE public.event_document_types OWNER TO emcatalyst;
+
 --
--- Name: event_document_types_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: event_document_types_id_seq; Type: SEQUENCE; Schema: public; Owner: emcatalyst
 --
 
 CREATE SEQUENCE public.event_document_types_id_seq
@@ -934,15 +1122,17 @@ CREATE SEQUENCE public.event_document_types_id_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.event_document_types_id_seq OWNER TO emcatalyst;
+
 --
--- Name: event_document_types_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: event_document_types_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: emcatalyst
 --
 
 ALTER SEQUENCE public.event_document_types_id_seq OWNED BY public.event_document_types.id;
 
 
 --
--- Name: event_documents; Type: TABLE; Schema: public; Owner: -
+-- Name: event_documents; Type: TABLE; Schema: public; Owner: emcatalyst
 --
 
 CREATE TABLE public.event_documents (
@@ -958,8 +1148,10 @@ CREATE TABLE public.event_documents (
 );
 
 
+ALTER TABLE public.event_documents OWNER TO emcatalyst;
+
 --
--- Name: event_documents_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: event_documents_id_seq; Type: SEQUENCE; Schema: public; Owner: emcatalyst
 --
 
 CREATE SEQUENCE public.event_documents_id_seq
@@ -971,15 +1163,17 @@ CREATE SEQUENCE public.event_documents_id_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.event_documents_id_seq OWNER TO emcatalyst;
+
 --
--- Name: event_documents_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: event_documents_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: emcatalyst
 --
 
 ALTER SEQUENCE public.event_documents_id_seq OWNED BY public.event_documents.id;
 
 
 --
--- Name: event_honorariums; Type: TABLE; Schema: public; Owner: -
+-- Name: event_honorariums; Type: TABLE; Schema: public; Owner: emcatalyst
 --
 
 CREATE TABLE public.event_honorariums (
@@ -1000,8 +1194,10 @@ CREATE TABLE public.event_honorariums (
 );
 
 
+ALTER TABLE public.event_honorariums OWNER TO emcatalyst;
+
 --
--- Name: event_honorariums_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: event_honorariums_id_seq; Type: SEQUENCE; Schema: public; Owner: emcatalyst
 --
 
 CREATE SEQUENCE public.event_honorariums_id_seq
@@ -1013,15 +1209,17 @@ CREATE SEQUENCE public.event_honorariums_id_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.event_honorariums_id_seq OWNER TO emcatalyst;
+
 --
--- Name: event_honorariums_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: event_honorariums_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: emcatalyst
 --
 
 ALTER SEQUENCE public.event_honorariums_id_seq OWNED BY public.event_honorariums.id;
 
 
 --
--- Name: event_institutions; Type: TABLE; Schema: public; Owner: -
+-- Name: event_institutions; Type: TABLE; Schema: public; Owner: emcatalyst
 --
 
 CREATE TABLE public.event_institutions (
@@ -1039,8 +1237,10 @@ CREATE TABLE public.event_institutions (
 );
 
 
+ALTER TABLE public.event_institutions OWNER TO emcatalyst;
+
 --
--- Name: event_institutions_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: event_institutions_id_seq; Type: SEQUENCE; Schema: public; Owner: emcatalyst
 --
 
 CREATE SEQUENCE public.event_institutions_id_seq
@@ -1052,15 +1252,17 @@ CREATE SEQUENCE public.event_institutions_id_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.event_institutions_id_seq OWNER TO emcatalyst;
+
 --
--- Name: event_institutions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: event_institutions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: emcatalyst
 --
 
 ALTER SEQUENCE public.event_institutions_id_seq OWNED BY public.event_institutions.id;
 
 
 --
--- Name: event_reports; Type: TABLE; Schema: public; Owner: -
+-- Name: event_reports; Type: TABLE; Schema: public; Owner: emcatalyst
 --
 
 CREATE TABLE public.event_reports (
@@ -1082,8 +1284,10 @@ CREATE TABLE public.event_reports (
 );
 
 
+ALTER TABLE public.event_reports OWNER TO emcatalyst;
+
 --
--- Name: event_reports_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: event_reports_id_seq; Type: SEQUENCE; Schema: public; Owner: emcatalyst
 --
 
 CREATE SEQUENCE public.event_reports_id_seq
@@ -1095,15 +1299,17 @@ CREATE SEQUENCE public.event_reports_id_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.event_reports_id_seq OWNER TO emcatalyst;
+
 --
--- Name: event_reports_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: event_reports_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: emcatalyst
 --
 
 ALTER SEQUENCE public.event_reports_id_seq OWNED BY public.event_reports.id;
 
 
 --
--- Name: event_types; Type: TABLE; Schema: public; Owner: -
+-- Name: event_types; Type: TABLE; Schema: public; Owner: emcatalyst
 --
 
 CREATE TABLE public.event_types (
@@ -1116,8 +1322,10 @@ CREATE TABLE public.event_types (
 );
 
 
+ALTER TABLE public.event_types OWNER TO emcatalyst;
+
 --
--- Name: event_types_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: event_types_id_seq; Type: SEQUENCE; Schema: public; Owner: emcatalyst
 --
 
 CREATE SEQUENCE public.event_types_id_seq
@@ -1129,15 +1337,17 @@ CREATE SEQUENCE public.event_types_id_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.event_types_id_seq OWNER TO emcatalyst;
+
 --
--- Name: event_types_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: event_types_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: emcatalyst
 --
 
 ALTER SEQUENCE public.event_types_id_seq OWNED BY public.event_types.id;
 
 
 --
--- Name: events; Type: TABLE; Schema: public; Owner: -
+-- Name: events; Type: TABLE; Schema: public; Owner: emcatalyst
 --
 
 CREATE TABLE public.events (
@@ -1171,8 +1381,10 @@ CREATE TABLE public.events (
 );
 
 
+ALTER TABLE public.events OWNER TO emcatalyst;
+
 --
--- Name: events_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: events_id_seq; Type: SEQUENCE; Schema: public; Owner: emcatalyst
 --
 
 CREATE SEQUENCE public.events_id_seq
@@ -1184,15 +1396,17 @@ CREATE SEQUENCE public.events_id_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.events_id_seq OWNER TO emcatalyst;
+
 --
--- Name: events_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: events_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: emcatalyst
 --
 
 ALTER SEQUENCE public.events_id_seq OWNED BY public.events.id;
 
 
 --
--- Name: finance_allocation_reports; Type: TABLE; Schema: public; Owner: -
+-- Name: finance_allocation_reports; Type: TABLE; Schema: public; Owner: emcatalyst
 --
 
 CREATE TABLE public.finance_allocation_reports (
@@ -1211,8 +1425,10 @@ CREATE TABLE public.finance_allocation_reports (
 );
 
 
+ALTER TABLE public.finance_allocation_reports OWNER TO emcatalyst;
+
 --
--- Name: finance_allocation_reports_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: finance_allocation_reports_id_seq; Type: SEQUENCE; Schema: public; Owner: emcatalyst
 --
 
 CREATE SEQUENCE public.finance_allocation_reports_id_seq
@@ -1224,15 +1440,17 @@ CREATE SEQUENCE public.finance_allocation_reports_id_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.finance_allocation_reports_id_seq OWNER TO emcatalyst;
+
 --
--- Name: finance_allocation_reports_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: finance_allocation_reports_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: emcatalyst
 --
 
 ALTER SEQUENCE public.finance_allocation_reports_id_seq OWNED BY public.finance_allocation_reports.id;
 
 
 --
--- Name: fmv_criteria; Type: TABLE; Schema: public; Owner: -
+-- Name: fmv_criteria; Type: TABLE; Schema: public; Owner: emcatalyst
 --
 
 CREATE TABLE public.fmv_criteria (
@@ -1248,8 +1466,10 @@ CREATE TABLE public.fmv_criteria (
 );
 
 
+ALTER TABLE public.fmv_criteria OWNER TO emcatalyst;
+
 --
--- Name: fmv_criteria_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: fmv_criteria_id_seq; Type: SEQUENCE; Schema: public; Owner: emcatalyst
 --
 
 CREATE SEQUENCE public.fmv_criteria_id_seq
@@ -1261,15 +1481,17 @@ CREATE SEQUENCE public.fmv_criteria_id_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.fmv_criteria_id_seq OWNER TO emcatalyst;
+
 --
--- Name: fmv_criteria_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: fmv_criteria_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: emcatalyst
 --
 
 ALTER SEQUENCE public.fmv_criteria_id_seq OWNED BY public.fmv_criteria.id;
 
 
 --
--- Name: functions; Type: TABLE; Schema: public; Owner: -
+-- Name: functions; Type: TABLE; Schema: public; Owner: emcatalyst
 --
 
 CREATE TABLE public.functions (
@@ -1280,8 +1502,10 @@ CREATE TABLE public.functions (
 );
 
 
+ALTER TABLE public.functions OWNER TO emcatalyst;
+
 --
--- Name: functions_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: functions_id_seq; Type: SEQUENCE; Schema: public; Owner: emcatalyst
 --
 
 CREATE SEQUENCE public.functions_id_seq
@@ -1293,15 +1517,17 @@ CREATE SEQUENCE public.functions_id_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.functions_id_seq OWNER TO emcatalyst;
+
 --
--- Name: functions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: functions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: emcatalyst
 --
 
 ALTER SEQUENCE public.functions_id_seq OWNED BY public.functions.id;
 
 
 --
--- Name: hcp_doctors; Type: TABLE; Schema: public; Owner: -
+-- Name: hcp_doctors; Type: TABLE; Schema: public; Owner: emcatalyst
 --
 
 CREATE TABLE public.hcp_doctors (
@@ -1344,8 +1570,10 @@ CREATE TABLE public.hcp_doctors (
 );
 
 
+ALTER TABLE public.hcp_doctors OWNER TO emcatalyst;
+
 --
--- Name: hcp_doctors_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: hcp_doctors_id_seq; Type: SEQUENCE; Schema: public; Owner: emcatalyst
 --
 
 CREATE SEQUENCE public.hcp_doctors_id_seq
@@ -1357,15 +1585,17 @@ CREATE SEQUENCE public.hcp_doctors_id_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.hcp_doctors_id_seq OWNER TO emcatalyst;
+
 --
--- Name: hcp_doctors_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: hcp_doctors_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: emcatalyst
 --
 
 ALTER SEQUENCE public.hcp_doctors_id_seq OWNED BY public.hcp_doctors.id;
 
 
 --
--- Name: invoice_approvals; Type: TABLE; Schema: public; Owner: -
+-- Name: invoice_approvals; Type: TABLE; Schema: public; Owner: emcatalyst
 --
 
 CREATE TABLE public.invoice_approvals (
@@ -1379,8 +1609,10 @@ CREATE TABLE public.invoice_approvals (
 );
 
 
+ALTER TABLE public.invoice_approvals OWNER TO emcatalyst;
+
 --
--- Name: invoice_approvals_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: invoice_approvals_id_seq; Type: SEQUENCE; Schema: public; Owner: emcatalyst
 --
 
 CREATE SEQUENCE public.invoice_approvals_id_seq
@@ -1392,15 +1624,17 @@ CREATE SEQUENCE public.invoice_approvals_id_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.invoice_approvals_id_seq OWNER TO emcatalyst;
+
 --
--- Name: invoice_approvals_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: invoice_approvals_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: emcatalyst
 --
 
 ALTER SEQUENCE public.invoice_approvals_id_seq OWNED BY public.invoice_approvals.id;
 
 
 --
--- Name: invoice_line_items; Type: TABLE; Schema: public; Owner: -
+-- Name: invoice_line_items; Type: TABLE; Schema: public; Owner: emcatalyst
 --
 
 CREATE TABLE public.invoice_line_items (
@@ -1417,8 +1651,10 @@ CREATE TABLE public.invoice_line_items (
 );
 
 
+ALTER TABLE public.invoice_line_items OWNER TO emcatalyst;
+
 --
--- Name: invoice_line_items_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: invoice_line_items_id_seq; Type: SEQUENCE; Schema: public; Owner: emcatalyst
 --
 
 CREATE SEQUENCE public.invoice_line_items_id_seq
@@ -1430,15 +1666,17 @@ CREATE SEQUENCE public.invoice_line_items_id_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.invoice_line_items_id_seq OWNER TO emcatalyst;
+
 --
--- Name: invoice_line_items_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: invoice_line_items_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: emcatalyst
 --
 
 ALTER SEQUENCE public.invoice_line_items_id_seq OWNED BY public.invoice_line_items.id;
 
 
 --
--- Name: invoice_messages; Type: TABLE; Schema: public; Owner: -
+-- Name: invoice_messages; Type: TABLE; Schema: public; Owner: emcatalyst
 --
 
 CREATE TABLE public.invoice_messages (
@@ -1454,8 +1692,10 @@ CREATE TABLE public.invoice_messages (
 );
 
 
+ALTER TABLE public.invoice_messages OWNER TO emcatalyst;
+
 --
--- Name: invoice_messages_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: invoice_messages_id_seq; Type: SEQUENCE; Schema: public; Owner: emcatalyst
 --
 
 CREATE SEQUENCE public.invoice_messages_id_seq
@@ -1467,15 +1707,17 @@ CREATE SEQUENCE public.invoice_messages_id_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.invoice_messages_id_seq OWNER TO emcatalyst;
+
 --
--- Name: invoice_messages_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: invoice_messages_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: emcatalyst
 --
 
 ALTER SEQUENCE public.invoice_messages_id_seq OWNED BY public.invoice_messages.id;
 
 
 --
--- Name: invoice_withholding; Type: TABLE; Schema: public; Owner: -
+-- Name: invoice_withholding; Type: TABLE; Schema: public; Owner: emcatalyst
 --
 
 CREATE TABLE public.invoice_withholding (
@@ -1488,8 +1730,10 @@ CREATE TABLE public.invoice_withholding (
 );
 
 
+ALTER TABLE public.invoice_withholding OWNER TO emcatalyst;
+
 --
--- Name: invoice_withholding_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: invoice_withholding_id_seq; Type: SEQUENCE; Schema: public; Owner: emcatalyst
 --
 
 CREATE SEQUENCE public.invoice_withholding_id_seq
@@ -1501,15 +1745,17 @@ CREATE SEQUENCE public.invoice_withholding_id_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.invoice_withholding_id_seq OWNER TO emcatalyst;
+
 --
--- Name: invoice_withholding_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: invoice_withholding_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: emcatalyst
 --
 
 ALTER SEQUENCE public.invoice_withholding_id_seq OWNED BY public.invoice_withholding.id;
 
 
 --
--- Name: master_brands; Type: TABLE; Schema: public; Owner: -
+-- Name: master_brands; Type: TABLE; Schema: public; Owner: emcatalyst
 --
 
 CREATE TABLE public.master_brands (
@@ -1521,8 +1767,10 @@ CREATE TABLE public.master_brands (
 );
 
 
+ALTER TABLE public.master_brands OWNER TO emcatalyst;
+
 --
--- Name: master_brands_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: master_brands_id_seq; Type: SEQUENCE; Schema: public; Owner: emcatalyst
 --
 
 CREATE SEQUENCE public.master_brands_id_seq
@@ -1534,15 +1782,17 @@ CREATE SEQUENCE public.master_brands_id_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.master_brands_id_seq OWNER TO emcatalyst;
+
 --
--- Name: master_brands_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: master_brands_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: emcatalyst
 --
 
 ALTER SEQUENCE public.master_brands_id_seq OWNED BY public.master_brands.id;
 
 
 --
--- Name: master_cities; Type: TABLE; Schema: public; Owner: -
+-- Name: master_cities; Type: TABLE; Schema: public; Owner: emcatalyst
 --
 
 CREATE TABLE public.master_cities (
@@ -1553,8 +1803,10 @@ CREATE TABLE public.master_cities (
 );
 
 
+ALTER TABLE public.master_cities OWNER TO emcatalyst;
+
 --
--- Name: master_cities_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: master_cities_id_seq; Type: SEQUENCE; Schema: public; Owner: emcatalyst
 --
 
 CREATE SEQUENCE public.master_cities_id_seq
@@ -1566,15 +1818,17 @@ CREATE SEQUENCE public.master_cities_id_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.master_cities_id_seq OWNER TO emcatalyst;
+
 --
--- Name: master_cities_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: master_cities_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: emcatalyst
 --
 
 ALTER SEQUENCE public.master_cities_id_seq OWNED BY public.master_cities.id;
 
 
 --
--- Name: master_divisions; Type: TABLE; Schema: public; Owner: -
+-- Name: master_divisions; Type: TABLE; Schema: public; Owner: emcatalyst
 --
 
 CREATE TABLE public.master_divisions (
@@ -1585,8 +1839,10 @@ CREATE TABLE public.master_divisions (
 );
 
 
+ALTER TABLE public.master_divisions OWNER TO emcatalyst;
+
 --
--- Name: master_divisions_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: master_divisions_id_seq; Type: SEQUENCE; Schema: public; Owner: emcatalyst
 --
 
 CREATE SEQUENCE public.master_divisions_id_seq
@@ -1598,15 +1854,17 @@ CREATE SEQUENCE public.master_divisions_id_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.master_divisions_id_seq OWNER TO emcatalyst;
+
 --
--- Name: master_divisions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: master_divisions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: emcatalyst
 --
 
 ALTER SEQUENCE public.master_divisions_id_seq OWNED BY public.master_divisions.id;
 
 
 --
--- Name: master_hcp_roles; Type: TABLE; Schema: public; Owner: -
+-- Name: master_hcp_roles; Type: TABLE; Schema: public; Owner: emcatalyst
 --
 
 CREATE TABLE public.master_hcp_roles (
@@ -1617,8 +1875,10 @@ CREATE TABLE public.master_hcp_roles (
 );
 
 
+ALTER TABLE public.master_hcp_roles OWNER TO emcatalyst;
+
 --
--- Name: master_hcp_roles_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: master_hcp_roles_id_seq; Type: SEQUENCE; Schema: public; Owner: emcatalyst
 --
 
 CREATE SEQUENCE public.master_hcp_roles_id_seq
@@ -1630,15 +1890,17 @@ CREATE SEQUENCE public.master_hcp_roles_id_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.master_hcp_roles_id_seq OWNER TO emcatalyst;
+
 --
--- Name: master_hcp_roles_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: master_hcp_roles_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: emcatalyst
 --
 
 ALTER SEQUENCE public.master_hcp_roles_id_seq OWNED BY public.master_hcp_roles.id;
 
 
 --
--- Name: master_meals; Type: TABLE; Schema: public; Owner: -
+-- Name: master_meals; Type: TABLE; Schema: public; Owner: emcatalyst
 --
 
 CREATE TABLE public.master_meals (
@@ -1649,8 +1911,10 @@ CREATE TABLE public.master_meals (
 );
 
 
+ALTER TABLE public.master_meals OWNER TO emcatalyst;
+
 --
--- Name: master_meals_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: master_meals_id_seq; Type: SEQUENCE; Schema: public; Owner: emcatalyst
 --
 
 CREATE SEQUENCE public.master_meals_id_seq
@@ -1662,15 +1926,17 @@ CREATE SEQUENCE public.master_meals_id_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.master_meals_id_seq OWNER TO emcatalyst;
+
 --
--- Name: master_meals_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: master_meals_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: emcatalyst
 --
 
 ALTER SEQUENCE public.master_meals_id_seq OWNED BY public.master_meals.id;
 
 
 --
--- Name: master_specialities; Type: TABLE; Schema: public; Owner: -
+-- Name: master_specialities; Type: TABLE; Schema: public; Owner: emcatalyst
 --
 
 CREATE TABLE public.master_specialities (
@@ -1681,8 +1947,10 @@ CREATE TABLE public.master_specialities (
 );
 
 
+ALTER TABLE public.master_specialities OWNER TO emcatalyst;
+
 --
--- Name: master_specialities_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: master_specialities_id_seq; Type: SEQUENCE; Schema: public; Owner: emcatalyst
 --
 
 CREATE SEQUENCE public.master_specialities_id_seq
@@ -1694,15 +1962,17 @@ CREATE SEQUENCE public.master_specialities_id_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.master_specialities_id_seq OWNER TO emcatalyst;
+
 --
--- Name: master_specialities_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: master_specialities_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: emcatalyst
 --
 
 ALTER SEQUENCE public.master_specialities_id_seq OWNED BY public.master_specialities.id;
 
 
 --
--- Name: master_sponsorship_types; Type: TABLE; Schema: public; Owner: -
+-- Name: master_sponsorship_types; Type: TABLE; Schema: public; Owner: emcatalyst
 --
 
 CREATE TABLE public.master_sponsorship_types (
@@ -1713,8 +1983,10 @@ CREATE TABLE public.master_sponsorship_types (
 );
 
 
+ALTER TABLE public.master_sponsorship_types OWNER TO emcatalyst;
+
 --
--- Name: master_sponsorship_types_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: master_sponsorship_types_id_seq; Type: SEQUENCE; Schema: public; Owner: emcatalyst
 --
 
 CREATE SEQUENCE public.master_sponsorship_types_id_seq
@@ -1726,15 +1998,17 @@ CREATE SEQUENCE public.master_sponsorship_types_id_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.master_sponsorship_types_id_seq OWNER TO emcatalyst;
+
 --
--- Name: master_sponsorship_types_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: master_sponsorship_types_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: emcatalyst
 --
 
 ALTER SEQUENCE public.master_sponsorship_types_id_seq OWNED BY public.master_sponsorship_types.id;
 
 
 --
--- Name: master_states; Type: TABLE; Schema: public; Owner: -
+-- Name: master_states; Type: TABLE; Schema: public; Owner: emcatalyst
 --
 
 CREATE TABLE public.master_states (
@@ -1745,8 +2019,10 @@ CREATE TABLE public.master_states (
 );
 
 
+ALTER TABLE public.master_states OWNER TO emcatalyst;
+
 --
--- Name: master_states_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: master_states_id_seq; Type: SEQUENCE; Schema: public; Owner: emcatalyst
 --
 
 CREATE SEQUENCE public.master_states_id_seq
@@ -1758,15 +2034,17 @@ CREATE SEQUENCE public.master_states_id_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.master_states_id_seq OWNER TO emcatalyst;
+
 --
--- Name: master_states_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: master_states_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: emcatalyst
 --
 
 ALTER SEQUENCE public.master_states_id_seq OWNED BY public.master_states.id;
 
 
 --
--- Name: master_therapeutics; Type: TABLE; Schema: public; Owner: -
+-- Name: master_therapeutics; Type: TABLE; Schema: public; Owner: emcatalyst
 --
 
 CREATE TABLE public.master_therapeutics (
@@ -1777,8 +2055,10 @@ CREATE TABLE public.master_therapeutics (
 );
 
 
+ALTER TABLE public.master_therapeutics OWNER TO emcatalyst;
+
 --
--- Name: master_therapeutics_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: master_therapeutics_id_seq; Type: SEQUENCE; Schema: public; Owner: emcatalyst
 --
 
 CREATE SEQUENCE public.master_therapeutics_id_seq
@@ -1790,15 +2070,17 @@ CREATE SEQUENCE public.master_therapeutics_id_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.master_therapeutics_id_seq OWNER TO emcatalyst;
+
 --
--- Name: master_therapeutics_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: master_therapeutics_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: emcatalyst
 --
 
 ALTER SEQUENCE public.master_therapeutics_id_seq OWNED BY public.master_therapeutics.id;
 
 
 --
--- Name: promotional_approvals; Type: TABLE; Schema: public; Owner: -
+-- Name: promotional_approvals; Type: TABLE; Schema: public; Owner: emcatalyst
 --
 
 CREATE TABLE public.promotional_approvals (
@@ -1812,8 +2094,10 @@ CREATE TABLE public.promotional_approvals (
 );
 
 
+ALTER TABLE public.promotional_approvals OWNER TO emcatalyst;
+
 --
--- Name: promotional_approvals_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: promotional_approvals_id_seq; Type: SEQUENCE; Schema: public; Owner: emcatalyst
 --
 
 CREATE SEQUENCE public.promotional_approvals_id_seq
@@ -1825,15 +2109,17 @@ CREATE SEQUENCE public.promotional_approvals_id_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.promotional_approvals_id_seq OWNER TO emcatalyst;
+
 --
--- Name: promotional_approvals_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: promotional_approvals_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: emcatalyst
 --
 
 ALTER SEQUENCE public.promotional_approvals_id_seq OWNED BY public.promotional_approvals.id;
 
 
 --
--- Name: promotional_budgets; Type: TABLE; Schema: public; Owner: -
+-- Name: promotional_budgets; Type: TABLE; Schema: public; Owner: emcatalyst
 --
 
 CREATE TABLE public.promotional_budgets (
@@ -1850,8 +2136,10 @@ CREATE TABLE public.promotional_budgets (
 );
 
 
+ALTER TABLE public.promotional_budgets OWNER TO emcatalyst;
+
 --
--- Name: promotional_budgets_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: promotional_budgets_id_seq; Type: SEQUENCE; Schema: public; Owner: emcatalyst
 --
 
 CREATE SEQUENCE public.promotional_budgets_id_seq
@@ -1863,15 +2151,17 @@ CREATE SEQUENCE public.promotional_budgets_id_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.promotional_budgets_id_seq OWNER TO emcatalyst;
+
 --
--- Name: promotional_budgets_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: promotional_budgets_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: emcatalyst
 --
 
 ALTER SEQUENCE public.promotional_budgets_id_seq OWNED BY public.promotional_budgets.id;
 
 
 --
--- Name: promotional_events; Type: TABLE; Schema: public; Owner: -
+-- Name: promotional_events; Type: TABLE; Schema: public; Owner: emcatalyst
 --
 
 CREATE TABLE public.promotional_events (
@@ -1899,8 +2189,10 @@ CREATE TABLE public.promotional_events (
 );
 
 
+ALTER TABLE public.promotional_events OWNER TO emcatalyst;
+
 --
--- Name: promotional_events_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: promotional_events_id_seq; Type: SEQUENCE; Schema: public; Owner: emcatalyst
 --
 
 CREATE SEQUENCE public.promotional_events_id_seq
@@ -1912,15 +2204,17 @@ CREATE SEQUENCE public.promotional_events_id_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.promotional_events_id_seq OWNER TO emcatalyst;
+
 --
--- Name: promotional_events_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: promotional_events_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: emcatalyst
 --
 
 ALTER SEQUENCE public.promotional_events_id_seq OWNED BY public.promotional_events.id;
 
 
 --
--- Name: territories; Type: TABLE; Schema: public; Owner: -
+-- Name: territories; Type: TABLE; Schema: public; Owner: emcatalyst
 --
 
 CREATE TABLE public.territories (
@@ -1932,8 +2226,10 @@ CREATE TABLE public.territories (
 );
 
 
+ALTER TABLE public.territories OWNER TO emcatalyst;
+
 --
--- Name: territories_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: territories_id_seq; Type: SEQUENCE; Schema: public; Owner: emcatalyst
 --
 
 CREATE SEQUENCE public.territories_id_seq
@@ -1945,15 +2241,17 @@ CREATE SEQUENCE public.territories_id_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.territories_id_seq OWNER TO emcatalyst;
+
 --
--- Name: territories_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: territories_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: emcatalyst
 --
 
 ALTER SEQUENCE public.territories_id_seq OWNED BY public.territories.id;
 
 
 --
--- Name: user_group_members; Type: TABLE; Schema: public; Owner: -
+-- Name: user_group_members; Type: TABLE; Schema: public; Owner: emcatalyst
 --
 
 CREATE TABLE public.user_group_members (
@@ -1962,8 +2260,10 @@ CREATE TABLE public.user_group_members (
 );
 
 
+ALTER TABLE public.user_group_members OWNER TO emcatalyst;
+
 --
--- Name: user_groups; Type: TABLE; Schema: public; Owner: -
+-- Name: user_groups; Type: TABLE; Schema: public; Owner: emcatalyst
 --
 
 CREATE TABLE public.user_groups (
@@ -1974,8 +2274,10 @@ CREATE TABLE public.user_groups (
 );
 
 
+ALTER TABLE public.user_groups OWNER TO emcatalyst;
+
 --
--- Name: user_groups_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: user_groups_id_seq; Type: SEQUENCE; Schema: public; Owner: emcatalyst
 --
 
 CREATE SEQUENCE public.user_groups_id_seq
@@ -1987,15 +2289,17 @@ CREATE SEQUENCE public.user_groups_id_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.user_groups_id_seq OWNER TO emcatalyst;
+
 --
--- Name: user_groups_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: user_groups_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: emcatalyst
 --
 
 ALTER SEQUENCE public.user_groups_id_seq OWNED BY public.user_groups.id;
 
 
 --
--- Name: users; Type: TABLE; Schema: public; Owner: -
+-- Name: users; Type: TABLE; Schema: public; Owner: emcatalyst
 --
 
 CREATE TABLE public.users (
@@ -2050,8 +2354,10 @@ CREATE TABLE public.users (
 );
 
 
+ALTER TABLE public.users OWNER TO emcatalyst;
+
 --
--- Name: users_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: users_id_seq; Type: SEQUENCE; Schema: public; Owner: emcatalyst
 --
 
 CREATE SEQUENCE public.users_id_seq
@@ -2063,15 +2369,17 @@ CREATE SEQUENCE public.users_id_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.users_id_seq OWNER TO emcatalyst;
+
 --
--- Name: users_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: users_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: emcatalyst
 --
 
 ALTER SEQUENCE public.users_id_seq OWNED BY public.users.id;
 
 
 --
--- Name: vendor_bank_details; Type: TABLE; Schema: public; Owner: -
+-- Name: vendor_bank_details; Type: TABLE; Schema: public; Owner: emcatalyst
 --
 
 CREATE TABLE public.vendor_bank_details (
@@ -2087,8 +2395,10 @@ CREATE TABLE public.vendor_bank_details (
 );
 
 
+ALTER TABLE public.vendor_bank_details OWNER TO emcatalyst;
+
 --
--- Name: vendor_bank_details_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: vendor_bank_details_id_seq; Type: SEQUENCE; Schema: public; Owner: emcatalyst
 --
 
 CREATE SEQUENCE public.vendor_bank_details_id_seq
@@ -2100,15 +2410,17 @@ CREATE SEQUENCE public.vendor_bank_details_id_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.vendor_bank_details_id_seq OWNER TO emcatalyst;
+
 --
--- Name: vendor_bank_details_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: vendor_bank_details_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: emcatalyst
 --
 
 ALTER SEQUENCE public.vendor_bank_details_id_seq OWNED BY public.vendor_bank_details.id;
 
 
 --
--- Name: vendor_invoices; Type: TABLE; Schema: public; Owner: -
+-- Name: vendor_invoices; Type: TABLE; Schema: public; Owner: emcatalyst
 --
 
 CREATE TABLE public.vendor_invoices (
@@ -2155,8 +2467,10 @@ CREATE TABLE public.vendor_invoices (
 );
 
 
+ALTER TABLE public.vendor_invoices OWNER TO emcatalyst;
+
 --
--- Name: vendor_invoices_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: vendor_invoices_id_seq; Type: SEQUENCE; Schema: public; Owner: emcatalyst
 --
 
 CREATE SEQUENCE public.vendor_invoices_id_seq
@@ -2168,15 +2482,17 @@ CREATE SEQUENCE public.vendor_invoices_id_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.vendor_invoices_id_seq OWNER TO emcatalyst;
+
 --
--- Name: vendor_invoices_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: vendor_invoices_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: emcatalyst
 --
 
 ALTER SEQUENCE public.vendor_invoices_id_seq OWNED BY public.vendor_invoices.id;
 
 
 --
--- Name: vendor_withholding; Type: TABLE; Schema: public; Owner: -
+-- Name: vendor_withholding; Type: TABLE; Schema: public; Owner: emcatalyst
 --
 
 CREATE TABLE public.vendor_withholding (
@@ -2196,8 +2512,10 @@ CREATE TABLE public.vendor_withholding (
 );
 
 
+ALTER TABLE public.vendor_withholding OWNER TO emcatalyst;
+
 --
--- Name: vendor_withholding_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: vendor_withholding_id_seq; Type: SEQUENCE; Schema: public; Owner: emcatalyst
 --
 
 CREATE SEQUENCE public.vendor_withholding_id_seq
@@ -2209,15 +2527,17 @@ CREATE SEQUENCE public.vendor_withholding_id_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.vendor_withholding_id_seq OWNER TO emcatalyst;
+
 --
--- Name: vendor_withholding_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: vendor_withholding_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: emcatalyst
 --
 
 ALTER SEQUENCE public.vendor_withholding_id_seq OWNED BY public.vendor_withholding.id;
 
 
 --
--- Name: vendors; Type: TABLE; Schema: public; Owner: -
+-- Name: vendors; Type: TABLE; Schema: public; Owner: emcatalyst
 --
 
 CREATE TABLE public.vendors (
@@ -2245,8 +2565,10 @@ CREATE TABLE public.vendors (
 );
 
 
+ALTER TABLE public.vendors OWNER TO emcatalyst;
+
 --
--- Name: vendors_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: vendors_id_seq; Type: SEQUENCE; Schema: public; Owner: emcatalyst
 --
 
 CREATE SEQUENCE public.vendors_id_seq
@@ -2258,386 +2580,402 @@ CREATE SEQUENCE public.vendors_id_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.vendors_id_seq OWNER TO emcatalyst;
+
 --
--- Name: vendors_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: vendors_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: emcatalyst
 --
 
 ALTER SEQUENCE public.vendors_id_seq OWNED BY public.vendors.id;
 
 
 --
--- Name: agreement_documents id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: agreement_documents id; Type: DEFAULT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.agreement_documents ALTER COLUMN id SET DEFAULT nextval('public.agreement_documents_id_seq'::regclass);
 
 
 --
--- Name: agreements id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: agreements id; Type: DEFAULT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.agreements ALTER COLUMN id SET DEFAULT nextval('public.agreements_id_seq'::regclass);
 
 
 --
--- Name: audit_history id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: audit_history id; Type: DEFAULT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.audit_history ALTER COLUMN id SET DEFAULT nextval('public.audit_history_id_seq'::regclass);
 
 
 --
--- Name: brs_applications id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: brs_applications id; Type: DEFAULT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.brs_applications ALTER COLUMN id SET DEFAULT nextval('public.brs_applications_id_seq'::regclass);
 
 
 --
--- Name: brs_audit_trail id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: brs_audit_trail id; Type: DEFAULT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.brs_audit_trail ALTER COLUMN id SET DEFAULT nextval('public.brs_audit_trail_id_seq'::regclass);
 
 
 --
--- Name: brs_otps id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: brs_bulk_requests id; Type: DEFAULT; Schema: public; Owner: emcatalyst
+--
+
+ALTER TABLE ONLY public.brs_bulk_requests ALTER COLUMN id SET DEFAULT nextval('public.brs_bulk_requests_id_seq'::regclass);
+
+
+--
+-- Name: brs_otps id; Type: DEFAULT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.brs_otps ALTER COLUMN id SET DEFAULT nextval('public.brs_otps_id_seq'::regclass);
 
 
 --
--- Name: brs_survey_questions id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: brs_survey_questions id; Type: DEFAULT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.brs_survey_questions ALTER COLUMN id SET DEFAULT nextval('public.brs_survey_questions_id_seq'::regclass);
 
 
 --
--- Name: brs_surveys id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: brs_surveys id; Type: DEFAULT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.brs_surveys ALTER COLUMN id SET DEFAULT nextval('public.brs_surveys_id_seq'::regclass);
 
 
 --
--- Name: cme_event_reports id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: cme_event_reports id; Type: DEFAULT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.cme_event_reports ALTER COLUMN id SET DEFAULT nextval('public.cme_event_reports_id_seq'::regclass);
 
 
 --
--- Name: company_codes id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: company_codes id; Type: DEFAULT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.company_codes ALTER COLUMN id SET DEFAULT nextval('public.company_codes_id_seq'::regclass);
 
 
 --
--- Name: cost_centers id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: cost_centers id; Type: DEFAULT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.cost_centers ALTER COLUMN id SET DEFAULT nextval('public.cost_centers_id_seq'::regclass);
 
 
 --
--- Name: designations id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: designations id; Type: DEFAULT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.designations ALTER COLUMN id SET DEFAULT nextval('public.designations_id_seq'::regclass);
 
 
 --
--- Name: deviation_reports id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: deviation_reports id; Type: DEFAULT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.deviation_reports ALTER COLUMN id SET DEFAULT nextval('public.deviation_reports_id_seq'::regclass);
 
 
 --
--- Name: divisions id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: divisions id; Type: DEFAULT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.divisions ALTER COLUMN id SET DEFAULT nextval('public.divisions_id_seq'::regclass);
 
 
 --
--- Name: document_types id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: doctor_portal_sessions id; Type: DEFAULT; Schema: public; Owner: emcatalyst
+--
+
+ALTER TABLE ONLY public.doctor_portal_sessions ALTER COLUMN id SET DEFAULT nextval('public.doctor_portal_sessions_id_seq'::regclass);
+
+
+--
+-- Name: document_types id; Type: DEFAULT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.document_types ALTER COLUMN id SET DEFAULT nextval('public.document_types_id_seq'::regclass);
 
 
 --
--- Name: enumerations id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: enumerations id; Type: DEFAULT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.enumerations ALTER COLUMN id SET DEFAULT nextval('public.enumerations_id_seq'::regclass);
 
 
 --
--- Name: event_agreements id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: event_agreements id; Type: DEFAULT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.event_agreements ALTER COLUMN id SET DEFAULT nextval('public.event_agreements_id_seq'::regclass);
 
 
 --
--- Name: event_costs id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: event_costs id; Type: DEFAULT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.event_costs ALTER COLUMN id SET DEFAULT nextval('public.event_costs_id_seq'::regclass);
 
 
 --
--- Name: event_doctors id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: event_doctors id; Type: DEFAULT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.event_doctors ALTER COLUMN id SET DEFAULT nextval('public.event_doctors_id_seq'::regclass);
 
 
 --
--- Name: event_document_types id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: event_document_types id; Type: DEFAULT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.event_document_types ALTER COLUMN id SET DEFAULT nextval('public.event_document_types_id_seq'::regclass);
 
 
 --
--- Name: event_documents id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: event_documents id; Type: DEFAULT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.event_documents ALTER COLUMN id SET DEFAULT nextval('public.event_documents_id_seq'::regclass);
 
 
 --
--- Name: event_honorariums id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: event_honorariums id; Type: DEFAULT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.event_honorariums ALTER COLUMN id SET DEFAULT nextval('public.event_honorariums_id_seq'::regclass);
 
 
 --
--- Name: event_institutions id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: event_institutions id; Type: DEFAULT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.event_institutions ALTER COLUMN id SET DEFAULT nextval('public.event_institutions_id_seq'::regclass);
 
 
 --
--- Name: event_reports id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: event_reports id; Type: DEFAULT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.event_reports ALTER COLUMN id SET DEFAULT nextval('public.event_reports_id_seq'::regclass);
 
 
 --
--- Name: event_types id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: event_types id; Type: DEFAULT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.event_types ALTER COLUMN id SET DEFAULT nextval('public.event_types_id_seq'::regclass);
 
 
 --
--- Name: events id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: events id; Type: DEFAULT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.events ALTER COLUMN id SET DEFAULT nextval('public.events_id_seq'::regclass);
 
 
 --
--- Name: finance_allocation_reports id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: finance_allocation_reports id; Type: DEFAULT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.finance_allocation_reports ALTER COLUMN id SET DEFAULT nextval('public.finance_allocation_reports_id_seq'::regclass);
 
 
 --
--- Name: fmv_criteria id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: fmv_criteria id; Type: DEFAULT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.fmv_criteria ALTER COLUMN id SET DEFAULT nextval('public.fmv_criteria_id_seq'::regclass);
 
 
 --
--- Name: functions id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: functions id; Type: DEFAULT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.functions ALTER COLUMN id SET DEFAULT nextval('public.functions_id_seq'::regclass);
 
 
 --
--- Name: hcp_doctors id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: hcp_doctors id; Type: DEFAULT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.hcp_doctors ALTER COLUMN id SET DEFAULT nextval('public.hcp_doctors_id_seq'::regclass);
 
 
 --
--- Name: invoice_approvals id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: invoice_approvals id; Type: DEFAULT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.invoice_approvals ALTER COLUMN id SET DEFAULT nextval('public.invoice_approvals_id_seq'::regclass);
 
 
 --
--- Name: invoice_line_items id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: invoice_line_items id; Type: DEFAULT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.invoice_line_items ALTER COLUMN id SET DEFAULT nextval('public.invoice_line_items_id_seq'::regclass);
 
 
 --
--- Name: invoice_messages id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: invoice_messages id; Type: DEFAULT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.invoice_messages ALTER COLUMN id SET DEFAULT nextval('public.invoice_messages_id_seq'::regclass);
 
 
 --
--- Name: invoice_withholding id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: invoice_withholding id; Type: DEFAULT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.invoice_withholding ALTER COLUMN id SET DEFAULT nextval('public.invoice_withholding_id_seq'::regclass);
 
 
 --
--- Name: master_brands id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: master_brands id; Type: DEFAULT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.master_brands ALTER COLUMN id SET DEFAULT nextval('public.master_brands_id_seq'::regclass);
 
 
 --
--- Name: master_cities id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: master_cities id; Type: DEFAULT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.master_cities ALTER COLUMN id SET DEFAULT nextval('public.master_cities_id_seq'::regclass);
 
 
 --
--- Name: master_divisions id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: master_divisions id; Type: DEFAULT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.master_divisions ALTER COLUMN id SET DEFAULT nextval('public.master_divisions_id_seq'::regclass);
 
 
 --
--- Name: master_hcp_roles id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: master_hcp_roles id; Type: DEFAULT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.master_hcp_roles ALTER COLUMN id SET DEFAULT nextval('public.master_hcp_roles_id_seq'::regclass);
 
 
 --
--- Name: master_meals id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: master_meals id; Type: DEFAULT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.master_meals ALTER COLUMN id SET DEFAULT nextval('public.master_meals_id_seq'::regclass);
 
 
 --
--- Name: master_specialities id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: master_specialities id; Type: DEFAULT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.master_specialities ALTER COLUMN id SET DEFAULT nextval('public.master_specialities_id_seq'::regclass);
 
 
 --
--- Name: master_sponsorship_types id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: master_sponsorship_types id; Type: DEFAULT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.master_sponsorship_types ALTER COLUMN id SET DEFAULT nextval('public.master_sponsorship_types_id_seq'::regclass);
 
 
 --
--- Name: master_states id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: master_states id; Type: DEFAULT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.master_states ALTER COLUMN id SET DEFAULT nextval('public.master_states_id_seq'::regclass);
 
 
 --
--- Name: master_therapeutics id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: master_therapeutics id; Type: DEFAULT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.master_therapeutics ALTER COLUMN id SET DEFAULT nextval('public.master_therapeutics_id_seq'::regclass);
 
 
 --
--- Name: promotional_approvals id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: promotional_approvals id; Type: DEFAULT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.promotional_approvals ALTER COLUMN id SET DEFAULT nextval('public.promotional_approvals_id_seq'::regclass);
 
 
 --
--- Name: promotional_budgets id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: promotional_budgets id; Type: DEFAULT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.promotional_budgets ALTER COLUMN id SET DEFAULT nextval('public.promotional_budgets_id_seq'::regclass);
 
 
 --
--- Name: promotional_events id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: promotional_events id; Type: DEFAULT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.promotional_events ALTER COLUMN id SET DEFAULT nextval('public.promotional_events_id_seq'::regclass);
 
 
 --
--- Name: territories id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: territories id; Type: DEFAULT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.territories ALTER COLUMN id SET DEFAULT nextval('public.territories_id_seq'::regclass);
 
 
 --
--- Name: user_groups id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: user_groups id; Type: DEFAULT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.user_groups ALTER COLUMN id SET DEFAULT nextval('public.user_groups_id_seq'::regclass);
 
 
 --
--- Name: users id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: users id; Type: DEFAULT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.users ALTER COLUMN id SET DEFAULT nextval('public.users_id_seq'::regclass);
 
 
 --
--- Name: vendor_bank_details id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: vendor_bank_details id; Type: DEFAULT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.vendor_bank_details ALTER COLUMN id SET DEFAULT nextval('public.vendor_bank_details_id_seq'::regclass);
 
 
 --
--- Name: vendor_invoices id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: vendor_invoices id; Type: DEFAULT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.vendor_invoices ALTER COLUMN id SET DEFAULT nextval('public.vendor_invoices_id_seq'::regclass);
 
 
 --
--- Name: vendor_withholding id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: vendor_withholding id; Type: DEFAULT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.vendor_withholding ALTER COLUMN id SET DEFAULT nextval('public.vendor_withholding_id_seq'::regclass);
 
 
 --
--- Name: vendors id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: vendors id; Type: DEFAULT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.vendors ALTER COLUMN id SET DEFAULT nextval('public.vendors_id_seq'::regclass);
 
 
 --
--- Data for Name: agreement_documents; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: agreement_documents; Type: TABLE DATA; Schema: public; Owner: emcatalyst
 --
 
 COPY public.agreement_documents (id, agreement_id, document_name, document_type, file_path, file_size, uploaded_by_id, uploaded_at) FROM stdin;
@@ -2645,7 +2983,7 @@ COPY public.agreement_documents (id, agreement_id, document_name, document_type,
 
 
 --
--- Data for Name: agreements; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: agreements; Type: TABLE DATA; Schema: public; Owner: emcatalyst
 --
 
 COPY public.agreements (id, agreement_no, title, agreement_type, party_name, party_contact, party_email, party_address, start_date, end_date, value, currency, payment_terms, status, description, terms_conditions, created_by_id, approved_by_id, division_id, renewal_required, auto_renew, renewal_notice_days, created_at, updated_at) FROM stdin;
@@ -2653,7 +2991,7 @@ COPY public.agreements (id, agreement_no, title, agreement_type, party_name, par
 
 
 --
--- Data for Name: audit_history; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: audit_history; Type: TABLE DATA; Schema: public; Owner: emcatalyst
 --
 
 COPY public.audit_history (id, entity_type, entity_id, action, field_name, old_value, new_value, changed_by_id, changed_at, ip_address, remarks) FROM stdin;
@@ -2661,16 +2999,16 @@ COPY public.audit_history (id, entity_type, entity_id, action, field_name, old_v
 
 
 --
--- Data for Name: brs_applications; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: brs_applications; Type: TABLE DATA; Schema: public; Owner: emcatalyst
 --
 
-COPY public.brs_applications (id, brs_code, survey_title, therapeutic_area, brand, topic, mode, survey_duration_minutes, honorarium_amount, division_id, cost_center, company_code, remarks, status, hcp_doctor_id, is_new_doctor, new_doctor_name, new_doctor_email, new_doctor_phone, new_doctor_speciality, new_doctor_city, pan_number, bank_name, bank_account_no, ifsc_code, survey_token, survey_link_sent_at, hcp_form_submitted_at, survey_started_at, survey_completed_at, survey_responses, agreement_sent_at, agreement_signed_at, signature_image_path, signature_otp_verified, vendor_id, vendor_lookup_scenario, vendor_creation_notified_at, initiator_id, l1_approver_id, l2_approver_id, compliance_approver_id, l1_approved_at, l2_approved_at, compliance_approved_at, coord_verified_at, finance_posted_at, paid_at, rejection_reason, pan_document_path, survey_id, created_at, updated_at) FROM stdin;
-1	BRS2026050001	Hypertension	CARDIOLOGIST	TEMSAN	Role of Telmisartan in Hypertension	Online	60	50000.00	26	4199	EPL	NA	PENDING_L1	\N	t	Anup Kumar	anup.kumar@emcure.com	9990169093	Cardiologist	Pune	123456789	HDFC	181818181818	HDFC000012	\N	\N	\N	\N	\N	\N	\N	\N	\N	f	\N	\N	\N	1	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	1	2026-05-12 14:43:21.808542+05:30	2026-05-12 09:14:19.518231+05:30
+COPY public.brs_applications (id, brs_code, survey_title, therapeutic_area, brand, topic, mode, survey_duration_minutes, honorarium_amount, division_id, cost_center, company_code, remarks, status, hcp_doctor_id, is_new_doctor, new_doctor_name, new_doctor_email, new_doctor_phone, new_doctor_speciality, new_doctor_city, pan_number, bank_name, bank_account_no, ifsc_code, survey_token, survey_link_sent_at, hcp_form_submitted_at, survey_started_at, survey_completed_at, survey_responses, agreement_sent_at, agreement_signed_at, signature_image_path, signature_otp_verified, vendor_id, vendor_lookup_scenario, vendor_creation_notified_at, initiator_id, l1_approver_id, l2_approver_id, compliance_approver_id, l1_approved_at, l2_approved_at, compliance_approved_at, coord_verified_at, finance_posted_at, paid_at, rejection_reason, pan_document_path, survey_id, created_at, updated_at, survey_duration_days, survey_deadline_at, bulk_request_id) FROM stdin;
+1	BRS2026050001	Hypertension	CARDIOLOGIST	TEMSAN	Role of Telmisartan in Hypertension	Online	60	50000.00	26	4199	EPL	NA	PENDING_L1	\N	t	Anup Kumar	anup.kumar@emcure.com	9990169093	Cardiologist	Pune	123456789	HDFC	181818181818	HDFC000012	\N	\N	\N	\N	\N	\N	\N	\N	\N	f	\N	\N	\N	1	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	1	2026-05-12 14:43:21.808542+05:30	2026-05-12 09:14:19.518231+05:30	7	\N	\N
 \.
 
 
 --
--- Data for Name: brs_audit_trail; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: brs_audit_trail; Type: TABLE DATA; Schema: public; Owner: emcatalyst
 --
 
 COPY public.brs_audit_trail (id, application_id, action, from_status, to_status, performed_by_id, remarks, created_at) FROM stdin;
@@ -2680,7 +3018,15 @@ COPY public.brs_audit_trail (id, application_id, action, from_status, to_status,
 
 
 --
--- Data for Name: brs_otps; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: brs_bulk_requests; Type: TABLE DATA; Schema: public; Owner: emcatalyst
+--
+
+COPY public.brs_bulk_requests (id, bulk_code, survey_title, survey_id, therapeutic_area, brand, topic, honorarium_amount, survey_duration_days, mode, division_id, cost_center, company_code, remarks, initiator_id, status, total_doctors, sent_count, completed_count, created_at, updated_at) FROM stdin;
+\.
+
+
+--
+-- Data for Name: brs_otps; Type: TABLE DATA; Schema: public; Owner: emcatalyst
 --
 
 COPY public.brs_otps (id, application_id, otp_code, mobile, expires_at, used, created_at) FROM stdin;
@@ -2688,7 +3034,7 @@ COPY public.brs_otps (id, application_id, otp_code, mobile, expires_at, used, cr
 
 
 --
--- Data for Name: brs_survey_questions; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: brs_survey_questions; Type: TABLE DATA; Schema: public; Owner: emcatalyst
 --
 
 COPY public.brs_survey_questions (id, survey_id, order_no, question_text, question_type, options, is_required, min_duration_seconds, video_url, created_at) FROM stdin;
@@ -2699,7 +3045,7 @@ COPY public.brs_survey_questions (id, survey_id, order_no, question_text, questi
 
 
 --
--- Data for Name: brs_surveys; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: brs_surveys; Type: TABLE DATA; Schema: public; Owner: emcatalyst
 --
 
 COPY public.brs_surveys (id, title, description, honorarium_upper_limit, is_active, requires_agreement_download, agreement_template, created_by_id, created_at, updated_at) FROM stdin;
@@ -2708,7 +3054,7 @@ COPY public.brs_surveys (id, title, description, honorarium_upper_limit, is_acti
 
 
 --
--- Data for Name: cme_event_reports; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: cme_event_reports; Type: TABLE DATA; Schema: public; Owner: emcatalyst
 --
 
 COPY public.cme_event_reports (id, event_code, event_title, event_date, event_type, division, location, doctor_name, specialization, honorarium, tds_deducted, net_paid, payment_status, created_at) FROM stdin;
@@ -2716,7 +3062,7 @@ COPY public.cme_event_reports (id, event_code, event_title, event_date, event_ty
 
 
 --
--- Data for Name: company_codes; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: company_codes; Type: TABLE DATA; Schema: public; Owner: emcatalyst
 --
 
 COPY public.company_codes (id, code, name, country, currency, is_active) FROM stdin;
@@ -2725,7 +3071,7 @@ COPY public.company_codes (id, code, name, country, currency, is_active) FROM st
 
 
 --
--- Data for Name: cost_centers; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: cost_centers; Type: TABLE DATA; Schema: public; Owner: emcatalyst
 --
 
 COPY public.cost_centers (id, cost_center_id, name, division_id, is_active, created_at) FROM stdin;
@@ -2733,7 +3079,7 @@ COPY public.cost_centers (id, cost_center_id, name, division_id, is_active, crea
 
 
 --
--- Data for Name: designations; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: designations; Type: TABLE DATA; Schema: public; Owner: emcatalyst
 --
 
 COPY public.designations (id, title, grade, is_active) FROM stdin;
@@ -2750,7 +3096,7 @@ COPY public.designations (id, title, grade, is_active) FROM stdin;
 
 
 --
--- Data for Name: deviation_reports; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: deviation_reports; Type: TABLE DATA; Schema: public; Owner: emcatalyst
 --
 
 COPY public.deviation_reports (id, event_code, deviation_type, description, budget_amount, actual_amount, deviation_amount, deviation_percent, justification, status, raised_by_id, created_at) FROM stdin;
@@ -2758,7 +3104,7 @@ COPY public.deviation_reports (id, event_code, deviation_type, description, budg
 
 
 --
--- Data for Name: divisions; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: divisions; Type: TABLE DATA; Schema: public; Owner: emcatalyst
 --
 
 COPY public.divisions (id, mendix_id, name, code, cluster, costcenter, profitcenter, eventcodeprefix, is_active, created_at) FROM stdin;
@@ -2805,7 +3151,16 @@ COPY public.divisions (id, mendix_id, name, code, cluster, costcenter, profitcen
 
 
 --
--- Data for Name: document_types; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: doctor_portal_sessions; Type: TABLE DATA; Schema: public; Owner: emcatalyst
+--
+
+COPY public.doctor_portal_sessions (id, email, hcp_doctor_id, otp_code, expires_at, used, session_token, created_at) FROM stdin;
+1	anup.kumar@emcure.com	\N	015472	2026-05-12 10:34:04.472771	t	7m400EzO5mC0ZcMxAxrS8Y6EL4lagKlJfBmDL_Z7w9psoYzj-JT0Ug	2026-05-12 15:54:04.469728+05:30
+\.
+
+
+--
+-- Data for Name: document_types; Type: TABLE DATA; Schema: public; Owner: emcatalyst
 --
 
 COPY public.document_types (id, code, name, is_mandatory, is_active) FROM stdin;
@@ -2822,7 +3177,7 @@ COPY public.document_types (id, code, name, is_mandatory, is_active) FROM stdin;
 
 
 --
--- Data for Name: enumerations; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: enumerations; Type: TABLE DATA; Schema: public; Owner: emcatalyst
 --
 
 COPY public.enumerations (id, category, code, label, sort_order, is_active) FROM stdin;
@@ -2830,7 +3185,7 @@ COPY public.enumerations (id, category, code, label, sort_order, is_active) FROM
 
 
 --
--- Data for Name: event_agreements; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: event_agreements; Type: TABLE DATA; Schema: public; Owner: emcatalyst
 --
 
 COPY public.event_agreements (id, mendix_id, event_id, doctor_id, non_mcl_name, non_mcl_pan, non_mcl_email, is_hcp_doctor, agreement_date, status, cancellation_remark, is_downloadable, created_at, updated_at) FROM stdin;
@@ -2840,7 +3195,7 @@ COPY public.event_agreements (id, mendix_id, event_id, doctor_id, non_mcl_name, 
 
 
 --
--- Data for Name: event_costs; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: event_costs; Type: TABLE DATA; Schema: public; Owner: emcatalyst
 --
 
 COPY public.event_costs (id, event_id, cost_head, cost_category, vendor_name, estimated_amount, actual_amount, currency, gst_applicable, gst_rate, remarks, created_at) FROM stdin;
@@ -2848,7 +3203,7 @@ COPY public.event_costs (id, event_id, cost_head, cost_category, vendor_name, es
 
 
 --
--- Data for Name: event_doctors; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: event_doctors; Type: TABLE DATA; Schema: public; Owner: emcatalyst
 --
 
 COPY public.event_doctors (id, event_id, doctor_name, qualification, specialization, institute, city, mobile_no, email, pan_number, gstin, role, bank_name, bank_account_no, ifsc_code, fmv_amount, created_at) FROM stdin;
@@ -2856,7 +3211,7 @@ COPY public.event_doctors (id, event_id, doctor_name, qualification, specializat
 
 
 --
--- Data for Name: event_document_types; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: event_document_types; Type: TABLE DATA; Schema: public; Owner: emcatalyst
 --
 
 COPY public.event_document_types (id, event_type, document_name, is_mandatory, is_active) FROM stdin;
@@ -2864,7 +3219,7 @@ COPY public.event_document_types (id, event_type, document_name, is_mandatory, i
 
 
 --
--- Data for Name: event_documents; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: event_documents; Type: TABLE DATA; Schema: public; Owner: emcatalyst
 --
 
 COPY public.event_documents (id, event_id, document_type, document_name, file_path, file_size, mime_type, uploaded_by_id, uploaded_at) FROM stdin;
@@ -2872,7 +3227,7 @@ COPY public.event_documents (id, event_id, document_type, document_name, file_pa
 
 
 --
--- Data for Name: event_honorariums; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: event_honorariums; Type: TABLE DATA; Schema: public; Owner: emcatalyst
 --
 
 COPY public.event_honorariums (id, event_id, doctor_id, doctor_name, session_type, duration_minutes, fmv_per_hour, honorarium_amount, tds_applicable, tds_rate, tds_amount, net_payable, payment_status, created_at) FROM stdin;
@@ -2880,7 +3235,7 @@ COPY public.event_honorariums (id, event_id, doctor_id, doctor_name, session_typ
 
 
 --
--- Data for Name: event_institutions; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: event_institutions; Type: TABLE DATA; Schema: public; Owner: emcatalyst
 --
 
 COPY public.event_institutions (id, event_id, institution_name, contact_person, mobile_no, email, address, city, state, gstin, created_at) FROM stdin;
@@ -2888,7 +3243,7 @@ COPY public.event_institutions (id, event_id, institution_name, contact_person, 
 
 
 --
--- Data for Name: event_reports; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: event_reports; Type: TABLE DATA; Schema: public; Owner: emcatalyst
 --
 
 COPY public.event_reports (id, event_code, event_title, event_type, event_date, division, location, initiator, status, budget_amount, actual_amount, doctor_count, attendance, generated_at, generated_by_id) FROM stdin;
@@ -2896,7 +3251,7 @@ COPY public.event_reports (id, event_code, event_title, event_type, event_date, 
 
 
 --
--- Data for Name: event_types; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: event_types; Type: TABLE DATA; Schema: public; Owner: emcatalyst
 --
 
 COPY public.event_types (id, code, name, description, max_fmv, is_active) FROM stdin;
@@ -2907,7 +3262,7 @@ COPY public.event_types (id, code, name, description, max_fmv, is_active) FROM s
 
 
 --
--- Data for Name: events; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: events; Type: TABLE DATA; Schema: public; Owner: emcatalyst
 --
 
 COPY public.events (id, event_code, event_title, event_type, event_category, event_date, event_end_date, venue, city, state, country, expected_attendance, actual_attendance, division_id, company_code, cost_center, budget_amount, actual_amount, status, initiator_id, approver_id, compliance_remarks, finance_remarks, rejection_reason, step, created_at, updated_at) FROM stdin;
@@ -3923,7 +4278,7 @@ COPY public.events (id, event_code, event_title, event_type, event_category, eve
 
 
 --
--- Data for Name: finance_allocation_reports; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: finance_allocation_reports; Type: TABLE DATA; Schema: public; Owner: emcatalyst
 --
 
 COPY public.finance_allocation_reports (id, report_period, division, cost_center, event_code, event_type, gl_account, amount, currency, sap_doc_no, posting_date, created_at) FROM stdin;
@@ -3931,7 +4286,7 @@ COPY public.finance_allocation_reports (id, report_period, division, cost_center
 
 
 --
--- Data for Name: fmv_criteria; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: fmv_criteria; Type: TABLE DATA; Schema: public; Owner: emcatalyst
 --
 
 COPY public.fmv_criteria (id, mendix_id, clinical_practice_experience, investigator_experience, expertise, professional_position, congress_experience, publications, is_active) FROM stdin;
@@ -3992,7 +4347,7 @@ COPY public.fmv_criteria (id, mendix_id, clinical_practice_experience, investiga
 
 
 --
--- Data for Name: functions; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: functions; Type: TABLE DATA; Schema: public; Owner: emcatalyst
 --
 
 COPY public.functions (id, name, code, is_active) FROM stdin;
@@ -4000,7 +4355,7 @@ COPY public.functions (id, name, code, is_active) FROM stdin;
 
 
 --
--- Data for Name: hcp_doctors; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: hcp_doctors; Type: TABLE DATA; Schema: public; Owner: emcatalyst
 --
 
 COPY public.hcp_doctors (id, mendix_id, first_name, middle_name, last_name, full_name, qualification, email, experience, uid_number, address, pan_number, city, state, pincode, degree, diploma, gender, mci_reg_number, is_registered_under_gst, is_active, is_draft, sbu_code, mobile_number, doctor_type, doctor_class, hml, name_as_per_bank, bank_name, account_number, bank_branch, ifsc_code, hourly_rate, max_capping, created_at, updated_at) FROM stdin;
@@ -5008,7 +5363,7 @@ COPY public.hcp_doctors (id, mendix_id, first_name, middle_name, last_name, full
 
 
 --
--- Data for Name: invoice_approvals; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: invoice_approvals; Type: TABLE DATA; Schema: public; Owner: emcatalyst
 --
 
 COPY public.invoice_approvals (id, invoice_id, approver_id, approver_role, action, remarks, action_date) FROM stdin;
@@ -5016,7 +5371,7 @@ COPY public.invoice_approvals (id, invoice_id, approver_id, approver_role, actio
 
 
 --
--- Data for Name: invoice_line_items; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: invoice_line_items; Type: TABLE DATA; Schema: public; Owner: emcatalyst
 --
 
 COPY public.invoice_line_items (id, invoice_id, item_number, gl_account, amount, cost_center, profit_center, internal_order, tax_code, text) FROM stdin;
@@ -5024,7 +5379,7 @@ COPY public.invoice_line_items (id, invoice_id, item_number, gl_account, amount,
 
 
 --
--- Data for Name: invoice_messages; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: invoice_messages; Type: TABLE DATA; Schema: public; Owner: emcatalyst
 --
 
 COPY public.invoice_messages (id, invoice_id, message_type, message_text, ex_doc_no, ex_message, ex_utrno, ex_amount, created_at) FROM stdin;
@@ -5032,7 +5387,7 @@ COPY public.invoice_messages (id, invoice_id, message_type, message_text, ex_doc
 
 
 --
--- Data for Name: invoice_withholding; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: invoice_withholding; Type: TABLE DATA; Schema: public; Owner: emcatalyst
 --
 
 COPY public.invoice_withholding (id, invoice_id, witht, wt_code, wt_base, wt_amount) FROM stdin;
@@ -5040,7 +5395,7 @@ COPY public.invoice_withholding (id, invoice_id, witht, wt_code, wt_base, wt_amo
 
 
 --
--- Data for Name: master_brands; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: master_brands; Type: TABLE DATA; Schema: public; Owner: emcatalyst
 --
 
 COPY public.master_brands (id, mendix_id, name, therapeutic_area, is_active) FROM stdin;
@@ -5380,7 +5735,7 @@ COPY public.master_brands (id, mendix_id, name, therapeutic_area, is_active) FRO
 
 
 --
--- Data for Name: master_cities; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: master_cities; Type: TABLE DATA; Schema: public; Owner: emcatalyst
 --
 
 COPY public.master_cities (id, name, state, is_active) FROM stdin;
@@ -5439,7 +5794,7 @@ COPY public.master_cities (id, name, state, is_active) FROM stdin;
 
 
 --
--- Data for Name: master_divisions; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: master_divisions; Type: TABLE DATA; Schema: public; Owner: emcatalyst
 --
 
 COPY public.master_divisions (id, code, name, is_active) FROM stdin;
@@ -5447,7 +5802,7 @@ COPY public.master_divisions (id, code, name, is_active) FROM stdin;
 
 
 --
--- Data for Name: master_hcp_roles; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: master_hcp_roles; Type: TABLE DATA; Schema: public; Owner: emcatalyst
 --
 
 COPY public.master_hcp_roles (id, mendix_id, name, is_active) FROM stdin;
@@ -5461,7 +5816,7 @@ COPY public.master_hcp_roles (id, mendix_id, name, is_active) FROM stdin;
 
 
 --
--- Data for Name: master_meals; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: master_meals; Type: TABLE DATA; Schema: public; Owner: emcatalyst
 --
 
 COPY public.master_meals (id, mendix_id, name, is_active) FROM stdin;
@@ -5475,7 +5830,7 @@ COPY public.master_meals (id, mendix_id, name, is_active) FROM stdin;
 
 
 --
--- Data for Name: master_specialities; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: master_specialities; Type: TABLE DATA; Schema: public; Owner: emcatalyst
 --
 
 COPY public.master_specialities (id, mendix_id, name, is_active) FROM stdin;
@@ -5505,7 +5860,7 @@ COPY public.master_specialities (id, mendix_id, name, is_active) FROM stdin;
 
 
 --
--- Data for Name: master_sponsorship_types; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: master_sponsorship_types; Type: TABLE DATA; Schema: public; Owner: emcatalyst
 --
 
 COPY public.master_sponsorship_types (id, name, description, is_active) FROM stdin;
@@ -5519,7 +5874,7 @@ COPY public.master_sponsorship_types (id, name, description, is_active) FROM std
 
 
 --
--- Data for Name: master_states; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: master_states; Type: TABLE DATA; Schema: public; Owner: emcatalyst
 --
 
 COPY public.master_states (id, mendix_id, name, is_active) FROM stdin;
@@ -5564,7 +5919,7 @@ COPY public.master_states (id, mendix_id, name, is_active) FROM stdin;
 
 
 --
--- Data for Name: master_therapeutics; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: master_therapeutics; Type: TABLE DATA; Schema: public; Owner: emcatalyst
 --
 
 COPY public.master_therapeutics (id, mendix_id, name, is_active) FROM stdin;
@@ -5630,7 +5985,7 @@ COPY public.master_therapeutics (id, mendix_id, name, is_active) FROM stdin;
 
 
 --
--- Data for Name: promotional_approvals; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: promotional_approvals; Type: TABLE DATA; Schema: public; Owner: emcatalyst
 --
 
 COPY public.promotional_approvals (id, promo_event_id, approver_id, approver_role, action, remarks, action_date) FROM stdin;
@@ -5638,7 +5993,7 @@ COPY public.promotional_approvals (id, promo_event_id, approver_id, approver_rol
 
 
 --
--- Data for Name: promotional_budgets; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: promotional_budgets; Type: TABLE DATA; Schema: public; Owner: emcatalyst
 --
 
 COPY public.promotional_budgets (id, promo_event_id, cost_head, quantity, rate, amount, gst_rate, gst_amount, total_amount, vendor_name) FROM stdin;
@@ -5646,7 +6001,7 @@ COPY public.promotional_budgets (id, promo_event_id, cost_head, quantity, rate, 
 
 
 --
--- Data for Name: promotional_events; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: promotional_events; Type: TABLE DATA; Schema: public; Owner: emcatalyst
 --
 
 COPY public.promotional_events (id, event_code, event_title, event_type, month_and_year, division_id, territory, target_audience, objective, quantity, rate_per_qty, total_budget, actual_spend, is_valid, status, action, progress_value, remarks, initiator_id, created_at, updated_at) FROM stdin;
@@ -5654,7 +6009,7 @@ COPY public.promotional_events (id, event_code, event_title, event_type, month_a
 
 
 --
--- Data for Name: territories; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: territories; Type: TABLE DATA; Schema: public; Owner: emcatalyst
 --
 
 COPY public.territories (id, name, code, division_id, is_active) FROM stdin;
@@ -5662,7 +6017,7 @@ COPY public.territories (id, name, code, division_id, is_active) FROM stdin;
 
 
 --
--- Data for Name: user_group_members; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: user_group_members; Type: TABLE DATA; Schema: public; Owner: emcatalyst
 --
 
 COPY public.user_group_members (user_id, group_id) FROM stdin;
@@ -5670,7 +6025,7 @@ COPY public.user_group_members (user_id, group_id) FROM stdin;
 
 
 --
--- Data for Name: user_groups; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: user_groups; Type: TABLE DATA; Schema: public; Owner: emcatalyst
 --
 
 COPY public.user_groups (id, name, description, created_at) FROM stdin;
@@ -5678,7 +6033,7 @@ COPY public.user_groups (id, name, description, created_at) FROM stdin;
 
 
 --
--- Data for Name: users; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: users; Type: TABLE DATA; Schema: public; Owner: emcatalyst
 --
 
 COPY public.users (id, employee_id, email, hashed_password, first_name, middle_name, last_name, current_address, designation_title, office_mobile_no, personal_mobile_no, date_of_joining, grade, location, region, zone, reporting_manager, sap_user_id, pan_number, aadhar_number, profile_image_url, business_unit, department, group_company, employee_status, job_level, direct_manager_employee_id, direct_manager_email, direct_manager_name, office_location, office_state, office_city, territory_name, territory_code, gender, date_of_birth, extension_number, mendix_id, division_id, cost_center_id, function_id, territory_id, role, is_active, is_superuser, created_at, updated_at, manager_id) FROM stdin;
@@ -6527,7 +6882,7 @@ COPY public.users (id, employee_id, email, hashed_password, first_name, middle_n
 
 
 --
--- Data for Name: vendor_bank_details; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: vendor_bank_details; Type: TABLE DATA; Schema: public; Owner: emcatalyst
 --
 
 COPY public.vendor_bank_details (id, vendor_id, bankl, bankn, bank_name, ifsc_code, account_type, is_active, created_at) FROM stdin;
@@ -6535,7 +6890,7 @@ COPY public.vendor_bank_details (id, vendor_id, bankl, bankn, bank_name, ifsc_co
 
 
 --
--- Data for Name: vendor_invoices; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: vendor_invoices; Type: TABLE DATA; Schema: public; Owner: emcatalyst
 --
 
 COPY public.vendor_invoices (id, serial_no, vendor_id, vendor_code, vendor_name, reference, document_date, posting_date, document_type, vendor_amount, exch_rate, currency, calculate_tax, comp_code, sp_gl_ind, text, payment_method, due_on, payment_block, baseline_date, assignment, wt_tax_code, profit_center, cost_center, internal_order, gl_account, tax_code, igst_flag, igst_amount, cgst_amount, sgst_amount, tds_amount, net_amount, status, sap_doc_no, utr_no, event_id, submitted_by_id, created_at, updated_at) FROM stdin;
@@ -6543,7 +6898,7 @@ COPY public.vendor_invoices (id, serial_no, vendor_id, vendor_code, vendor_name,
 
 
 --
--- Data for Name: vendor_withholding; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: vendor_withholding; Type: TABLE DATA; Schema: public; Owner: emcatalyst
 --
 
 COPY public.vendor_withholding (id, vendor_id, witht, qsrec, wtwtstcd, wtexnr, wtexrt, wtexdf, companycode, wtexdt, wtwithcd, wtsubjct, created_at) FROM stdin;
@@ -6551,7 +6906,7 @@ COPY public.vendor_withholding (id, vendor_id, witht, qsrec, wtwtstcd, wtexnr, w
 
 
 --
--- Data for Name: vendors; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: vendors; Type: TABLE DATA; Schema: public; Owner: emcatalyst
 --
 
 COPY public.vendors (id, lifnr, name1, name2, land1, ort01, pstlz, stras, adrnr, ktokk, j_1ipanno, zterm, erdat, ernam, pan_no, tax_no, gstin, vendor_type, is_active, created_at, updated_at) FROM stdin;
@@ -6559,378 +6914,392 @@ COPY public.vendors (id, lifnr, name1, name2, land1, ort01, pstlz, stras, adrnr,
 
 
 --
--- Name: agreement_documents_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: agreement_documents_id_seq; Type: SEQUENCE SET; Schema: public; Owner: emcatalyst
 --
 
 SELECT pg_catalog.setval('public.agreement_documents_id_seq', 1, false);
 
 
 --
--- Name: agreements_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: agreements_id_seq; Type: SEQUENCE SET; Schema: public; Owner: emcatalyst
 --
 
 SELECT pg_catalog.setval('public.agreements_id_seq', 1, false);
 
 
 --
--- Name: audit_history_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: audit_history_id_seq; Type: SEQUENCE SET; Schema: public; Owner: emcatalyst
 --
 
 SELECT pg_catalog.setval('public.audit_history_id_seq', 1, false);
 
 
 --
--- Name: brs_applications_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: brs_applications_id_seq; Type: SEQUENCE SET; Schema: public; Owner: emcatalyst
 --
 
 SELECT pg_catalog.setval('public.brs_applications_id_seq', 1, true);
 
 
 --
--- Name: brs_audit_trail_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: brs_audit_trail_id_seq; Type: SEQUENCE SET; Schema: public; Owner: emcatalyst
 --
 
 SELECT pg_catalog.setval('public.brs_audit_trail_id_seq', 2, true);
 
 
 --
--- Name: brs_otps_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: brs_bulk_requests_id_seq; Type: SEQUENCE SET; Schema: public; Owner: emcatalyst
+--
+
+SELECT pg_catalog.setval('public.brs_bulk_requests_id_seq', 1, false);
+
+
+--
+-- Name: brs_otps_id_seq; Type: SEQUENCE SET; Schema: public; Owner: emcatalyst
 --
 
 SELECT pg_catalog.setval('public.brs_otps_id_seq', 1, false);
 
 
 --
--- Name: brs_survey_questions_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: brs_survey_questions_id_seq; Type: SEQUENCE SET; Schema: public; Owner: emcatalyst
 --
 
 SELECT pg_catalog.setval('public.brs_survey_questions_id_seq', 3, true);
 
 
 --
--- Name: brs_surveys_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: brs_surveys_id_seq; Type: SEQUENCE SET; Schema: public; Owner: emcatalyst
 --
 
 SELECT pg_catalog.setval('public.brs_surveys_id_seq', 1, true);
 
 
 --
--- Name: cme_event_reports_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: cme_event_reports_id_seq; Type: SEQUENCE SET; Schema: public; Owner: emcatalyst
 --
 
 SELECT pg_catalog.setval('public.cme_event_reports_id_seq', 1, false);
 
 
 --
--- Name: company_codes_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: company_codes_id_seq; Type: SEQUENCE SET; Schema: public; Owner: emcatalyst
 --
 
 SELECT pg_catalog.setval('public.company_codes_id_seq', 1, true);
 
 
 --
--- Name: cost_centers_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: cost_centers_id_seq; Type: SEQUENCE SET; Schema: public; Owner: emcatalyst
 --
 
 SELECT pg_catalog.setval('public.cost_centers_id_seq', 1, false);
 
 
 --
--- Name: designations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: designations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: emcatalyst
 --
 
 SELECT pg_catalog.setval('public.designations_id_seq', 9, true);
 
 
 --
--- Name: deviation_reports_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: deviation_reports_id_seq; Type: SEQUENCE SET; Schema: public; Owner: emcatalyst
 --
 
 SELECT pg_catalog.setval('public.deviation_reports_id_seq', 1, false);
 
 
 --
--- Name: divisions_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: divisions_id_seq; Type: SEQUENCE SET; Schema: public; Owner: emcatalyst
 --
 
 SELECT pg_catalog.setval('public.divisions_id_seq', 39, true);
 
 
 --
--- Name: document_types_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: doctor_portal_sessions_id_seq; Type: SEQUENCE SET; Schema: public; Owner: emcatalyst
+--
+
+SELECT pg_catalog.setval('public.doctor_portal_sessions_id_seq', 1, true);
+
+
+--
+-- Name: document_types_id_seq; Type: SEQUENCE SET; Schema: public; Owner: emcatalyst
 --
 
 SELECT pg_catalog.setval('public.document_types_id_seq', 9, true);
 
 
 --
--- Name: enumerations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: enumerations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: emcatalyst
 --
 
 SELECT pg_catalog.setval('public.enumerations_id_seq', 1, false);
 
 
 --
--- Name: event_agreements_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: event_agreements_id_seq; Type: SEQUENCE SET; Schema: public; Owner: emcatalyst
 --
 
 SELECT pg_catalog.setval('public.event_agreements_id_seq', 2, true);
 
 
 --
--- Name: event_costs_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: event_costs_id_seq; Type: SEQUENCE SET; Schema: public; Owner: emcatalyst
 --
 
 SELECT pg_catalog.setval('public.event_costs_id_seq', 1, false);
 
 
 --
--- Name: event_doctors_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: event_doctors_id_seq; Type: SEQUENCE SET; Schema: public; Owner: emcatalyst
 --
 
 SELECT pg_catalog.setval('public.event_doctors_id_seq', 1, false);
 
 
 --
--- Name: event_document_types_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: event_document_types_id_seq; Type: SEQUENCE SET; Schema: public; Owner: emcatalyst
 --
 
 SELECT pg_catalog.setval('public.event_document_types_id_seq', 1, false);
 
 
 --
--- Name: event_documents_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: event_documents_id_seq; Type: SEQUENCE SET; Schema: public; Owner: emcatalyst
 --
 
 SELECT pg_catalog.setval('public.event_documents_id_seq', 1, false);
 
 
 --
--- Name: event_honorariums_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: event_honorariums_id_seq; Type: SEQUENCE SET; Schema: public; Owner: emcatalyst
 --
 
 SELECT pg_catalog.setval('public.event_honorariums_id_seq', 1, false);
 
 
 --
--- Name: event_institutions_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: event_institutions_id_seq; Type: SEQUENCE SET; Schema: public; Owner: emcatalyst
 --
 
 SELECT pg_catalog.setval('public.event_institutions_id_seq', 1, false);
 
 
 --
--- Name: event_reports_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: event_reports_id_seq; Type: SEQUENCE SET; Schema: public; Owner: emcatalyst
 --
 
 SELECT pg_catalog.setval('public.event_reports_id_seq', 1, false);
 
 
 --
--- Name: event_types_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: event_types_id_seq; Type: SEQUENCE SET; Schema: public; Owner: emcatalyst
 --
 
 SELECT pg_catalog.setval('public.event_types_id_seq', 3, true);
 
 
 --
--- Name: events_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: events_id_seq; Type: SEQUENCE SET; Schema: public; Owner: emcatalyst
 --
 
 SELECT pg_catalog.setval('public.events_id_seq', 1008, true);
 
 
 --
--- Name: finance_allocation_reports_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: finance_allocation_reports_id_seq; Type: SEQUENCE SET; Schema: public; Owner: emcatalyst
 --
 
 SELECT pg_catalog.setval('public.finance_allocation_reports_id_seq', 1, false);
 
 
 --
--- Name: fmv_criteria_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: fmv_criteria_id_seq; Type: SEQUENCE SET; Schema: public; Owner: emcatalyst
 --
 
 SELECT pg_catalog.setval('public.fmv_criteria_id_seq', 53, true);
 
 
 --
--- Name: functions_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: functions_id_seq; Type: SEQUENCE SET; Schema: public; Owner: emcatalyst
 --
 
 SELECT pg_catalog.setval('public.functions_id_seq', 1, false);
 
 
 --
--- Name: hcp_doctors_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: hcp_doctors_id_seq; Type: SEQUENCE SET; Schema: public; Owner: emcatalyst
 --
 
 SELECT pg_catalog.setval('public.hcp_doctors_id_seq', 1000, true);
 
 
 --
--- Name: invoice_approvals_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: invoice_approvals_id_seq; Type: SEQUENCE SET; Schema: public; Owner: emcatalyst
 --
 
 SELECT pg_catalog.setval('public.invoice_approvals_id_seq', 1, false);
 
 
 --
--- Name: invoice_line_items_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: invoice_line_items_id_seq; Type: SEQUENCE SET; Schema: public; Owner: emcatalyst
 --
 
 SELECT pg_catalog.setval('public.invoice_line_items_id_seq', 1, false);
 
 
 --
--- Name: invoice_messages_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: invoice_messages_id_seq; Type: SEQUENCE SET; Schema: public; Owner: emcatalyst
 --
 
 SELECT pg_catalog.setval('public.invoice_messages_id_seq', 1, false);
 
 
 --
--- Name: invoice_withholding_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: invoice_withholding_id_seq; Type: SEQUENCE SET; Schema: public; Owner: emcatalyst
 --
 
 SELECT pg_catalog.setval('public.invoice_withholding_id_seq', 1, false);
 
 
 --
--- Name: master_brands_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: master_brands_id_seq; Type: SEQUENCE SET; Schema: public; Owner: emcatalyst
 --
 
 SELECT pg_catalog.setval('public.master_brands_id_seq', 332, true);
 
 
 --
--- Name: master_cities_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: master_cities_id_seq; Type: SEQUENCE SET; Schema: public; Owner: emcatalyst
 --
 
 SELECT pg_catalog.setval('public.master_cities_id_seq', 51, true);
 
 
 --
--- Name: master_divisions_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: master_divisions_id_seq; Type: SEQUENCE SET; Schema: public; Owner: emcatalyst
 --
 
 SELECT pg_catalog.setval('public.master_divisions_id_seq', 1, false);
 
 
 --
--- Name: master_hcp_roles_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: master_hcp_roles_id_seq; Type: SEQUENCE SET; Schema: public; Owner: emcatalyst
 --
 
 SELECT pg_catalog.setval('public.master_hcp_roles_id_seq', 6, true);
 
 
 --
--- Name: master_meals_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: master_meals_id_seq; Type: SEQUENCE SET; Schema: public; Owner: emcatalyst
 --
 
 SELECT pg_catalog.setval('public.master_meals_id_seq', 6, true);
 
 
 --
--- Name: master_specialities_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: master_specialities_id_seq; Type: SEQUENCE SET; Schema: public; Owner: emcatalyst
 --
 
 SELECT pg_catalog.setval('public.master_specialities_id_seq', 22, true);
 
 
 --
--- Name: master_sponsorship_types_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: master_sponsorship_types_id_seq; Type: SEQUENCE SET; Schema: public; Owner: emcatalyst
 --
 
 SELECT pg_catalog.setval('public.master_sponsorship_types_id_seq', 6, true);
 
 
 --
--- Name: master_states_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: master_states_id_seq; Type: SEQUENCE SET; Schema: public; Owner: emcatalyst
 --
 
 SELECT pg_catalog.setval('public.master_states_id_seq', 37, true);
 
 
 --
--- Name: master_therapeutics_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: master_therapeutics_id_seq; Type: SEQUENCE SET; Schema: public; Owner: emcatalyst
 --
 
 SELECT pg_catalog.setval('public.master_therapeutics_id_seq', 58, true);
 
 
 --
--- Name: promotional_approvals_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: promotional_approvals_id_seq; Type: SEQUENCE SET; Schema: public; Owner: emcatalyst
 --
 
 SELECT pg_catalog.setval('public.promotional_approvals_id_seq', 1, false);
 
 
 --
--- Name: promotional_budgets_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: promotional_budgets_id_seq; Type: SEQUENCE SET; Schema: public; Owner: emcatalyst
 --
 
 SELECT pg_catalog.setval('public.promotional_budgets_id_seq', 1, false);
 
 
 --
--- Name: promotional_events_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: promotional_events_id_seq; Type: SEQUENCE SET; Schema: public; Owner: emcatalyst
 --
 
 SELECT pg_catalog.setval('public.promotional_events_id_seq', 1, false);
 
 
 --
--- Name: territories_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: territories_id_seq; Type: SEQUENCE SET; Schema: public; Owner: emcatalyst
 --
 
 SELECT pg_catalog.setval('public.territories_id_seq', 1, false);
 
 
 --
--- Name: user_groups_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: user_groups_id_seq; Type: SEQUENCE SET; Schema: public; Owner: emcatalyst
 --
 
 SELECT pg_catalog.setval('public.user_groups_id_seq', 1, false);
 
 
 --
--- Name: users_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: users_id_seq; Type: SEQUENCE SET; Schema: public; Owner: emcatalyst
 --
 
 SELECT pg_catalog.setval('public.users_id_seq', 841, true);
 
 
 --
--- Name: vendor_bank_details_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: vendor_bank_details_id_seq; Type: SEQUENCE SET; Schema: public; Owner: emcatalyst
 --
 
 SELECT pg_catalog.setval('public.vendor_bank_details_id_seq', 1, false);
 
 
 --
--- Name: vendor_invoices_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: vendor_invoices_id_seq; Type: SEQUENCE SET; Schema: public; Owner: emcatalyst
 --
 
 SELECT pg_catalog.setval('public.vendor_invoices_id_seq', 1, false);
 
 
 --
--- Name: vendor_withholding_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: vendor_withholding_id_seq; Type: SEQUENCE SET; Schema: public; Owner: emcatalyst
 --
 
 SELECT pg_catalog.setval('public.vendor_withholding_id_seq', 1, false);
 
 
 --
--- Name: vendors_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: vendors_id_seq; Type: SEQUENCE SET; Schema: public; Owner: emcatalyst
 --
 
 SELECT pg_catalog.setval('public.vendors_id_seq', 1, false);
 
 
 --
--- Name: agreement_documents agreement_documents_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: agreement_documents agreement_documents_pkey; Type: CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.agreement_documents
@@ -6938,7 +7307,7 @@ ALTER TABLE ONLY public.agreement_documents
 
 
 --
--- Name: agreements agreements_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: agreements agreements_pkey; Type: CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.agreements
@@ -6946,7 +7315,7 @@ ALTER TABLE ONLY public.agreements
 
 
 --
--- Name: audit_history audit_history_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: audit_history audit_history_pkey; Type: CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.audit_history
@@ -6954,7 +7323,7 @@ ALTER TABLE ONLY public.audit_history
 
 
 --
--- Name: brs_applications brs_applications_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: brs_applications brs_applications_pkey; Type: CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.brs_applications
@@ -6962,7 +7331,7 @@ ALTER TABLE ONLY public.brs_applications
 
 
 --
--- Name: brs_audit_trail brs_audit_trail_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: brs_audit_trail brs_audit_trail_pkey; Type: CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.brs_audit_trail
@@ -6970,7 +7339,15 @@ ALTER TABLE ONLY public.brs_audit_trail
 
 
 --
--- Name: brs_otps brs_otps_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: brs_bulk_requests brs_bulk_requests_pkey; Type: CONSTRAINT; Schema: public; Owner: emcatalyst
+--
+
+ALTER TABLE ONLY public.brs_bulk_requests
+    ADD CONSTRAINT brs_bulk_requests_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: brs_otps brs_otps_pkey; Type: CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.brs_otps
@@ -6978,7 +7355,7 @@ ALTER TABLE ONLY public.brs_otps
 
 
 --
--- Name: brs_survey_questions brs_survey_questions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: brs_survey_questions brs_survey_questions_pkey; Type: CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.brs_survey_questions
@@ -6986,7 +7363,7 @@ ALTER TABLE ONLY public.brs_survey_questions
 
 
 --
--- Name: brs_surveys brs_surveys_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: brs_surveys brs_surveys_pkey; Type: CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.brs_surveys
@@ -6994,7 +7371,7 @@ ALTER TABLE ONLY public.brs_surveys
 
 
 --
--- Name: cme_event_reports cme_event_reports_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: cme_event_reports cme_event_reports_pkey; Type: CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.cme_event_reports
@@ -7002,7 +7379,7 @@ ALTER TABLE ONLY public.cme_event_reports
 
 
 --
--- Name: company_codes company_codes_code_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: company_codes company_codes_code_key; Type: CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.company_codes
@@ -7010,7 +7387,7 @@ ALTER TABLE ONLY public.company_codes
 
 
 --
--- Name: company_codes company_codes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: company_codes company_codes_pkey; Type: CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.company_codes
@@ -7018,7 +7395,7 @@ ALTER TABLE ONLY public.company_codes
 
 
 --
--- Name: cost_centers cost_centers_cost_center_id_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: cost_centers cost_centers_cost_center_id_key; Type: CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.cost_centers
@@ -7026,7 +7403,7 @@ ALTER TABLE ONLY public.cost_centers
 
 
 --
--- Name: cost_centers cost_centers_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: cost_centers cost_centers_pkey; Type: CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.cost_centers
@@ -7034,7 +7411,7 @@ ALTER TABLE ONLY public.cost_centers
 
 
 --
--- Name: designations designations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: designations designations_pkey; Type: CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.designations
@@ -7042,7 +7419,7 @@ ALTER TABLE ONLY public.designations
 
 
 --
--- Name: designations designations_title_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: designations designations_title_key; Type: CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.designations
@@ -7050,7 +7427,7 @@ ALTER TABLE ONLY public.designations
 
 
 --
--- Name: deviation_reports deviation_reports_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: deviation_reports deviation_reports_pkey; Type: CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.deviation_reports
@@ -7058,7 +7435,7 @@ ALTER TABLE ONLY public.deviation_reports
 
 
 --
--- Name: divisions divisions_mendix_id_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: divisions divisions_mendix_id_key; Type: CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.divisions
@@ -7066,7 +7443,7 @@ ALTER TABLE ONLY public.divisions
 
 
 --
--- Name: divisions divisions_name_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: divisions divisions_name_key; Type: CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.divisions
@@ -7074,7 +7451,7 @@ ALTER TABLE ONLY public.divisions
 
 
 --
--- Name: divisions divisions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: divisions divisions_pkey; Type: CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.divisions
@@ -7082,7 +7459,15 @@ ALTER TABLE ONLY public.divisions
 
 
 --
--- Name: document_types document_types_code_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: doctor_portal_sessions doctor_portal_sessions_pkey; Type: CONSTRAINT; Schema: public; Owner: emcatalyst
+--
+
+ALTER TABLE ONLY public.doctor_portal_sessions
+    ADD CONSTRAINT doctor_portal_sessions_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: document_types document_types_code_key; Type: CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.document_types
@@ -7090,7 +7475,7 @@ ALTER TABLE ONLY public.document_types
 
 
 --
--- Name: document_types document_types_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: document_types document_types_pkey; Type: CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.document_types
@@ -7098,7 +7483,7 @@ ALTER TABLE ONLY public.document_types
 
 
 --
--- Name: enumerations enumerations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: enumerations enumerations_pkey; Type: CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.enumerations
@@ -7106,7 +7491,7 @@ ALTER TABLE ONLY public.enumerations
 
 
 --
--- Name: event_agreements event_agreements_mendix_id_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: event_agreements event_agreements_mendix_id_key; Type: CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.event_agreements
@@ -7114,7 +7499,7 @@ ALTER TABLE ONLY public.event_agreements
 
 
 --
--- Name: event_agreements event_agreements_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: event_agreements event_agreements_pkey; Type: CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.event_agreements
@@ -7122,7 +7507,7 @@ ALTER TABLE ONLY public.event_agreements
 
 
 --
--- Name: event_costs event_costs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: event_costs event_costs_pkey; Type: CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.event_costs
@@ -7130,7 +7515,7 @@ ALTER TABLE ONLY public.event_costs
 
 
 --
--- Name: event_doctors event_doctors_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: event_doctors event_doctors_pkey; Type: CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.event_doctors
@@ -7138,7 +7523,7 @@ ALTER TABLE ONLY public.event_doctors
 
 
 --
--- Name: event_document_types event_document_types_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: event_document_types event_document_types_pkey; Type: CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.event_document_types
@@ -7146,7 +7531,7 @@ ALTER TABLE ONLY public.event_document_types
 
 
 --
--- Name: event_documents event_documents_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: event_documents event_documents_pkey; Type: CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.event_documents
@@ -7154,7 +7539,7 @@ ALTER TABLE ONLY public.event_documents
 
 
 --
--- Name: event_honorariums event_honorariums_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: event_honorariums event_honorariums_pkey; Type: CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.event_honorariums
@@ -7162,7 +7547,7 @@ ALTER TABLE ONLY public.event_honorariums
 
 
 --
--- Name: event_institutions event_institutions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: event_institutions event_institutions_pkey; Type: CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.event_institutions
@@ -7170,7 +7555,7 @@ ALTER TABLE ONLY public.event_institutions
 
 
 --
--- Name: event_reports event_reports_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: event_reports event_reports_pkey; Type: CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.event_reports
@@ -7178,7 +7563,7 @@ ALTER TABLE ONLY public.event_reports
 
 
 --
--- Name: event_types event_types_code_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: event_types event_types_code_key; Type: CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.event_types
@@ -7186,7 +7571,7 @@ ALTER TABLE ONLY public.event_types
 
 
 --
--- Name: event_types event_types_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: event_types event_types_pkey; Type: CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.event_types
@@ -7194,7 +7579,7 @@ ALTER TABLE ONLY public.event_types
 
 
 --
--- Name: events events_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: events events_pkey; Type: CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.events
@@ -7202,7 +7587,7 @@ ALTER TABLE ONLY public.events
 
 
 --
--- Name: finance_allocation_reports finance_allocation_reports_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: finance_allocation_reports finance_allocation_reports_pkey; Type: CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.finance_allocation_reports
@@ -7210,7 +7595,7 @@ ALTER TABLE ONLY public.finance_allocation_reports
 
 
 --
--- Name: fmv_criteria fmv_criteria_mendix_id_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: fmv_criteria fmv_criteria_mendix_id_key; Type: CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.fmv_criteria
@@ -7218,7 +7603,7 @@ ALTER TABLE ONLY public.fmv_criteria
 
 
 --
--- Name: fmv_criteria fmv_criteria_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: fmv_criteria fmv_criteria_pkey; Type: CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.fmv_criteria
@@ -7226,7 +7611,7 @@ ALTER TABLE ONLY public.fmv_criteria
 
 
 --
--- Name: functions functions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: functions functions_pkey; Type: CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.functions
@@ -7234,7 +7619,7 @@ ALTER TABLE ONLY public.functions
 
 
 --
--- Name: hcp_doctors hcp_doctors_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: hcp_doctors hcp_doctors_pkey; Type: CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.hcp_doctors
@@ -7242,7 +7627,7 @@ ALTER TABLE ONLY public.hcp_doctors
 
 
 --
--- Name: invoice_approvals invoice_approvals_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: invoice_approvals invoice_approvals_pkey; Type: CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.invoice_approvals
@@ -7250,7 +7635,7 @@ ALTER TABLE ONLY public.invoice_approvals
 
 
 --
--- Name: invoice_line_items invoice_line_items_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: invoice_line_items invoice_line_items_pkey; Type: CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.invoice_line_items
@@ -7258,7 +7643,7 @@ ALTER TABLE ONLY public.invoice_line_items
 
 
 --
--- Name: invoice_messages invoice_messages_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: invoice_messages invoice_messages_pkey; Type: CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.invoice_messages
@@ -7266,7 +7651,7 @@ ALTER TABLE ONLY public.invoice_messages
 
 
 --
--- Name: invoice_withholding invoice_withholding_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: invoice_withholding invoice_withholding_pkey; Type: CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.invoice_withholding
@@ -7274,7 +7659,7 @@ ALTER TABLE ONLY public.invoice_withholding
 
 
 --
--- Name: master_brands master_brands_mendix_id_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: master_brands master_brands_mendix_id_key; Type: CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.master_brands
@@ -7282,7 +7667,7 @@ ALTER TABLE ONLY public.master_brands
 
 
 --
--- Name: master_brands master_brands_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: master_brands master_brands_pkey; Type: CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.master_brands
@@ -7290,7 +7675,7 @@ ALTER TABLE ONLY public.master_brands
 
 
 --
--- Name: master_cities master_cities_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: master_cities master_cities_pkey; Type: CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.master_cities
@@ -7298,7 +7683,7 @@ ALTER TABLE ONLY public.master_cities
 
 
 --
--- Name: master_divisions master_divisions_code_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: master_divisions master_divisions_code_key; Type: CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.master_divisions
@@ -7306,7 +7691,7 @@ ALTER TABLE ONLY public.master_divisions
 
 
 --
--- Name: master_divisions master_divisions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: master_divisions master_divisions_pkey; Type: CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.master_divisions
@@ -7314,7 +7699,7 @@ ALTER TABLE ONLY public.master_divisions
 
 
 --
--- Name: master_hcp_roles master_hcp_roles_mendix_id_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: master_hcp_roles master_hcp_roles_mendix_id_key; Type: CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.master_hcp_roles
@@ -7322,7 +7707,7 @@ ALTER TABLE ONLY public.master_hcp_roles
 
 
 --
--- Name: master_hcp_roles master_hcp_roles_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: master_hcp_roles master_hcp_roles_pkey; Type: CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.master_hcp_roles
@@ -7330,7 +7715,7 @@ ALTER TABLE ONLY public.master_hcp_roles
 
 
 --
--- Name: master_meals master_meals_mendix_id_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: master_meals master_meals_mendix_id_key; Type: CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.master_meals
@@ -7338,7 +7723,7 @@ ALTER TABLE ONLY public.master_meals
 
 
 --
--- Name: master_meals master_meals_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: master_meals master_meals_pkey; Type: CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.master_meals
@@ -7346,7 +7731,7 @@ ALTER TABLE ONLY public.master_meals
 
 
 --
--- Name: master_specialities master_specialities_mendix_id_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: master_specialities master_specialities_mendix_id_key; Type: CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.master_specialities
@@ -7354,7 +7739,7 @@ ALTER TABLE ONLY public.master_specialities
 
 
 --
--- Name: master_specialities master_specialities_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: master_specialities master_specialities_pkey; Type: CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.master_specialities
@@ -7362,7 +7747,7 @@ ALTER TABLE ONLY public.master_specialities
 
 
 --
--- Name: master_sponsorship_types master_sponsorship_types_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: master_sponsorship_types master_sponsorship_types_pkey; Type: CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.master_sponsorship_types
@@ -7370,7 +7755,7 @@ ALTER TABLE ONLY public.master_sponsorship_types
 
 
 --
--- Name: master_states master_states_mendix_id_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: master_states master_states_mendix_id_key; Type: CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.master_states
@@ -7378,7 +7763,7 @@ ALTER TABLE ONLY public.master_states
 
 
 --
--- Name: master_states master_states_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: master_states master_states_pkey; Type: CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.master_states
@@ -7386,7 +7771,7 @@ ALTER TABLE ONLY public.master_states
 
 
 --
--- Name: master_therapeutics master_therapeutics_mendix_id_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: master_therapeutics master_therapeutics_mendix_id_key; Type: CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.master_therapeutics
@@ -7394,7 +7779,7 @@ ALTER TABLE ONLY public.master_therapeutics
 
 
 --
--- Name: master_therapeutics master_therapeutics_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: master_therapeutics master_therapeutics_pkey; Type: CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.master_therapeutics
@@ -7402,7 +7787,7 @@ ALTER TABLE ONLY public.master_therapeutics
 
 
 --
--- Name: promotional_approvals promotional_approvals_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: promotional_approvals promotional_approvals_pkey; Type: CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.promotional_approvals
@@ -7410,7 +7795,7 @@ ALTER TABLE ONLY public.promotional_approvals
 
 
 --
--- Name: promotional_budgets promotional_budgets_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: promotional_budgets promotional_budgets_pkey; Type: CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.promotional_budgets
@@ -7418,7 +7803,7 @@ ALTER TABLE ONLY public.promotional_budgets
 
 
 --
--- Name: promotional_events promotional_events_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: promotional_events promotional_events_pkey; Type: CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.promotional_events
@@ -7426,7 +7811,7 @@ ALTER TABLE ONLY public.promotional_events
 
 
 --
--- Name: territories territories_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: territories territories_pkey; Type: CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.territories
@@ -7434,7 +7819,7 @@ ALTER TABLE ONLY public.territories
 
 
 --
--- Name: user_group_members user_group_members_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: user_group_members user_group_members_pkey; Type: CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.user_group_members
@@ -7442,7 +7827,7 @@ ALTER TABLE ONLY public.user_group_members
 
 
 --
--- Name: user_groups user_groups_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: user_groups user_groups_pkey; Type: CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.user_groups
@@ -7450,7 +7835,7 @@ ALTER TABLE ONLY public.user_groups
 
 
 --
--- Name: users users_mendix_id_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: users users_mendix_id_key; Type: CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.users
@@ -7458,7 +7843,7 @@ ALTER TABLE ONLY public.users
 
 
 --
--- Name: users users_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: users users_pkey; Type: CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.users
@@ -7466,7 +7851,7 @@ ALTER TABLE ONLY public.users
 
 
 --
--- Name: vendor_bank_details vendor_bank_details_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: vendor_bank_details vendor_bank_details_pkey; Type: CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.vendor_bank_details
@@ -7474,7 +7859,7 @@ ALTER TABLE ONLY public.vendor_bank_details
 
 
 --
--- Name: vendor_invoices vendor_invoices_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: vendor_invoices vendor_invoices_pkey; Type: CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.vendor_invoices
@@ -7482,7 +7867,7 @@ ALTER TABLE ONLY public.vendor_invoices
 
 
 --
--- Name: vendor_withholding vendor_withholding_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: vendor_withholding vendor_withholding_pkey; Type: CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.vendor_withholding
@@ -7490,7 +7875,7 @@ ALTER TABLE ONLY public.vendor_withholding
 
 
 --
--- Name: vendors vendors_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: vendors vendors_pkey; Type: CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.vendors
@@ -7498,406 +7883,441 @@ ALTER TABLE ONLY public.vendors
 
 
 --
--- Name: ix_agreement_documents_id; Type: INDEX; Schema: public; Owner: -
+-- Name: ix_agreement_documents_id; Type: INDEX; Schema: public; Owner: emcatalyst
 --
 
 CREATE INDEX ix_agreement_documents_id ON public.agreement_documents USING btree (id);
 
 
 --
--- Name: ix_agreements_agreement_no; Type: INDEX; Schema: public; Owner: -
+-- Name: ix_agreements_agreement_no; Type: INDEX; Schema: public; Owner: emcatalyst
 --
 
 CREATE UNIQUE INDEX ix_agreements_agreement_no ON public.agreements USING btree (agreement_no);
 
 
 --
--- Name: ix_agreements_id; Type: INDEX; Schema: public; Owner: -
+-- Name: ix_agreements_id; Type: INDEX; Schema: public; Owner: emcatalyst
 --
 
 CREATE INDEX ix_agreements_id ON public.agreements USING btree (id);
 
 
 --
--- Name: ix_audit_history_entity_id; Type: INDEX; Schema: public; Owner: -
+-- Name: ix_audit_history_entity_id; Type: INDEX; Schema: public; Owner: emcatalyst
 --
 
 CREATE INDEX ix_audit_history_entity_id ON public.audit_history USING btree (entity_id);
 
 
 --
--- Name: ix_audit_history_entity_type; Type: INDEX; Schema: public; Owner: -
+-- Name: ix_audit_history_entity_type; Type: INDEX; Schema: public; Owner: emcatalyst
 --
 
 CREATE INDEX ix_audit_history_entity_type ON public.audit_history USING btree (entity_type);
 
 
 --
--- Name: ix_audit_history_id; Type: INDEX; Schema: public; Owner: -
+-- Name: ix_audit_history_id; Type: INDEX; Schema: public; Owner: emcatalyst
 --
 
 CREATE INDEX ix_audit_history_id ON public.audit_history USING btree (id);
 
 
 --
--- Name: ix_brs_applications_brs_code; Type: INDEX; Schema: public; Owner: -
+-- Name: ix_brs_applications_brs_code; Type: INDEX; Schema: public; Owner: emcatalyst
 --
 
 CREATE UNIQUE INDEX ix_brs_applications_brs_code ON public.brs_applications USING btree (brs_code);
 
 
 --
--- Name: ix_brs_applications_id; Type: INDEX; Schema: public; Owner: -
+-- Name: ix_brs_applications_id; Type: INDEX; Schema: public; Owner: emcatalyst
 --
 
 CREATE INDEX ix_brs_applications_id ON public.brs_applications USING btree (id);
 
 
 --
--- Name: ix_brs_applications_survey_token; Type: INDEX; Schema: public; Owner: -
+-- Name: ix_brs_applications_survey_token; Type: INDEX; Schema: public; Owner: emcatalyst
 --
 
 CREATE UNIQUE INDEX ix_brs_applications_survey_token ON public.brs_applications USING btree (survey_token);
 
 
 --
--- Name: ix_brs_audit_trail_id; Type: INDEX; Schema: public; Owner: -
+-- Name: ix_brs_audit_trail_id; Type: INDEX; Schema: public; Owner: emcatalyst
 --
 
 CREATE INDEX ix_brs_audit_trail_id ON public.brs_audit_trail USING btree (id);
 
 
 --
--- Name: ix_brs_otps_id; Type: INDEX; Schema: public; Owner: -
+-- Name: ix_brs_bulk_requests_bulk_code; Type: INDEX; Schema: public; Owner: emcatalyst
+--
+
+CREATE UNIQUE INDEX ix_brs_bulk_requests_bulk_code ON public.brs_bulk_requests USING btree (bulk_code);
+
+
+--
+-- Name: ix_brs_bulk_requests_id; Type: INDEX; Schema: public; Owner: emcatalyst
+--
+
+CREATE INDEX ix_brs_bulk_requests_id ON public.brs_bulk_requests USING btree (id);
+
+
+--
+-- Name: ix_brs_otps_id; Type: INDEX; Schema: public; Owner: emcatalyst
 --
 
 CREATE INDEX ix_brs_otps_id ON public.brs_otps USING btree (id);
 
 
 --
--- Name: ix_brs_survey_questions_id; Type: INDEX; Schema: public; Owner: -
+-- Name: ix_brs_survey_questions_id; Type: INDEX; Schema: public; Owner: emcatalyst
 --
 
 CREATE INDEX ix_brs_survey_questions_id ON public.brs_survey_questions USING btree (id);
 
 
 --
--- Name: ix_brs_surveys_id; Type: INDEX; Schema: public; Owner: -
+-- Name: ix_brs_surveys_id; Type: INDEX; Schema: public; Owner: emcatalyst
 --
 
 CREATE INDEX ix_brs_surveys_id ON public.brs_surveys USING btree (id);
 
 
 --
--- Name: ix_cme_event_reports_event_code; Type: INDEX; Schema: public; Owner: -
+-- Name: ix_cme_event_reports_event_code; Type: INDEX; Schema: public; Owner: emcatalyst
 --
 
 CREATE INDEX ix_cme_event_reports_event_code ON public.cme_event_reports USING btree (event_code);
 
 
 --
--- Name: ix_cme_event_reports_id; Type: INDEX; Schema: public; Owner: -
+-- Name: ix_cme_event_reports_id; Type: INDEX; Schema: public; Owner: emcatalyst
 --
 
 CREATE INDEX ix_cme_event_reports_id ON public.cme_event_reports USING btree (id);
 
 
 --
--- Name: ix_cost_centers_id; Type: INDEX; Schema: public; Owner: -
+-- Name: ix_cost_centers_id; Type: INDEX; Schema: public; Owner: emcatalyst
 --
 
 CREATE INDEX ix_cost_centers_id ON public.cost_centers USING btree (id);
 
 
 --
--- Name: ix_deviation_reports_id; Type: INDEX; Schema: public; Owner: -
+-- Name: ix_deviation_reports_id; Type: INDEX; Schema: public; Owner: emcatalyst
 --
 
 CREATE INDEX ix_deviation_reports_id ON public.deviation_reports USING btree (id);
 
 
 --
--- Name: ix_divisions_id; Type: INDEX; Schema: public; Owner: -
+-- Name: ix_divisions_id; Type: INDEX; Schema: public; Owner: emcatalyst
 --
 
 CREATE INDEX ix_divisions_id ON public.divisions USING btree (id);
 
 
 --
--- Name: ix_enumerations_category; Type: INDEX; Schema: public; Owner: -
+-- Name: ix_doctor_portal_sessions_email; Type: INDEX; Schema: public; Owner: emcatalyst
+--
+
+CREATE INDEX ix_doctor_portal_sessions_email ON public.doctor_portal_sessions USING btree (email);
+
+
+--
+-- Name: ix_doctor_portal_sessions_id; Type: INDEX; Schema: public; Owner: emcatalyst
+--
+
+CREATE INDEX ix_doctor_portal_sessions_id ON public.doctor_portal_sessions USING btree (id);
+
+
+--
+-- Name: ix_doctor_portal_sessions_session_token; Type: INDEX; Schema: public; Owner: emcatalyst
+--
+
+CREATE UNIQUE INDEX ix_doctor_portal_sessions_session_token ON public.doctor_portal_sessions USING btree (session_token);
+
+
+--
+-- Name: ix_enumerations_category; Type: INDEX; Schema: public; Owner: emcatalyst
 --
 
 CREATE INDEX ix_enumerations_category ON public.enumerations USING btree (category);
 
 
 --
--- Name: ix_event_agreements_id; Type: INDEX; Schema: public; Owner: -
+-- Name: ix_event_agreements_id; Type: INDEX; Schema: public; Owner: emcatalyst
 --
 
 CREATE INDEX ix_event_agreements_id ON public.event_agreements USING btree (id);
 
 
 --
--- Name: ix_event_costs_id; Type: INDEX; Schema: public; Owner: -
+-- Name: ix_event_costs_id; Type: INDEX; Schema: public; Owner: emcatalyst
 --
 
 CREATE INDEX ix_event_costs_id ON public.event_costs USING btree (id);
 
 
 --
--- Name: ix_event_doctors_id; Type: INDEX; Schema: public; Owner: -
+-- Name: ix_event_doctors_id; Type: INDEX; Schema: public; Owner: emcatalyst
 --
 
 CREATE INDEX ix_event_doctors_id ON public.event_doctors USING btree (id);
 
 
 --
--- Name: ix_event_documents_id; Type: INDEX; Schema: public; Owner: -
+-- Name: ix_event_documents_id; Type: INDEX; Schema: public; Owner: emcatalyst
 --
 
 CREATE INDEX ix_event_documents_id ON public.event_documents USING btree (id);
 
 
 --
--- Name: ix_event_honorariums_id; Type: INDEX; Schema: public; Owner: -
+-- Name: ix_event_honorariums_id; Type: INDEX; Schema: public; Owner: emcatalyst
 --
 
 CREATE INDEX ix_event_honorariums_id ON public.event_honorariums USING btree (id);
 
 
 --
--- Name: ix_event_institutions_id; Type: INDEX; Schema: public; Owner: -
+-- Name: ix_event_institutions_id; Type: INDEX; Schema: public; Owner: emcatalyst
 --
 
 CREATE INDEX ix_event_institutions_id ON public.event_institutions USING btree (id);
 
 
 --
--- Name: ix_event_reports_event_code; Type: INDEX; Schema: public; Owner: -
+-- Name: ix_event_reports_event_code; Type: INDEX; Schema: public; Owner: emcatalyst
 --
 
 CREATE INDEX ix_event_reports_event_code ON public.event_reports USING btree (event_code);
 
 
 --
--- Name: ix_event_reports_id; Type: INDEX; Schema: public; Owner: -
+-- Name: ix_event_reports_id; Type: INDEX; Schema: public; Owner: emcatalyst
 --
 
 CREATE INDEX ix_event_reports_id ON public.event_reports USING btree (id);
 
 
 --
--- Name: ix_events_event_code; Type: INDEX; Schema: public; Owner: -
+-- Name: ix_events_event_code; Type: INDEX; Schema: public; Owner: emcatalyst
 --
 
 CREATE UNIQUE INDEX ix_events_event_code ON public.events USING btree (event_code);
 
 
 --
--- Name: ix_events_id; Type: INDEX; Schema: public; Owner: -
+-- Name: ix_events_id; Type: INDEX; Schema: public; Owner: emcatalyst
 --
 
 CREATE INDEX ix_events_id ON public.events USING btree (id);
 
 
 --
--- Name: ix_finance_allocation_reports_id; Type: INDEX; Schema: public; Owner: -
+-- Name: ix_finance_allocation_reports_id; Type: INDEX; Schema: public; Owner: emcatalyst
 --
 
 CREATE INDEX ix_finance_allocation_reports_id ON public.finance_allocation_reports USING btree (id);
 
 
 --
--- Name: ix_fmv_criteria_id; Type: INDEX; Schema: public; Owner: -
+-- Name: ix_fmv_criteria_id; Type: INDEX; Schema: public; Owner: emcatalyst
 --
 
 CREATE INDEX ix_fmv_criteria_id ON public.fmv_criteria USING btree (id);
 
 
 --
--- Name: ix_functions_id; Type: INDEX; Schema: public; Owner: -
+-- Name: ix_functions_id; Type: INDEX; Schema: public; Owner: emcatalyst
 --
 
 CREATE INDEX ix_functions_id ON public.functions USING btree (id);
 
 
 --
--- Name: ix_hcp_doctors_id; Type: INDEX; Schema: public; Owner: -
+-- Name: ix_hcp_doctors_id; Type: INDEX; Schema: public; Owner: emcatalyst
 --
 
 CREATE INDEX ix_hcp_doctors_id ON public.hcp_doctors USING btree (id);
 
 
 --
--- Name: ix_hcp_doctors_mendix_id; Type: INDEX; Schema: public; Owner: -
+-- Name: ix_hcp_doctors_mendix_id; Type: INDEX; Schema: public; Owner: emcatalyst
 --
 
 CREATE UNIQUE INDEX ix_hcp_doctors_mendix_id ON public.hcp_doctors USING btree (mendix_id);
 
 
 --
--- Name: ix_invoice_approvals_id; Type: INDEX; Schema: public; Owner: -
+-- Name: ix_invoice_approvals_id; Type: INDEX; Schema: public; Owner: emcatalyst
 --
 
 CREATE INDEX ix_invoice_approvals_id ON public.invoice_approvals USING btree (id);
 
 
 --
--- Name: ix_invoice_line_items_id; Type: INDEX; Schema: public; Owner: -
+-- Name: ix_invoice_line_items_id; Type: INDEX; Schema: public; Owner: emcatalyst
 --
 
 CREATE INDEX ix_invoice_line_items_id ON public.invoice_line_items USING btree (id);
 
 
 --
--- Name: ix_invoice_messages_id; Type: INDEX; Schema: public; Owner: -
+-- Name: ix_invoice_messages_id; Type: INDEX; Schema: public; Owner: emcatalyst
 --
 
 CREATE INDEX ix_invoice_messages_id ON public.invoice_messages USING btree (id);
 
 
 --
--- Name: ix_invoice_withholding_id; Type: INDEX; Schema: public; Owner: -
+-- Name: ix_invoice_withholding_id; Type: INDEX; Schema: public; Owner: emcatalyst
 --
 
 CREATE INDEX ix_invoice_withholding_id ON public.invoice_withholding USING btree (id);
 
 
 --
--- Name: ix_master_hcp_roles_id; Type: INDEX; Schema: public; Owner: -
+-- Name: ix_master_hcp_roles_id; Type: INDEX; Schema: public; Owner: emcatalyst
 --
 
 CREATE INDEX ix_master_hcp_roles_id ON public.master_hcp_roles USING btree (id);
 
 
 --
--- Name: ix_master_specialities_id; Type: INDEX; Schema: public; Owner: -
+-- Name: ix_master_specialities_id; Type: INDEX; Schema: public; Owner: emcatalyst
 --
 
 CREATE INDEX ix_master_specialities_id ON public.master_specialities USING btree (id);
 
 
 --
--- Name: ix_master_states_id; Type: INDEX; Schema: public; Owner: -
+-- Name: ix_master_states_id; Type: INDEX; Schema: public; Owner: emcatalyst
 --
 
 CREATE INDEX ix_master_states_id ON public.master_states USING btree (id);
 
 
 --
--- Name: ix_master_therapeutics_id; Type: INDEX; Schema: public; Owner: -
+-- Name: ix_master_therapeutics_id; Type: INDEX; Schema: public; Owner: emcatalyst
 --
 
 CREATE INDEX ix_master_therapeutics_id ON public.master_therapeutics USING btree (id);
 
 
 --
--- Name: ix_promotional_approvals_id; Type: INDEX; Schema: public; Owner: -
+-- Name: ix_promotional_approvals_id; Type: INDEX; Schema: public; Owner: emcatalyst
 --
 
 CREATE INDEX ix_promotional_approvals_id ON public.promotional_approvals USING btree (id);
 
 
 --
--- Name: ix_promotional_budgets_id; Type: INDEX; Schema: public; Owner: -
+-- Name: ix_promotional_budgets_id; Type: INDEX; Schema: public; Owner: emcatalyst
 --
 
 CREATE INDEX ix_promotional_budgets_id ON public.promotional_budgets USING btree (id);
 
 
 --
--- Name: ix_promotional_events_event_code; Type: INDEX; Schema: public; Owner: -
+-- Name: ix_promotional_events_event_code; Type: INDEX; Schema: public; Owner: emcatalyst
 --
 
 CREATE UNIQUE INDEX ix_promotional_events_event_code ON public.promotional_events USING btree (event_code);
 
 
 --
--- Name: ix_promotional_events_id; Type: INDEX; Schema: public; Owner: -
+-- Name: ix_promotional_events_id; Type: INDEX; Schema: public; Owner: emcatalyst
 --
 
 CREATE INDEX ix_promotional_events_id ON public.promotional_events USING btree (id);
 
 
 --
--- Name: ix_territories_id; Type: INDEX; Schema: public; Owner: -
+-- Name: ix_territories_id; Type: INDEX; Schema: public; Owner: emcatalyst
 --
 
 CREATE INDEX ix_territories_id ON public.territories USING btree (id);
 
 
 --
--- Name: ix_user_groups_id; Type: INDEX; Schema: public; Owner: -
+-- Name: ix_user_groups_id; Type: INDEX; Schema: public; Owner: emcatalyst
 --
 
 CREATE INDEX ix_user_groups_id ON public.user_groups USING btree (id);
 
 
 --
--- Name: ix_users_email; Type: INDEX; Schema: public; Owner: -
+-- Name: ix_users_email; Type: INDEX; Schema: public; Owner: emcatalyst
 --
 
 CREATE UNIQUE INDEX ix_users_email ON public.users USING btree (email);
 
 
 --
--- Name: ix_users_employee_id; Type: INDEX; Schema: public; Owner: -
+-- Name: ix_users_employee_id; Type: INDEX; Schema: public; Owner: emcatalyst
 --
 
 CREATE UNIQUE INDEX ix_users_employee_id ON public.users USING btree (employee_id);
 
 
 --
--- Name: ix_users_id; Type: INDEX; Schema: public; Owner: -
+-- Name: ix_users_id; Type: INDEX; Schema: public; Owner: emcatalyst
 --
 
 CREATE INDEX ix_users_id ON public.users USING btree (id);
 
 
 --
--- Name: ix_vendor_bank_details_id; Type: INDEX; Schema: public; Owner: -
+-- Name: ix_vendor_bank_details_id; Type: INDEX; Schema: public; Owner: emcatalyst
 --
 
 CREATE INDEX ix_vendor_bank_details_id ON public.vendor_bank_details USING btree (id);
 
 
 --
--- Name: ix_vendor_invoices_id; Type: INDEX; Schema: public; Owner: -
+-- Name: ix_vendor_invoices_id; Type: INDEX; Schema: public; Owner: emcatalyst
 --
 
 CREATE INDEX ix_vendor_invoices_id ON public.vendor_invoices USING btree (id);
 
 
 --
--- Name: ix_vendor_invoices_serial_no; Type: INDEX; Schema: public; Owner: -
+-- Name: ix_vendor_invoices_serial_no; Type: INDEX; Schema: public; Owner: emcatalyst
 --
 
 CREATE UNIQUE INDEX ix_vendor_invoices_serial_no ON public.vendor_invoices USING btree (serial_no);
 
 
 --
--- Name: ix_vendor_withholding_id; Type: INDEX; Schema: public; Owner: -
+-- Name: ix_vendor_withholding_id; Type: INDEX; Schema: public; Owner: emcatalyst
 --
 
 CREATE INDEX ix_vendor_withholding_id ON public.vendor_withholding USING btree (id);
 
 
 --
--- Name: ix_vendors_id; Type: INDEX; Schema: public; Owner: -
+-- Name: ix_vendors_id; Type: INDEX; Schema: public; Owner: emcatalyst
 --
 
 CREATE INDEX ix_vendors_id ON public.vendors USING btree (id);
 
 
 --
--- Name: ix_vendors_lifnr; Type: INDEX; Schema: public; Owner: -
+-- Name: ix_vendors_lifnr; Type: INDEX; Schema: public; Owner: emcatalyst
 --
 
 CREATE UNIQUE INDEX ix_vendors_lifnr ON public.vendors USING btree (lifnr);
 
 
 --
--- Name: agreement_documents agreement_documents_agreement_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: agreement_documents agreement_documents_agreement_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.agreement_documents
@@ -7905,7 +8325,7 @@ ALTER TABLE ONLY public.agreement_documents
 
 
 --
--- Name: agreement_documents agreement_documents_uploaded_by_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: agreement_documents agreement_documents_uploaded_by_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.agreement_documents
@@ -7913,7 +8333,7 @@ ALTER TABLE ONLY public.agreement_documents
 
 
 --
--- Name: agreements agreements_approved_by_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: agreements agreements_approved_by_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.agreements
@@ -7921,7 +8341,7 @@ ALTER TABLE ONLY public.agreements
 
 
 --
--- Name: agreements agreements_created_by_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: agreements agreements_created_by_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.agreements
@@ -7929,7 +8349,7 @@ ALTER TABLE ONLY public.agreements
 
 
 --
--- Name: agreements agreements_division_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: agreements agreements_division_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.agreements
@@ -7937,7 +8357,7 @@ ALTER TABLE ONLY public.agreements
 
 
 --
--- Name: audit_history audit_history_changed_by_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: audit_history audit_history_changed_by_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.audit_history
@@ -7945,7 +8365,7 @@ ALTER TABLE ONLY public.audit_history
 
 
 --
--- Name: brs_applications brs_applications_compliance_approver_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: brs_applications brs_applications_compliance_approver_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.brs_applications
@@ -7953,7 +8373,7 @@ ALTER TABLE ONLY public.brs_applications
 
 
 --
--- Name: brs_applications brs_applications_division_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: brs_applications brs_applications_division_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.brs_applications
@@ -7961,7 +8381,7 @@ ALTER TABLE ONLY public.brs_applications
 
 
 --
--- Name: brs_applications brs_applications_hcp_doctor_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: brs_applications brs_applications_hcp_doctor_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.brs_applications
@@ -7969,7 +8389,7 @@ ALTER TABLE ONLY public.brs_applications
 
 
 --
--- Name: brs_applications brs_applications_initiator_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: brs_applications brs_applications_initiator_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.brs_applications
@@ -7977,7 +8397,7 @@ ALTER TABLE ONLY public.brs_applications
 
 
 --
--- Name: brs_applications brs_applications_l1_approver_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: brs_applications brs_applications_l1_approver_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.brs_applications
@@ -7985,7 +8405,7 @@ ALTER TABLE ONLY public.brs_applications
 
 
 --
--- Name: brs_applications brs_applications_l2_approver_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: brs_applications brs_applications_l2_approver_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.brs_applications
@@ -7993,7 +8413,7 @@ ALTER TABLE ONLY public.brs_applications
 
 
 --
--- Name: brs_applications brs_applications_survey_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: brs_applications brs_applications_survey_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.brs_applications
@@ -8001,7 +8421,7 @@ ALTER TABLE ONLY public.brs_applications
 
 
 --
--- Name: brs_applications brs_applications_vendor_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: brs_applications brs_applications_vendor_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.brs_applications
@@ -8009,7 +8429,7 @@ ALTER TABLE ONLY public.brs_applications
 
 
 --
--- Name: brs_audit_trail brs_audit_trail_application_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: brs_audit_trail brs_audit_trail_application_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.brs_audit_trail
@@ -8017,7 +8437,7 @@ ALTER TABLE ONLY public.brs_audit_trail
 
 
 --
--- Name: brs_audit_trail brs_audit_trail_performed_by_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: brs_audit_trail brs_audit_trail_performed_by_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.brs_audit_trail
@@ -8025,7 +8445,31 @@ ALTER TABLE ONLY public.brs_audit_trail
 
 
 --
--- Name: brs_otps brs_otps_application_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: brs_bulk_requests brs_bulk_requests_division_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: emcatalyst
+--
+
+ALTER TABLE ONLY public.brs_bulk_requests
+    ADD CONSTRAINT brs_bulk_requests_division_id_fkey FOREIGN KEY (division_id) REFERENCES public.divisions(id);
+
+
+--
+-- Name: brs_bulk_requests brs_bulk_requests_initiator_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: emcatalyst
+--
+
+ALTER TABLE ONLY public.brs_bulk_requests
+    ADD CONSTRAINT brs_bulk_requests_initiator_id_fkey FOREIGN KEY (initiator_id) REFERENCES public.users(id);
+
+
+--
+-- Name: brs_bulk_requests brs_bulk_requests_survey_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: emcatalyst
+--
+
+ALTER TABLE ONLY public.brs_bulk_requests
+    ADD CONSTRAINT brs_bulk_requests_survey_id_fkey FOREIGN KEY (survey_id) REFERENCES public.brs_surveys(id);
+
+
+--
+-- Name: brs_otps brs_otps_application_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.brs_otps
@@ -8033,7 +8477,7 @@ ALTER TABLE ONLY public.brs_otps
 
 
 --
--- Name: brs_survey_questions brs_survey_questions_survey_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: brs_survey_questions brs_survey_questions_survey_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.brs_survey_questions
@@ -8041,7 +8485,7 @@ ALTER TABLE ONLY public.brs_survey_questions
 
 
 --
--- Name: brs_surveys brs_surveys_created_by_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: brs_surveys brs_surveys_created_by_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.brs_surveys
@@ -8049,7 +8493,7 @@ ALTER TABLE ONLY public.brs_surveys
 
 
 --
--- Name: cost_centers cost_centers_division_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: cost_centers cost_centers_division_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.cost_centers
@@ -8057,7 +8501,7 @@ ALTER TABLE ONLY public.cost_centers
 
 
 --
--- Name: deviation_reports deviation_reports_raised_by_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: deviation_reports deviation_reports_raised_by_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.deviation_reports
@@ -8065,7 +8509,15 @@ ALTER TABLE ONLY public.deviation_reports
 
 
 --
--- Name: event_agreements event_agreements_doctor_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: doctor_portal_sessions doctor_portal_sessions_hcp_doctor_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: emcatalyst
+--
+
+ALTER TABLE ONLY public.doctor_portal_sessions
+    ADD CONSTRAINT doctor_portal_sessions_hcp_doctor_id_fkey FOREIGN KEY (hcp_doctor_id) REFERENCES public.hcp_doctors(id);
+
+
+--
+-- Name: event_agreements event_agreements_doctor_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.event_agreements
@@ -8073,7 +8525,7 @@ ALTER TABLE ONLY public.event_agreements
 
 
 --
--- Name: event_agreements event_agreements_event_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: event_agreements event_agreements_event_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.event_agreements
@@ -8081,7 +8533,7 @@ ALTER TABLE ONLY public.event_agreements
 
 
 --
--- Name: event_costs event_costs_event_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: event_costs event_costs_event_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.event_costs
@@ -8089,7 +8541,7 @@ ALTER TABLE ONLY public.event_costs
 
 
 --
--- Name: event_doctors event_doctors_event_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: event_doctors event_doctors_event_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.event_doctors
@@ -8097,7 +8549,7 @@ ALTER TABLE ONLY public.event_doctors
 
 
 --
--- Name: event_documents event_documents_event_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: event_documents event_documents_event_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.event_documents
@@ -8105,7 +8557,7 @@ ALTER TABLE ONLY public.event_documents
 
 
 --
--- Name: event_documents event_documents_uploaded_by_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: event_documents event_documents_uploaded_by_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.event_documents
@@ -8113,7 +8565,7 @@ ALTER TABLE ONLY public.event_documents
 
 
 --
--- Name: event_honorariums event_honorariums_doctor_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: event_honorariums event_honorariums_doctor_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.event_honorariums
@@ -8121,7 +8573,7 @@ ALTER TABLE ONLY public.event_honorariums
 
 
 --
--- Name: event_honorariums event_honorariums_event_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: event_honorariums event_honorariums_event_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.event_honorariums
@@ -8129,7 +8581,7 @@ ALTER TABLE ONLY public.event_honorariums
 
 
 --
--- Name: event_institutions event_institutions_event_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: event_institutions event_institutions_event_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.event_institutions
@@ -8137,7 +8589,7 @@ ALTER TABLE ONLY public.event_institutions
 
 
 --
--- Name: event_reports event_reports_generated_by_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: event_reports event_reports_generated_by_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.event_reports
@@ -8145,7 +8597,7 @@ ALTER TABLE ONLY public.event_reports
 
 
 --
--- Name: events events_approver_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: events events_approver_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.events
@@ -8153,7 +8605,7 @@ ALTER TABLE ONLY public.events
 
 
 --
--- Name: events events_division_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: events events_division_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.events
@@ -8161,7 +8613,7 @@ ALTER TABLE ONLY public.events
 
 
 --
--- Name: events events_initiator_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: events events_initiator_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.events
@@ -8169,7 +8621,7 @@ ALTER TABLE ONLY public.events
 
 
 --
--- Name: invoice_approvals invoice_approvals_approver_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: invoice_approvals invoice_approvals_approver_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.invoice_approvals
@@ -8177,7 +8629,7 @@ ALTER TABLE ONLY public.invoice_approvals
 
 
 --
--- Name: invoice_approvals invoice_approvals_invoice_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: invoice_approvals invoice_approvals_invoice_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.invoice_approvals
@@ -8185,7 +8637,7 @@ ALTER TABLE ONLY public.invoice_approvals
 
 
 --
--- Name: invoice_line_items invoice_line_items_invoice_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: invoice_line_items invoice_line_items_invoice_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.invoice_line_items
@@ -8193,7 +8645,7 @@ ALTER TABLE ONLY public.invoice_line_items
 
 
 --
--- Name: invoice_messages invoice_messages_invoice_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: invoice_messages invoice_messages_invoice_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.invoice_messages
@@ -8201,7 +8653,7 @@ ALTER TABLE ONLY public.invoice_messages
 
 
 --
--- Name: invoice_withholding invoice_withholding_invoice_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: invoice_withholding invoice_withholding_invoice_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.invoice_withholding
@@ -8209,7 +8661,7 @@ ALTER TABLE ONLY public.invoice_withholding
 
 
 --
--- Name: promotional_approvals promotional_approvals_approver_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: promotional_approvals promotional_approvals_approver_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.promotional_approvals
@@ -8217,7 +8669,7 @@ ALTER TABLE ONLY public.promotional_approvals
 
 
 --
--- Name: promotional_approvals promotional_approvals_promo_event_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: promotional_approvals promotional_approvals_promo_event_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.promotional_approvals
@@ -8225,7 +8677,7 @@ ALTER TABLE ONLY public.promotional_approvals
 
 
 --
--- Name: promotional_budgets promotional_budgets_promo_event_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: promotional_budgets promotional_budgets_promo_event_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.promotional_budgets
@@ -8233,7 +8685,7 @@ ALTER TABLE ONLY public.promotional_budgets
 
 
 --
--- Name: promotional_events promotional_events_division_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: promotional_events promotional_events_division_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.promotional_events
@@ -8241,7 +8693,7 @@ ALTER TABLE ONLY public.promotional_events
 
 
 --
--- Name: promotional_events promotional_events_initiator_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: promotional_events promotional_events_initiator_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.promotional_events
@@ -8249,7 +8701,7 @@ ALTER TABLE ONLY public.promotional_events
 
 
 --
--- Name: territories territories_division_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: territories territories_division_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.territories
@@ -8257,7 +8709,7 @@ ALTER TABLE ONLY public.territories
 
 
 --
--- Name: user_group_members user_group_members_group_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: user_group_members user_group_members_group_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.user_group_members
@@ -8265,7 +8717,7 @@ ALTER TABLE ONLY public.user_group_members
 
 
 --
--- Name: user_group_members user_group_members_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: user_group_members user_group_members_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.user_group_members
@@ -8273,7 +8725,7 @@ ALTER TABLE ONLY public.user_group_members
 
 
 --
--- Name: users users_cost_center_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: users users_cost_center_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.users
@@ -8281,7 +8733,7 @@ ALTER TABLE ONLY public.users
 
 
 --
--- Name: users users_division_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: users users_division_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.users
@@ -8289,7 +8741,7 @@ ALTER TABLE ONLY public.users
 
 
 --
--- Name: users users_function_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: users users_function_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.users
@@ -8297,7 +8749,7 @@ ALTER TABLE ONLY public.users
 
 
 --
--- Name: users users_manager_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: users users_manager_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.users
@@ -8305,7 +8757,7 @@ ALTER TABLE ONLY public.users
 
 
 --
--- Name: users users_territory_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: users users_territory_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.users
@@ -8313,7 +8765,7 @@ ALTER TABLE ONLY public.users
 
 
 --
--- Name: vendor_bank_details vendor_bank_details_vendor_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: vendor_bank_details vendor_bank_details_vendor_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.vendor_bank_details
@@ -8321,7 +8773,7 @@ ALTER TABLE ONLY public.vendor_bank_details
 
 
 --
--- Name: vendor_invoices vendor_invoices_event_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: vendor_invoices vendor_invoices_event_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.vendor_invoices
@@ -8329,7 +8781,7 @@ ALTER TABLE ONLY public.vendor_invoices
 
 
 --
--- Name: vendor_invoices vendor_invoices_submitted_by_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: vendor_invoices vendor_invoices_submitted_by_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.vendor_invoices
@@ -8337,7 +8789,7 @@ ALTER TABLE ONLY public.vendor_invoices
 
 
 --
--- Name: vendor_invoices vendor_invoices_vendor_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: vendor_invoices vendor_invoices_vendor_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.vendor_invoices
@@ -8345,7 +8797,7 @@ ALTER TABLE ONLY public.vendor_invoices
 
 
 --
--- Name: vendor_withholding vendor_withholding_vendor_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: vendor_withholding vendor_withholding_vendor_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: emcatalyst
 --
 
 ALTER TABLE ONLY public.vendor_withholding
@@ -8356,5 +8808,5 @@ ALTER TABLE ONLY public.vendor_withholding
 -- PostgreSQL database dump complete
 --
 
-\unrestrict RdmaMG8gYyWgjgy9XDK0miHqXgrkd1G87GtgMOHdHVIOVDLc9cATphGfQrYAXoh
+\unrestrict FlnEYtoYTp9vgIyVS7fn8Np1JkzMDEPvOYoxeBFxg44npEnEYFDGjVT3w403JIT
 
