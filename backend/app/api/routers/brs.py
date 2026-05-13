@@ -41,13 +41,22 @@ def _generate_brs_code(db: Session) -> str:
 
 def _get_user_division_ids(db: Session, user: User) -> List[int]:
     """Get division IDs the user has access to"""
-    if user.role.value == "Administrator":
+    if user.role.value == "Administrator" or user.is_superuser:
         from app.models.user import Division
         return [d.id for d in db.query(Division).all()]
-    ids = []
+    ids = set()
     if user.division_id:
-        ids.append(user.division_id)
-    return ids
+        ids.add(user.division_id)
+    # Also include divisions from BRS apps the user created
+    user_brs_divs = (
+        db.query(BrsApplication.division_id)
+        .filter(BrsApplication.created_by_id == user.id, BrsApplication.division_id != None)
+        .distinct()
+        .all()
+    )
+    for (div_id,) in user_brs_divs:
+        ids.add(div_id)
+    return list(ids) if ids else []
 
 
 def _has_role(user: User, role_name: str) -> bool:
@@ -568,7 +577,7 @@ def doctor_portal_get(token: str, db: Session = Depends(get_db)):
             "requires_agreement": survey.requires_agreement_download,
             "questions": [
                 {"id": q.id, "order_no": q.order_no, "question_text": q.question_text,
-                 "question_type": q.question_type.value if q.question_type else "free_text",
+                 "question_type": q.question_type or "free_text",
                  "options": q.options or [],
                  "is_required": q.is_required}
                 for q in survey.questions

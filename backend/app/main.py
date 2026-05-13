@@ -9,6 +9,7 @@ from app.core.config import settings
 from app.api.routers import auth, events, vendors, approvals, agreements, reports, access, promotional, master, brs, import_mcl
 from app.api.routers import rbac as rbac_router
 from app.api.routers import workflows as workflow_router
+from app.api.routers import brs_bulk
 
 logger = logging.getLogger(__name__)
 
@@ -82,6 +83,7 @@ app.include_router(brs.router, prefix=PREFIX)
 app.include_router(import_mcl.router, prefix=PREFIX)
 app.include_router(rbac_router.router, prefix=PREFIX)
 app.include_router(workflow_router.router, prefix=PREFIX)
+app.include_router(brs_bulk.router, prefix=PREFIX)
 
 os.makedirs("uploads", exist_ok=True)
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")

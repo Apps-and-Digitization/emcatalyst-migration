@@ -19,6 +19,7 @@ const PAGE_ROUTES = {
   agreements_list: '/agreements',
   admin_rbac: '/admin/rbac',
   admin_workflows: '/admin/workflows',
+  brs_bulk_upload: '/brs/bulk-upload',
 }
 
 export default function Unauthorized() {
@@ -27,8 +28,9 @@ export default function Unauthorized() {
   const { logout } = useAuthStore()
 
   const handleGoHome = () => {
-    for (const pageKey of accessiblePages) {
-      if (PAGE_ROUTES[pageKey]) {
+    // Navigate to first accessible page (use PAGE_ROUTES order as priority)
+    for (const pageKey of Object.keys(PAGE_ROUTES)) {
+      if (accessiblePages.includes(pageKey)) {
         navigate(PAGE_ROUTES[pageKey])
         return
       }

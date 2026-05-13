@@ -3,10 +3,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'react-hot-toast'
 import {
   Plus, Trash2, GripVertical, Edit3, Save, X, ChevronDown,
-  ChevronUp, Video, List, CheckSquare, AlignLeft, ToggleLeft, ArrowLeft, FileText
+  ChevronUp, List, CheckSquare, AlignLeft, ToggleLeft, ArrowLeft, FileText, Upload, Download
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { brsApi, accessApi } from '../../api/endpoints'
+import api from '../../api/client'
 import PageHeader from '../../components/ui/PageHeader'
 import Modal from '../../components/ui/Modal'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
@@ -15,8 +16,7 @@ const QUESTION_TYPES = [
   { value: 'free_text', label: 'Free Text', icon: AlignLeft },
   { value: 'single_select', label: 'Single Select', icon: ToggleLeft },
   { value: 'multi_select', label: 'Multi Select', icon: CheckSquare },
-  { value: 'dropdown', label: 'Dropdown', icon: List },
-  { value: 'video', label: 'Video', icon: Video },
+  { value: 'fill_in_blanks', label: 'Fill in the Blanks', icon: FileText },
 ]
 
 function QuestionTypeIcon({ type, size = 14 }) {
@@ -43,9 +43,9 @@ function QuestionCard({ q, surveyId, onRefresh }) {
       question_text: form.question_text,
       question_type: form.question_type,
       is_required: form.is_required,
-      min_duration_seconds: parseInt(form.min_duration_seconds) || 0,
-      video_url: form.video_url || null,
-      options: ['dropdown', 'single_select', 'multi_select'].includes(form.question_type)
+      min_duration_seconds: 0,
+      video_url: null,
+      options: ['single_select', 'multi_select'].includes(form.question_type)
         ? form.options_text.split('\n').map(s => s.trim()).filter(Boolean)
         : [],
     }),
@@ -59,7 +59,7 @@ function QuestionCard({ q, surveyId, onRefresh }) {
     onError: (e) => toast.error(e.response?.data?.detail || 'Delete failed'),
   })
 
-  const hasOptions = ['dropdown', 'single_select', 'multi_select'].includes(form.question_type)
+  const hasOptions = ['single_select', 'multi_select'].includes(form.question_type)
 
   return (
     <div className="border border-gray-200 rounded-lg bg-white">
@@ -75,6 +75,11 @@ function QuestionCard({ q, surveyId, onRefresh }) {
                 onChange={e => setForm(f => ({ ...f, question_text: e.target.value }))}
                 placeholder="Question text…"
               />
+              {form.question_type === 'fill_in_blanks' && (
+                <p className="text-xs text-gray-500 bg-blue-50 p-2 rounded">
+                  Use ___ (three underscores) to mark blanks. Example: "I prescribe ___ mg of drug X for ___ days"
+                </p>
+              )}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="label text-xs">Question Type</label>
@@ -102,22 +107,6 @@ function QuestionCard({ q, surveyId, onRefresh }) {
                     placeholder="Option 1&#10;Option 2&#10;Option 3" />
                 </div>
               )}
-              {form.question_type === 'video' && (
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="label text-xs">Video URL</label>
-                    <input className="input text-sm" value={form.video_url}
-                      onChange={e => setForm(f => ({ ...f, video_url: e.target.value }))}
-                      placeholder="https://…" />
-                  </div>
-                  <div>
-                    <label className="label text-xs">Min Watch Duration (seconds)</label>
-                    <input className="input text-sm" type="number" min={0}
-                      value={form.min_duration_seconds}
-                      onChange={e => setForm(f => ({ ...f, min_duration_seconds: e.target.value }))} />
-                  </div>
-                </div>
-              )}
               <div className="flex gap-2">
                 <button className="btn-primary py-1 px-3 text-xs flex items-center gap-1"
                   onClick={() => updateMut.mutate()} disabled={updateMut.isPending}>
@@ -137,9 +126,6 @@ function QuestionCard({ q, surveyId, onRefresh }) {
                   {QUESTION_TYPES.find(t => t.value === q.question_type)?.label || q.question_type}
                 </span>
                 {q.is_required && <span className="text-xs text-red-500">Required</span>}
-                {q.min_duration_seconds > 0 && (
-                  <span className="text-xs text-indigo-500">Min {q.min_duration_seconds}s</span>
-                )}
               </div>
               <p className="text-sm font-medium text-gray-800">{q.question_text}</p>
               {q.options?.length > 0 && (
@@ -148,10 +134,6 @@ function QuestionCard({ q, surveyId, onRefresh }) {
                     <span key={i} className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">{o}</span>
                   ))}
                 </div>
-              )}
-              {q.video_url && (
-                <a href={q.video_url} target="_blank" rel="noreferrer"
-                  className="text-xs text-blue-500 mt-1 block">🎬 {q.video_url}</a>
               )}
             </div>
           )}
@@ -197,9 +179,9 @@ function SurveyEditor({ surveyId, onBack }) {
       question_text: newQ.question_text,
       question_type: newQ.question_type,
       is_required: newQ.is_required,
-      min_duration_seconds: parseInt(newQ.min_duration_seconds) || 0,
-      video_url: newQ.video_url || null,
-      options: ['dropdown', 'single_select', 'multi_select'].includes(newQ.question_type)
+      min_duration_seconds: 0,
+      video_url: null,
+      options: ['single_select', 'multi_select'].includes(newQ.question_type)
         ? newQ.options_text.split('\n').map(s => s.trim()).filter(Boolean)
         : [],
     }),
@@ -214,7 +196,7 @@ function SurveyEditor({ surveyId, onBack }) {
 
   if (isLoading) return <LoadingSpinner />
 
-  const hasOptions = ['dropdown', 'single_select', 'multi_select'].includes(newQ.question_type)
+  const hasOptions = ['single_select', 'multi_select'].includes(newQ.question_type)
 
   return (
     <div>
@@ -311,20 +293,10 @@ function SurveyEditor({ surveyId, onBack }) {
                   placeholder="Option 1&#10;Option 2&#10;Option 3" />
               </div>
             )}
-            {newQ.question_type === 'video' && (
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="label text-xs">Video URL</label>
-                  <input className="input text-sm" value={newQ.video_url}
-                    onChange={e => setNewQ(q => ({ ...q, video_url: e.target.value }))} />
-                </div>
-                <div>
-                  <label className="label text-xs">Min Watch Duration (seconds)</label>
-                  <input className="input text-sm" type="number" min={0}
-                    value={newQ.min_duration_seconds}
-                    onChange={e => setNewQ(q => ({ ...q, min_duration_seconds: e.target.value }))} />
-                </div>
-              </div>
+            {newQ.question_type === 'fill_in_blanks' && (
+              <p className="text-xs text-gray-500 bg-blue-50 p-2 rounded">
+                Use ___ (three underscores) to mark blanks. Example: "I prescribe ___ mg of drug X for ___ days"
+              </p>
             )}
             <div className="flex gap-2">
               <button className="btn-primary text-sm" onClick={() => addQMut.mutate()}
@@ -350,6 +322,10 @@ export default function SurveyBuilder() {
   const qc = useQueryClient()
   const [activeSurveyId, setActiveSurveyId] = useState(null)
   const [showNewSurvey, setShowNewSurvey] = useState(false)
+  const [showImport, setShowImport] = useState(false)
+  const [importFile, setImportFile] = useState(null)
+  const [importing, setImporting] = useState(false)
+  const [importResult, setImportResult] = useState(null)
   const [newSurvey, setNewSurvey] = useState({ title: '', description: '', total_honorarium_amount: '', division_id: '' })
 
   const { data: surveys = [], isLoading } = useQuery({
@@ -383,6 +359,42 @@ export default function SurveyBuilder() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['brs-surveys'] }),
   })
 
+  const handleDownloadTemplate = async () => {
+    try {
+      const res = await api.get('/brs/bulk/survey-template', { responseType: 'blob' })
+      const url = window.URL.createObjectURL(new Blob([res.data]))
+      const link = document.createElement('a')
+      link.href = url
+      link.setAttribute('download', 'survey_import_template.xlsx')
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.URL.revokeObjectURL(url)
+    } catch (err) {
+      toast.error('Failed to download template')
+    }
+  }
+
+  const handleImport = async () => {
+    if (!importFile) return
+    setImporting(true)
+    setImportResult(null)
+    try {
+      const formData = new FormData()
+      formData.append('file', importFile)
+      const res = await api.post('/brs/bulk/survey-upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+      setImportResult(res.data)
+      toast.success(res.data.message)
+      qc.invalidateQueries({ queryKey: ['brs-surveys'] })
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Import failed')
+    } finally {
+      setImporting(false)
+    }
+  }
+
   if (activeSurveyId) {
     return (
       <div className="p-8 max-w-4xl mx-auto">
@@ -400,6 +412,9 @@ export default function SurveyBuilder() {
           <div className="flex gap-2">
             <button className="btn-secondary flex items-center gap-2" onClick={() => navigate('/brs')}>
               <ArrowLeft size={16} /> Back to BRS
+            </button>
+            <button className="btn-secondary flex items-center gap-2" onClick={() => setShowImport(true)}>
+              <Upload size={16} /> Import from Excel
             </button>
             <button className="btn-primary flex items-center gap-2" onClick={() => setShowNewSurvey(true)}>
               <Plus size={16} /> New Survey
@@ -488,6 +503,58 @@ export default function SurveyBuilder() {
               </button>
             </div>
           </div>
+      </Modal>
+
+      {/* Import from Excel Modal */}
+      <Modal open={showImport} title="Import Survey from Excel" onClose={() => { setShowImport(false); setImportResult(null); setImportFile(null) }}>
+        <div className="p-5 space-y-4">
+          <p className="text-sm text-gray-600">
+            Upload an Excel file to create a survey with all its questions. Each row = one question.
+          </p>
+          <button
+            onClick={handleDownloadTemplate}
+            className="flex items-center gap-2 text-sm text-green-700 hover:text-green-800 font-medium"
+          >
+            <Download size={14} /> Download Template
+          </button>
+          <div>
+            <input
+              type="file"
+              accept=".xlsx,.xls"
+              onChange={(e) => { setImportFile(e.target.files[0]); setImportResult(null) }}
+              className="text-sm"
+            />
+          </div>
+          {importResult && (
+            <div className="text-sm space-y-2">
+              {importResult.created?.length > 0 && (
+                <div className="bg-green-50 p-3 rounded border border-green-200">
+                  <p className="font-medium text-green-800">Created {importResult.created.length} survey(s):</p>
+                  {importResult.created.map(s => (
+                    <p key={s.id} className="text-green-700">• {s.title} ({s.question_count} questions)</p>
+                  ))}
+                </div>
+              )}
+              {importResult.errors?.length > 0 && (
+                <div className="bg-red-50 p-3 rounded border border-red-200 max-h-32 overflow-y-auto">
+                  {importResult.errors.map((e, i) => (
+                    <p key={i} className="text-red-700 text-xs">Row {e.row}: {e.error}</p>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+          <div className="flex gap-3 justify-end">
+            <button className="btn-secondary" onClick={() => { setShowImport(false); setImportResult(null); setImportFile(null) }}>Close</button>
+            <button
+              className="btn-primary"
+              onClick={handleImport}
+              disabled={!importFile || importing}
+            >
+              {importing ? 'Importing…' : 'Import'}
+            </button>
+          </div>
+        </div>
       </Modal>
     </div>
   )

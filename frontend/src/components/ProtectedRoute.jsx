@@ -16,6 +16,7 @@ const PAGE_ROUTES = {
   agreements_list: '/agreements',
   admin_rbac: '/admin/rbac',
   admin_workflows: '/admin/workflows',
+  brs_bulk_upload: '/brs/bulk-upload',
 }
 
 /**
@@ -29,9 +30,9 @@ export default function ProtectedRoute({ pageKey, children }) {
   if (!loaded || error) return children
 
   if (!accessiblePages.includes(pageKey)) {
-    // Find the first accessible page to redirect to
-    for (const pk of accessiblePages) {
-      if (PAGE_ROUTES[pk]) {
+    // Find the first accessible page to redirect to (use PAGE_ROUTES order as priority)
+    for (const pk of Object.keys(PAGE_ROUTES)) {
+      if (accessiblePages.includes(pk)) {
         return <Navigate to={PAGE_ROUTES[pk]} replace />
       }
     }

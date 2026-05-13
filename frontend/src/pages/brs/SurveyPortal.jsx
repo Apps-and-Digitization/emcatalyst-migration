@@ -373,7 +373,7 @@ export default function SurveyPortal() {
                   {q.question_type === 'free_text' && (
                     <textarea className="input h-16" onChange={e => setResponses(r => ({...r, [q.id]: e.target.value}))} />
                   )}
-                  {(q.question_type === 'single_select' || q.question_type === 'dropdown') && (
+                  {q.question_type === 'single_select' && (
                     <select className="input" onChange={e => setResponses(r => ({...r, [q.id]: e.target.value}))}>
                       <option value="">Select</option>
                       {q.options?.map(o => <option key={o} value={o}>{o}</option>)}
@@ -391,6 +391,30 @@ export default function SurveyPortal() {
                           }} />
                           {o}
                         </label>
+                      ))}
+                    </div>
+                  )}
+                  {q.question_type === 'fill_in_blanks' && (
+                    <div className="text-sm leading-relaxed">
+                      {q.question_text.split('___').map((part, i, arr) => (
+                        <span key={i}>
+                          {i > 0 && (
+                            <input
+                              type="text"
+                              className="inline-block w-32 mx-1 px-2 py-0.5 border-b-2 border-blue-400 bg-blue-50 text-center text-sm focus:outline-none focus:border-blue-600"
+                              placeholder={`blank ${i}`}
+                              onChange={e => {
+                                setResponses(r => {
+                                  const blanks = r[q.id] || []
+                                  const updated = [...blanks]
+                                  updated[i - 1] = e.target.value
+                                  return {...r, [q.id]: updated}
+                                })
+                              }}
+                            />
+                          )}
+                          {part}
+                        </span>
                       ))}
                     </div>
                   )}

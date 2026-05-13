@@ -15,11 +15,10 @@ class BrsStatus(str, enum.Enum):
 
 
 class BrsQuestionType(str, enum.Enum):
-    DROPDOWN = "dropdown"
     SINGLE_SELECT = "single_select"
     MULTI_SELECT = "multi_select"
     FREE_TEXT = "free_text"
-    VIDEO = "video"
+    FILL_IN_BLANKS = "fill_in_blanks"
 
 
 class BrsApplication(Base):
@@ -149,7 +148,7 @@ class BrsSurveyQuestion(Base):
     survey_id = Column(Integer, ForeignKey("brs_surveys.id"), nullable=False)
     order_no = Column(Integer, default=1)
     question_text = Column(Text, nullable=False)
-    question_type = Column(Enum(BrsQuestionType), default=BrsQuestionType.FREE_TEXT)
+    question_type = Column(String(50), default=BrsQuestionType.FREE_TEXT)
     options = Column(JSON)
     is_required = Column(Boolean, default=True)
     min_duration_seconds = Column(Integer, default=0)

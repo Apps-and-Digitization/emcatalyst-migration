@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Search } from 'lucide-react'
+import { Plus, Search, Upload } from 'lucide-react'
 import { brsApi } from '../../api/endpoints'
 import { fmtDate } from '../../utils/helpers'
 import PageHeader from '../../components/ui/PageHeader'
@@ -36,6 +36,11 @@ export default function BrsList() {
             <button className="btn-secondary flex items-center gap-2" onClick={() => navigate('/brs/survey-builder')}>
               Survey Builder
             </button>
+            {isMarketingHead && (
+              <button className="btn-secondary flex items-center gap-2" onClick={() => navigate('/brs/bulk-upload')}>
+                <Upload size={16} /> Bulk Upload
+              </button>
+            )}
             {isMarketingHead && (
               <button className="btn-primary flex items-center gap-2" onClick={() => navigate('/brs/new')}>
                 <Plus size={16} /> New BRS

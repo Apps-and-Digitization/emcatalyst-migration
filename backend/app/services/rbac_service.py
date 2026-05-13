@@ -31,6 +31,7 @@ DEFAULT_PAGES = [
     {"page_key": "brs_detail", "page_label": "BRS Detail", "page_path": "/brs/:id", "nav_group": "BRS"},
     {"page_key": "brs_edit", "page_label": "Edit BRS", "page_path": "/brs/:id/edit", "nav_group": "BRS"},
     {"page_key": "brs_survey_builder", "page_label": "Survey Builder", "page_path": "/brs/survey-builder", "nav_group": "BRS"},
+    {"page_key": "brs_bulk_upload", "page_label": "Bulk BRS Upload", "page_path": "/brs/bulk-upload", "nav_group": "BRS"},
     {"page_key": "masters", "page_label": "Masters", "page_path": "/masters", "nav_group": "Masters"},
     {"page_key": "reports", "page_label": "Reports", "page_path": "/reports", "nav_group": "Reports"},
     {"page_key": "access_management", "page_label": "Access Management", "page_path": "/access", "nav_group": "Admin"},

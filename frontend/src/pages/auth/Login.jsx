@@ -22,6 +22,7 @@ const PAGE_ROUTES = {
   agreements_list: '/agreements',
   admin_rbac: '/admin/rbac',
   admin_workflows: '/admin/workflows',
+  brs_bulk_upload: '/brs/bulk-upload',
 }
 
 export default function Login() {
@@ -34,7 +35,7 @@ export default function Login() {
   // If already logged in, redirect to first accessible page
   if (token) {
     if (loaded && accessiblePages.length > 0) {
-      const target = accessiblePages.find(pk => PAGE_ROUTES[pk])
+      const target = Object.keys(PAGE_ROUTES).find(pk => accessiblePages.includes(pk))
       return <Navigate to={target ? PAGE_ROUTES[target] : '/'} replace />
     }
     return <Navigate to="/" replace />
@@ -53,10 +54,10 @@ export default function Login() {
         const pages = accessRes.data.pages || []
         useAccessStore.getState().fetchAccess()
 
-        // Find first accessible nav page
+        // Find first accessible nav page (use PAGE_ROUTES order as priority)
         let targetRoute = '/'
-        for (const pageKey of pages) {
-          if (PAGE_ROUTES[pageKey]) {
+        for (const pageKey of Object.keys(PAGE_ROUTES)) {
+          if (pages.includes(pageKey)) {
             targetRoute = PAGE_ROUTES[pageKey]
             break
           }

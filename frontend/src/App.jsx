@@ -30,6 +30,7 @@ import Masters from './pages/masters/Masters'
 import BrsList from './pages/brs/BrsList'
 import BrsForm from './pages/brs/BrsForm'
 import BrsDetail from './pages/brs/BrsDetail'
+import BrsBulkUpload from './pages/brs/BrsBulkUpload'
 import SurveyBuilder from './pages/brs/SurveyBuilder'
 import SurveyPortal from './pages/brs/SurveyPortal'
 import DoctorLogin from './pages/brs/DoctorLogin'
@@ -104,6 +105,7 @@ export default function App() {
                 <Route path="masters" element={<ProtectedRoute pageKey="masters"><Masters /></ProtectedRoute>} />
                 <Route path="brs" element={<ProtectedRoute pageKey="brs_list"><BrsList /></ProtectedRoute>} />
                 <Route path="brs/new" element={<ProtectedRoute pageKey="brs_create"><BrsForm /></ProtectedRoute>} />
+                <Route path="brs/bulk-upload" element={<ProtectedRoute pageKey="brs_bulk_upload"><BrsBulkUpload /></ProtectedRoute>} />
                 <Route path="brs/:id/edit" element={<ProtectedRoute pageKey="brs_edit"><BrsForm /></ProtectedRoute>} />
                 <Route path="brs/survey-builder" element={<ProtectedRoute pageKey="brs_survey_builder"><SurveyBuilder /></ProtectedRoute>} />
                 <Route path="brs/:id" element={<ProtectedRoute pageKey="brs_detail"><BrsDetail /></ProtectedRoute>} />
