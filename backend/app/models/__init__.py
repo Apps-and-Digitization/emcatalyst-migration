@@ -20,7 +20,7 @@ from app.models.promotional import (
 from app.models.master import (
     CompanyCode, MasterDivision,
     Designation, EventType, DocumentType, Enumeration,
-    HcpDoctor, FmvCriteria, FmvParameter, MasterSpeciality, MasterHcpRole,
+    HcpDoctor, HcpDoctorDivision, FmvCriteria, FmvParameter, MasterSpeciality, MasterHcpRole,
     MasterTherapeutic, MasterState,
     MasterBrand, MasterMeal, MasterCity, MasterSponsorshipType
 )

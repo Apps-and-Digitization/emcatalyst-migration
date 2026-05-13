@@ -42,23 +42,30 @@ class EnumerationOut(BaseModel):
 
 class HcpDoctorOut(BaseModel):
     id: int
-    mendix_id: Optional[str] = None
+    division: Optional[str] = None
+    territory_name: Optional[str] = None
+    employee_code: Optional[str] = None
     first_name: Optional[str] = None
+    middle_name: Optional[str] = None
     last_name: Optional[str] = None
     full_name: Optional[str] = None
+    uid_number: Optional[str] = None
+    sbu_code: Optional[str] = None
+    gender: Optional[str] = None
+    doctor_type: Optional[str] = None
     qualification: Optional[str] = None
-    email: Optional[str] = None
-    pan_number: Optional[str] = None
+    speciality: Optional[str] = None
     city: Optional[str] = None
     state: Optional[str] = None
+    town_name: Optional[str] = None
+    birthday: Optional[str] = None
+    service_preference: Optional[str] = None
+    area_of_practice: Optional[str] = None
     mobile_number: Optional[str] = None
-    doctor_type: Optional[str] = None
+    email: Optional[str] = None
+    pan_number: Optional[str] = None
     hourly_rate: Optional[Decimal] = None
     max_capping: Optional[Decimal] = None
-    bank_name: Optional[str] = None
-    account_number: Optional[str] = None
-    ifsc_code: Optional[str] = None
-    name_as_per_bank: Optional[str] = None
     is_active: bool = True
 
     class Config:
@@ -190,9 +197,9 @@ def list_divisions(
     return db.query(Division).filter(Division.is_active == True).order_by(Division.name).all()
 
 
-@router.get("/hcp-doctors", response_model=List[HcpDoctorOut])
+@router.get("/hcp-doctors")
 def search_hcp_doctors(
-    q: Optional[str] = Query(None, description="Search by name, pan, email, city"),
+    q: Optional[str] = Query(None, description="Search by name, UID, pan, email, city"),
     limit: int = Query(50, le=200),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
@@ -205,11 +212,20 @@ def search_hcp_doctors(
             HcpDoctor.full_name.ilike(like),
             HcpDoctor.first_name.ilike(like),
             HcpDoctor.last_name.ilike(like),
+            HcpDoctor.uid_number.ilike(like),
             HcpDoctor.pan_number.ilike(like),
             HcpDoctor.email.ilike(like),
             HcpDoctor.city.ilike(like),
+            HcpDoctor.speciality.ilike(like),
         ))
-    return query.order_by(HcpDoctor.full_name).limit(limit).all()
+    doctors = query.order_by(HcpDoctor.full_name).limit(limit).all()
+    # Add divisions to response
+    result = []
+    for doc in doctors:
+        d = HcpDoctorOut.model_validate(doc).model_dump()
+        d["divisions"] = [{"id": div.id, "name": div.name} for div in doc.divisions]
+        result.append(d)
+    return result
 
 
 @router.get("/hcp-doctors/{doctor_id}", response_model=HcpDoctorOut)
@@ -294,29 +310,50 @@ def create_hcp_doctor(
     full_name: str,
     first_name: Optional[str] = None,
     last_name: Optional[str] = None,
+    middle_name: Optional[str] = None,
+    division: Optional[str] = None,
+    division_ids: Optional[str] = None,  # comma-separated division IDs
+    territory_name: Optional[str] = None,
+    employee_code: Optional[str] = None,
+    uid_number: Optional[str] = None,
+    sbu_code: Optional[str] = None,
     qualification: Optional[str] = None,
+    speciality: Optional[str] = None,
     email: Optional[str] = None,
     pan_number: Optional[str] = None,
     city: Optional[str] = None,
     state: Optional[str] = None,
+    town_name: Optional[str] = None,
     mobile_number: Optional[str] = None,
     doctor_type: Optional[str] = None,
+    gender: Optional[str] = None,
+    birthday: Optional[str] = None,
+    service_preference: Optional[str] = None,
+    area_of_practice: Optional[str] = None,
     hourly_rate: Optional[float] = None,
     max_capping: Optional[float] = None,
-    bank_name: Optional[str] = None,
-    account_number: Optional[str] = None,
-    ifsc_code: Optional[str] = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
+    from app.models.master import HcpDoctorDivision
     doc = HcpDoctor(
-        full_name=full_name, first_name=first_name, last_name=last_name,
-        qualification=qualification, email=email, pan_number=pan_number,
-        city=city, state=state, mobile_number=mobile_number,
-        doctor_type=doctor_type, hourly_rate=hourly_rate, max_capping=max_capping,
-        bank_name=bank_name, account_number=account_number, ifsc_code=ifsc_code
+        full_name=full_name, first_name=first_name, last_name=last_name, middle_name=middle_name,
+        division=division, territory_name=territory_name,
+        employee_code=employee_code, uid_number=uid_number, sbu_code=sbu_code,
+        qualification=qualification, speciality=speciality, email=email, pan_number=pan_number,
+        city=city, state=state, town_name=town_name, mobile_number=mobile_number,
+        doctor_type=doctor_type, gender=gender, birthday=birthday,
+        service_preference=service_preference, area_of_practice=area_of_practice,
+        hourly_rate=hourly_rate, max_capping=max_capping,
     )
     db.add(doc)
+    db.flush()
+    # Add division associations
+    if division_ids:
+        for did in division_ids.split(','):
+            did = did.strip()
+            if did:
+                db.add(HcpDoctorDivision(hcp_doctor_id=doc.id, division_id=int(did)))
     db.commit()
     db.refresh(doc)
     return doc
@@ -328,35 +365,60 @@ def update_hcp_doctor(
     full_name: Optional[str] = None,
     first_name: Optional[str] = None,
     last_name: Optional[str] = None,
+    middle_name: Optional[str] = None,
+    division: Optional[str] = None,
+    division_ids: Optional[str] = None,  # comma-separated
+    territory_name: Optional[str] = None,
+    employee_code: Optional[str] = None,
+    uid_number: Optional[str] = None,
+    sbu_code: Optional[str] = None,
     qualification: Optional[str] = None,
+    speciality: Optional[str] = None,
     email: Optional[str] = None,
     pan_number: Optional[str] = None,
     city: Optional[str] = None,
     state: Optional[str] = None,
+    town_name: Optional[str] = None,
     mobile_number: Optional[str] = None,
     doctor_type: Optional[str] = None,
+    gender: Optional[str] = None,
+    birthday: Optional[str] = None,
+    service_preference: Optional[str] = None,
+    area_of_practice: Optional[str] = None,
     hourly_rate: Optional[float] = None,
     max_capping: Optional[float] = None,
-    bank_name: Optional[str] = None,
-    account_number: Optional[str] = None,
-    ifsc_code: Optional[str] = None,
     is_active: Optional[bool] = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
+    from app.models.master import HcpDoctorDivision
     doc = db.query(HcpDoctor).filter(HcpDoctor.id == doctor_id).first()
     if not doc:
         raise HTTPException(status_code=404, detail="Doctor not found")
     for field, value in [
         ("full_name", full_name), ("first_name", first_name), ("last_name", last_name),
-        ("qualification", qualification), ("email", email), ("pan_number", pan_number),
-        ("city", city), ("state", state), ("mobile_number", mobile_number),
-        ("doctor_type", doctor_type), ("hourly_rate", hourly_rate), ("max_capping", max_capping),
-        ("bank_name", bank_name), ("account_number", account_number), ("ifsc_code", ifsc_code),
+        ("middle_name", middle_name), ("division", division),
+        ("territory_name", territory_name), ("employee_code", employee_code),
+        ("uid_number", uid_number), ("sbu_code", sbu_code),
+        ("qualification", qualification), ("speciality", speciality),
+        ("email", email), ("pan_number", pan_number),
+        ("city", city), ("state", state), ("town_name", town_name),
+        ("mobile_number", mobile_number), ("doctor_type", doctor_type),
+        ("gender", gender), ("birthday", birthday),
+        ("service_preference", service_preference), ("area_of_practice", area_of_practice),
+        ("hourly_rate", hourly_rate), ("max_capping", max_capping),
         ("is_active", is_active),
     ]:
         if value is not None:
             setattr(doc, field, value)
+    # Update division associations (replace all)
+    if division_ids is not None:
+        db.query(HcpDoctorDivision).filter(HcpDoctorDivision.hcp_doctor_id == doctor_id).delete()
+        if division_ids:  # not empty string
+            for did in division_ids.split(','):
+                did = did.strip()
+                if did:
+                    db.add(HcpDoctorDivision(hcp_doctor_id=doctor_id, division_id=int(did)))
     db.commit()
     db.refresh(doc)
     return doc
@@ -860,7 +922,7 @@ def delete_document_type(dt_id: int, db: Session = Depends(get_db), current_user
 
 # --- HCP Doctors full list (for Masters page) ---
 
-@router.get("/hcp-doctors-all", response_model=List[HcpDoctorOut])
+@router.get("/hcp-doctors-all")
 def list_all_hcp_doctors(
     q: Optional[str] = Query(None),
     state: Optional[str] = Query(None),
@@ -875,13 +937,19 @@ def list_all_hcp_doctors(
         like = f"%{q}%"
         query = query.filter(or_(
             HcpDoctor.full_name.ilike(like),
+            HcpDoctor.uid_number.ilike(like),
             HcpDoctor.pan_number.ilike(like),
             HcpDoctor.email.ilike(like),
             HcpDoctor.city.ilike(like),
             HcpDoctor.mobile_number.ilike(like),
+            HcpDoctor.speciality.ilike(like),
         ))
     if state:
         query = query.filter(HcpDoctor.state == state)
-    total = query.count()
     doctors = query.order_by(HcpDoctor.full_name).offset(skip).limit(limit).all()
-    return doctors
+    result = []
+    for doc in doctors:
+        d = HcpDoctorOut.model_validate(doc).model_dump()
+        d["divisions"] = [{"id": div.id, "name": div.name} for div in doc.divisions]
+        result.append(d)
+    return result

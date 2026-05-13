@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, Search, Edit2, Trash2 } from 'lucide-react'
+import { Plus, Search, Edit2, Trash2, Upload } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { masterApi } from '../../../api/endpoints'
+import { masterApi, accessApi } from '../../../api/endpoints'
+import api from '../../../api/client'
 import LoadingSpinner from '../../../components/ui/LoadingSpinner'
 import Modal from '../../../components/ui/Modal'
 
@@ -15,11 +16,18 @@ export default function DoctorsTab() {
   const [page, setPage] = useState(1)
   const [selectedDoc, setSelectedDoc] = useState(null)
   const [showAdd, setShowAdd] = useState(false)
-  const [addForm, setAddForm] = useState({ full_name: '', first_name: '', last_name: '', qualification: '', email: '', pan_number: '', city: '', state: '', mobile_number: '', doctor_type: '', hourly_rate: '', max_capping: '' })
+  const [importing, setImporting] = useState(false)
+  const [importStatus, setImportStatus] = useState(null)
+  const [addForm, setAddForm] = useState({ full_name: '', first_name: '', last_name: '', middle_name: '', division_ids: [], uid_number: '', qualification: '', speciality: '', email: '', pan_number: '', city: '', state: '', town_name: '', mobile_number: '', doctor_type: '', gender: '', area_of_practice: '', hourly_rate: '', max_capping: '' })
 
   const { data: states = [] } = useQuery({
     queryKey: ['master-states'],
     queryFn: () => masterApi.states().then(r => r.data),
+  })
+
+  const { data: divisions = [] } = useQuery({
+    queryKey: ['divisions'],
+    queryFn: () => accessApi.listDivisions().then(r => r.data),
   })
 
   const { data, isLoading } = useQuery({
@@ -37,14 +45,15 @@ export default function DoctorsTab() {
   const createDoctor = useMutation({
     mutationFn: () => {
       const payload = {}
-      for (const [k, v] of Object.entries(addForm)) { if (v) payload[k] = v }
+      for (const [k, v] of Object.entries(addForm)) { if (v && k !== 'division_ids') payload[k] = v }
       if (!payload.full_name) payload.full_name = `${payload.first_name || ''} ${payload.last_name || ''}`.trim()
+      if (addForm.division_ids.length > 0) payload.division_ids = addForm.division_ids.join(',')
       return masterApi.createHcpDoctor(payload)
     },
     onSuccess: () => {
       qc.invalidateQueries(['doctors-all'])
       setShowAdd(false)
-      setAddForm({ full_name: '', first_name: '', last_name: '', qualification: '', email: '', pan_number: '', city: '', state: '', mobile_number: '', doctor_type: '', hourly_rate: '', max_capping: '' })
+      setAddForm({ full_name: '', first_name: '', last_name: '', middle_name: '', division_ids: [], uid_number: '', qualification: '', speciality: '', email: '', pan_number: '', city: '', state: '', town_name: '', mobile_number: '', doctor_type: '', gender: '', area_of_practice: '', hourly_rate: '', max_capping: '' })
       toast.success('Doctor added')
     },
     onError: () => toast.error('Error adding doctor'),
@@ -75,7 +84,56 @@ export default function DoctorsTab() {
         <button className="btn-primary flex items-center gap-2 text-sm" onClick={() => setShowAdd(true)}>
           <Plus size={14} /> Add Doctor
         </button>
+        <label className="btn-secondary flex items-center gap-2 text-sm cursor-pointer">
+          <Upload size={14} /> Import Excel
+          <input type="file" className="hidden" accept=".xlsx,.xls"
+            onClick={e => { e.target.value = null }}
+            onChange={async e => {
+              const file = e.target.files[0]
+              if (!file) return
+              setImporting(true)
+              setImportStatus(null)
+              const formData = new FormData()
+              formData.append('file', file)
+              try {
+                const res = await api.post('/import/mcl', formData, { headers: { 'Content-Type': 'multipart/form-data' } })
+                const importId = res.data.import_id
+                toast.success(`Import started: ${res.data.file_name} (${res.data.file_size_mb} MB)`)
+                // Poll status
+                const poll = setInterval(async () => {
+                  try {
+                    const status = await api.get(`/import/status/${importId}`)
+                    setImportStatus(status.data)
+                    if (status.data.status === 'completed' || status.data.status === 'error') {
+                      clearInterval(poll)
+                      setImporting(false)
+                      if (status.data.status === 'completed') {
+                        toast.success(`Import complete: ${status.data.processed} records`)
+                        qc.invalidateQueries(['doctors-all'])
+                      } else {
+                        toast.error(`Import failed: ${status.data.message}`)
+                      }
+                    }
+                  } catch (err) { clearInterval(poll); setImporting(false) }
+                }, 2000)
+              } catch (err) {
+                toast.error(err.response?.data?.detail || 'Import failed')
+                setImporting(false)
+              }
+            }}
+          />
+        </label>
       </div>
+
+      {/* Import Status */}
+      {importStatus && importStatus.status === 'processing' && (
+        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <p className="text-sm font-medium text-blue-800">Importing... {importStatus.processed || 0} / {importStatus.total || '?'} records</p>
+          <div className="w-full bg-blue-200 rounded-full h-2 mt-2">
+            <div className="bg-blue-600 h-2 rounded-full transition-all" style={{ width: `${importStatus.total ? (importStatus.processed / importStatus.total * 100) : 0}%` }} />
+          </div>
+        </div>
+      )}
 
       {/* Add Doctor Form */}
       {showAdd && (
@@ -83,14 +141,38 @@ export default function DoctorsTab() {
           <p className="text-sm font-medium text-blue-800">Add New MCL Doctor</p>
           <div className="grid grid-cols-4 gap-3">
             <input className="input" placeholder="First Name *" value={addForm.first_name} onChange={e => setAddForm(p => ({...p, first_name: e.target.value}))} />
+            <input className="input" placeholder="Middle Name" value={addForm.middle_name} onChange={e => setAddForm(p => ({...p, middle_name: e.target.value}))} />
             <input className="input" placeholder="Last Name" value={addForm.last_name} onChange={e => setAddForm(p => ({...p, last_name: e.target.value}))} />
+            <div className="col-span-2">
+              <label className="label">Divisions</label>
+              <div className="border rounded-lg p-2 max-h-24 overflow-y-auto grid grid-cols-4 gap-1">
+                {divisions.map(d => (
+                  <label key={d.id} className="flex items-center gap-1 text-xs cursor-pointer">
+                    <input type="checkbox" checked={addForm.division_ids.includes(String(d.id))} onChange={e => {
+                      if (e.target.checked) setAddForm(p => ({...p, division_ids: [...p.division_ids, String(d.id)]}))
+                      else setAddForm(p => ({...p, division_ids: p.division_ids.filter(x => x !== String(d.id))}))
+                    }} />
+                    {d.name}
+                  </label>
+                ))}
+              </div>
+            </div>
+            <input className="input" placeholder="UID Number" value={addForm.uid_number} onChange={e => setAddForm(p => ({...p, uid_number: e.target.value}))} />
             <input className="input" placeholder="Qualification" value={addForm.qualification} onChange={e => setAddForm(p => ({...p, qualification: e.target.value}))} />
+            <input className="input" placeholder="Speciality" value={addForm.speciality} onChange={e => setAddForm(p => ({...p, speciality: e.target.value}))} />
             <input className="input" placeholder="Doctor Type" value={addForm.doctor_type} onChange={e => setAddForm(p => ({...p, doctor_type: e.target.value}))} />
+            <select className="input" value={addForm.gender} onChange={e => setAddForm(p => ({...p, gender: e.target.value}))}>
+              <option value="">Gender</option>
+              <option value="M">Male</option>
+              <option value="F">Female</option>
+            </select>
             <input className="input" placeholder="Email" value={addForm.email} onChange={e => setAddForm(p => ({...p, email: e.target.value}))} />
             <input className="input" placeholder="PAN Number" value={addForm.pan_number} onChange={e => setAddForm(p => ({...p, pan_number: e.target.value}))} />
             <input className="input" placeholder="Mobile" value={addForm.mobile_number} onChange={e => setAddForm(p => ({...p, mobile_number: e.target.value}))} />
             <input className="input" placeholder="City" value={addForm.city} onChange={e => setAddForm(p => ({...p, city: e.target.value}))} />
             <input className="input" placeholder="State" value={addForm.state} onChange={e => setAddForm(p => ({...p, state: e.target.value}))} />
+            <input className="input" placeholder="Town Name" value={addForm.town_name} onChange={e => setAddForm(p => ({...p, town_name: e.target.value}))} />
+            <input className="input" placeholder="Area of Practice" value={addForm.area_of_practice} onChange={e => setAddForm(p => ({...p, area_of_practice: e.target.value}))} />
             <input type="number" className="input" placeholder="Hourly Rate (₹)" value={addForm.hourly_rate} onChange={e => setAddForm(p => ({...p, hourly_rate: e.target.value}))} />
             <input type="number" className="input" placeholder="Max Capping (₹)" value={addForm.max_capping} onChange={e => setAddForm(p => ({...p, max_capping: e.target.value}))} />
           </div>
@@ -106,7 +188,7 @@ export default function DoctorsTab() {
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b">
               <tr>
-                {['Name', 'PAN', 'Qualification', 'City/State', 'Mobile', 'Type', 'Hourly Rate', 'Max Cap', 'Actions'].map(h => (
+                {['UID', 'Name', 'Speciality', 'City/State', 'Division', 'Mobile', 'Type', 'Actions'].map(h => (
                   <th key={h} className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">{h}</th>
                 ))}
               </tr>
@@ -114,18 +196,13 @@ export default function DoctorsTab() {
             <tbody className="divide-y">
               {doctors.map(d => (
                 <tr key={d.id} className="hover:bg-gray-50">
+                  <td className="px-3 py-2 font-mono text-xs text-blue-600">{d.uid_number || '—'}</td>
                   <td className="px-3 py-2 font-medium">{d.full_name || [d.first_name, d.last_name].filter(Boolean).join(' ') || '—'}</td>
-                  <td className="px-3 py-2 font-mono text-xs text-blue-600">{d.pan_number || '—'}</td>
-                  <td className="px-3 py-2 text-gray-500 text-xs">{d.qualification || '—'}</td>
+                  <td className="px-3 py-2 text-gray-500 text-xs">{d.speciality || d.qualification || '—'}</td>
                   <td className="px-3 py-2 text-gray-500 text-xs">{[d.city, d.state].filter(Boolean).join(', ') || '—'}</td>
+                  <td className="px-3 py-2 text-gray-500 text-xs">{d.divisions?.map(div => div.name).join(', ') || d.division || '—'}</td>
                   <td className="px-3 py-2 text-gray-500 text-xs">{d.mobile_number || '—'}</td>
                   <td className="px-3 py-2 text-gray-500 text-xs">{d.doctor_type || '—'}</td>
-                  <td className="px-3 py-2 text-right">
-                    {d.hourly_rate ? `₹${Number(d.hourly_rate).toLocaleString('en-IN')}` : '—'}
-                  </td>
-                  <td className="px-3 py-2 text-right">
-                    {d.max_capping ? `₹${Number(d.max_capping).toLocaleString('en-IN')}` : '—'}
-                  </td>
                   <td className="px-3 py-2">
                     <div className="flex gap-2">
                       <button className="text-xs text-blue-600 hover:underline" onClick={() => setSelectedDoc(d)}>
@@ -153,31 +230,62 @@ export default function DoctorsTab() {
       )}
 
       {/* Doctor detail/edit modal */}
-      <Modal open={!!selectedDoc} onClose={() => setSelectedDoc(null)} title="Edit Doctor" size="md">
+      <Modal open={!!selectedDoc} onClose={() => setSelectedDoc(null)} title="Edit Doctor" size="lg">
         {selectedDoc && (
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-3 gap-3">
               <div><label className="label">Full Name</label><input className="input" value={selectedDoc.full_name || ''} onChange={e => setSelectedDoc(p => ({...p, full_name: e.target.value}))} /></div>
-              <div><label className="label">PAN Number</label><input className="input" value={selectedDoc.pan_number || ''} onChange={e => setSelectedDoc(p => ({...p, pan_number: e.target.value}))} /></div>
+              <div><label className="label">First Name</label><input className="input" value={selectedDoc.first_name || ''} onChange={e => setSelectedDoc(p => ({...p, first_name: e.target.value}))} /></div>
+              <div><label className="label">Last Name</label><input className="input" value={selectedDoc.last_name || ''} onChange={e => setSelectedDoc(p => ({...p, last_name: e.target.value}))} /></div>
+              <div className="col-span-3">
+                <label className="label">Divisions</label>
+                <div className="border rounded-lg p-2 max-h-24 overflow-y-auto grid grid-cols-4 gap-1">
+                  {divisions.map(d => {
+                    const currentIds = selectedDoc._divIds || (selectedDoc.divisions || []).map(div => div.id)
+                    return (
+                      <label key={d.id} className="flex items-center gap-1 text-xs cursor-pointer">
+                        <input type="checkbox" checked={currentIds.includes(d.id)} onChange={e => {
+                          const ids = [...currentIds]
+                          if (e.target.checked) ids.push(d.id)
+                          else ids.splice(ids.indexOf(d.id), 1)
+                          setSelectedDoc(p => ({...p, _divIds: ids}))
+                        }} />
+                        {d.name}
+                      </label>
+                    )
+                  })}
+                </div>
+              </div>
+              <div><label className="label">UID Number</label><input className="input" value={selectedDoc.uid_number || ''} onChange={e => setSelectedDoc(p => ({...p, uid_number: e.target.value}))} /></div>
               <div><label className="label">Qualification</label><input className="input" value={selectedDoc.qualification || ''} onChange={e => setSelectedDoc(p => ({...p, qualification: e.target.value}))} /></div>
+              <div><label className="label">Speciality</label><input className="input" value={selectedDoc.speciality || ''} onChange={e => setSelectedDoc(p => ({...p, speciality: e.target.value}))} /></div>
               <div><label className="label">Doctor Type</label><input className="input" value={selectedDoc.doctor_type || ''} onChange={e => setSelectedDoc(p => ({...p, doctor_type: e.target.value}))} /></div>
+              <div><label className="label">Gender</label>
+                <select className="input" value={selectedDoc.gender || ''} onChange={e => setSelectedDoc(p => ({...p, gender: e.target.value}))}>
+                  <option value="">Select</option><option value="M">Male</option><option value="F">Female</option>
+                </select>
+              </div>
               <div><label className="label">City</label><input className="input" value={selectedDoc.city || ''} onChange={e => setSelectedDoc(p => ({...p, city: e.target.value}))} /></div>
               <div><label className="label">State</label><input className="input" value={selectedDoc.state || ''} onChange={e => setSelectedDoc(p => ({...p, state: e.target.value}))} /></div>
+              <div><label className="label">Town</label><input className="input" value={selectedDoc.town_name || ''} onChange={e => setSelectedDoc(p => ({...p, town_name: e.target.value}))} /></div>
               <div><label className="label">Mobile</label><input className="input" value={selectedDoc.mobile_number || ''} onChange={e => setSelectedDoc(p => ({...p, mobile_number: e.target.value}))} /></div>
               <div><label className="label">Email</label><input className="input" value={selectedDoc.email || ''} onChange={e => setSelectedDoc(p => ({...p, email: e.target.value}))} /></div>
+              <div><label className="label">PAN Number</label><input className="input" value={selectedDoc.pan_number || ''} onChange={e => setSelectedDoc(p => ({...p, pan_number: e.target.value}))} /></div>
+              <div><label className="label">Area of Practice</label><input className="input" value={selectedDoc.area_of_practice || ''} onChange={e => setSelectedDoc(p => ({...p, area_of_practice: e.target.value}))} /></div>
+              <div><label className="label">PAN Number</label><input className="input" value={selectedDoc.pan_number || ''} onChange={e => setSelectedDoc(p => ({...p, pan_number: e.target.value}))} /></div>
               <div><label className="label">Hourly Rate (₹)</label><input type="number" className="input" value={selectedDoc.hourly_rate || ''} onChange={e => setSelectedDoc(p => ({...p, hourly_rate: e.target.value}))} /></div>
               <div><label className="label">Max Capping (₹)</label><input type="number" className="input" value={selectedDoc.max_capping || ''} onChange={e => setSelectedDoc(p => ({...p, max_capping: e.target.value}))} /></div>
-              <div><label className="label">Bank Name</label><input className="input" value={selectedDoc.bank_name || ''} onChange={e => setSelectedDoc(p => ({...p, bank_name: e.target.value}))} /></div>
-              <div><label className="label">Account Number</label><input className="input" value={selectedDoc.account_number || ''} onChange={e => setSelectedDoc(p => ({...p, account_number: e.target.value}))} /></div>
-              <div><label className="label">IFSC Code</label><input className="input" value={selectedDoc.ifsc_code || ''} onChange={e => setSelectedDoc(p => ({...p, ifsc_code: e.target.value}))} /></div>
             </div>
             <div className="flex justify-end gap-2 pt-2 border-t">
               <button className="btn-secondary" onClick={() => setSelectedDoc(null)}>Cancel</button>
               <button className="btn-primary" onClick={() => {
                 const data = {}
                 for (const [k, v] of Object.entries(selectedDoc)) {
-                  if (k !== 'id' && k !== 'mendix_id' && k !== 'is_active' && k !== 'name_as_per_bank' && k !== 'hml' && v !== null && v !== undefined) data[k] = v
+                  if (k !== 'id' && k !== 'is_active' && k !== 'divisions' && k !== '_divIds' && v !== null && v !== undefined) data[k] = v
                 }
+                const divIds = selectedDoc._divIds || selectedDoc.divisions?.map(d => d.id) || []
+                if (divIds.length > 0) data.division_ids = divIds.join(',')
+                else data.division_ids = ''
                 masterApi.updateHcpDoctor(selectedDoc.id, data).then(() => {
                   qc.invalidateQueries(['doctors-all'])
                   setSelectedDoc(null)

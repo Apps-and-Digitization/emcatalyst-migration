@@ -57,8 +57,9 @@ export default function DoctorSearchModal({ open, onClose, onSelect }) {
                   {doc.qualification && <span className="text-gray-500 font-normal"> ({doc.qualification})</span>}
                 </p>
                 <p className="text-xs text-gray-500 truncate">
+                  {doc.uid_number && <span className="font-mono text-blue-600">{doc.uid_number}</span>}
+                  {doc.uid_number && ' • '}
                   {[doc.city, doc.state].filter(Boolean).join(', ')}
-                  {doc.pan_number && ` • PAN: ${doc.pan_number}`}
                 </p>
                 <p className="text-xs text-blue-600">
                   Rate: {fmtCurrency(doc.hourly_rate)}/hr

@@ -1,4 +1,5 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text, Numeric
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text, Numeric, ForeignKey
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.db.base import Base
 
@@ -66,45 +67,52 @@ class Enumeration(Base):
     is_active = Column(Boolean, default=True)
 
 
+class HcpDoctorDivision(Base):
+    """Many-to-many: Doctor belongs to multiple divisions"""
+    __tablename__ = "hcp_doctor_divisions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    hcp_doctor_id = Column(Integer, ForeignKey("hcp_doctors.id", ondelete="CASCADE"), nullable=False)
+    division_id = Column(Integer, ForeignKey("divisions.id", ondelete="CASCADE"), nullable=False)
+
+
 class HcpDoctor(Base):
     __tablename__ = "hcp_doctors"
 
     id = Column(Integer, primary_key=True, index=True)
-    mendix_id = Column(String(30), unique=True, index=True)
+    # MCL fields from Excel template
+    division = Column(String(200))  # Text field from import (for display/search)
+    territory_name = Column(String(200))
+    employee_code = Column(String(50))
     first_name = Column(String(200))
     middle_name = Column(String(200))
     last_name = Column(String(200))
     full_name = Column(String(200))
+    uid_number = Column(String(200), index=True, unique=True)
+    sbu_code = Column(String(200))
+    gender = Column(String(10))
+    doctor_type = Column(String(100))
     qualification = Column(String(200))
-    email = Column(String(200))
-    experience = Column(String(200))
-    uid_number = Column(String(200))
-    address = Column(String(200))
-    pan_number = Column(String(200))
+    speciality = Column(String(200))
     city = Column(String(200))
     state = Column(String(50))
-    pincode = Column(String(10))
-    degree = Column(String(50))
-    diploma = Column(String(50))
-    gender = Column(String(6))
-    mci_reg_number = Column(String(50))
-    is_registered_under_gst = Column(Boolean, default=False)
-    is_active = Column(Boolean, default=True)
-    is_draft = Column(Boolean, default=False)
-    sbu_code = Column(String(200))
+    town_name = Column(String(200))
+    birthday = Column(String(50))
+    service_preference = Column(String(200))
+    area_of_practice = Column(String(200))
     mobile_number = Column(String(20))
-    doctor_type = Column(String(20))
-    doctor_class = Column(String(1))
-    hml = Column(String(1))
-    name_as_per_bank = Column(String(70))
-    bank_name = Column(String(50))
-    account_number = Column(String(25))
-    bank_branch = Column(String(30))
-    ifsc_code = Column(String(50))
+    email = Column(String(200))
+    # Used in Events (FMV) and BRS
+    pan_number = Column(String(200))
     hourly_rate = Column(Numeric(12, 2))
     max_capping = Column(Numeric(12, 2))
+    # System fields
+    is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    # Many-to-many with divisions
+    divisions = relationship("Division", secondary="hcp_doctor_divisions", backref="hcp_doctors")
 
 
 class FmvCriteria(Base):
