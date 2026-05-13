@@ -166,7 +166,18 @@ export default function SurveyPortal() {
     queryFn: () => brsApi.doctorPortalGet(token).then(r => r.data),
   })
 
+  // Load existing uploaded documents
+  const { data: existingDocs } = useQuery({
+    queryKey: ['doctor-docs', token],
+    queryFn: () => brsApi.doctorListDocuments(token).then(r => r.data),
+  })
+
+  useEffect(() => {
+    if (existingDocs) setUploadedDocs(existingDocs)
+  }, [existingDocs])
+
   const [details, setDetails] = useState({})
+  const [uploadedDocs, setUploadedDocs] = useState([])
   const updateDetails = useMutation({
     mutationFn: (d) => brsApi.doctorUpdateDetails(token, d),
     onSuccess: () => { toast.success('Details saved'); setStep('agreement'); refetch() },
@@ -261,8 +272,68 @@ export default function SurveyPortal() {
               <div><label className="label">Mobile</label><input className="input" defaultValue={doctor.mobile || ''} onChange={e => setDetails(d => ({...d, mobile: e.target.value}))} /></div>
               <div><label className="label">Speciality</label><input className="input" defaultValue={doctor.speciality || ''} onChange={e => setDetails(d => ({...d, speciality: e.target.value}))} /></div>
             </div>
+
+            {/* Document Upload Section */}
+            <div className="border-t pt-4">
+              <h4 className="font-semibold text-sm mb-3">Upload Documents (Mandatory)</h4>
+              <p className="text-xs text-gray-500 mb-3">Upload PNG, JPEG, or PDF files only</p>
+              <div className="space-y-3">
+                {[
+                  { type: 'pan_copy', label: 'PAN Card Copy *' },
+                  { type: 'cancelled_cheque', label: 'Cancelled Cheque *' },
+                  { type: 'letterhead', label: 'Letter Head / Visiting Card *' },
+                  { type: 'others', label: 'Other Documents (multiple allowed)' },
+                ].map(docType => (
+                  <div key={docType.type} className="flex items-center gap-4 p-3 border rounded-lg">
+                    <div className="flex-1">
+                      <p className="text-sm font-medium">{docType.label}</p>
+                      {uploadedDocs.filter(d => d.document_type === docType.type).map(d => (
+                        <div key={d.id} className="flex items-center gap-2 mt-1">
+                          <span className="text-xs text-emerald-600">✓ {d.document_name}</span>
+                          <button className="text-xs text-red-400 hover:text-red-600" onClick={async () => {
+                            await brsApi.doctorDeleteDocument(token, d.id)
+                            setUploadedDocs(prev => prev.filter(x => x.id !== d.id))
+                          }}>Remove</button>
+                        </div>
+                      ))}
+                    </div>
+                    <label className="btn-secondary text-xs cursor-pointer flex items-center gap-1">
+                      Upload
+                      <input type="file" className="hidden" accept=".png,.jpg,.jpeg,.pdf"
+                        onClick={e => { e.target.value = null }}
+                        onChange={async e => {
+                          const file = e.target.files[0]
+                          if (!file) return
+                          const allowed = ['image/png', 'image/jpeg', 'image/jpg', 'application/pdf']
+                          if (!allowed.includes(file.type)) { toast.error('Only PNG, JPEG, or PDF allowed'); return }
+                          const formData = new FormData()
+                          formData.append('file', file)
+                          formData.append('document_type', docType.type)
+                          try {
+                            const res = await brsApi.doctorUploadDocument(token, formData)
+                            setUploadedDocs(prev => [...prev, res.data])
+                            toast.success('Uploaded')
+                          } catch (err) { toast.error(err.response?.data?.detail || 'Upload failed') }
+                        }}
+                      />
+                    </label>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             <div className="flex justify-end">
-              <button className="btn-primary" onClick={() => updateDetails.mutate(details)} disabled={updateDetails.isPending}>
+              <button className="btn-primary" onClick={() => {
+                // Validate mandatory documents
+                const hasPan = uploadedDocs.some(d => d.document_type === 'pan_copy')
+                const hasCheque = uploadedDocs.some(d => d.document_type === 'cancelled_cheque')
+                const hasLetterhead = uploadedDocs.some(d => d.document_type === 'letterhead')
+                if (!hasPan || !hasCheque || !hasLetterhead) {
+                  toast.error('Please upload all mandatory documents (PAN, Cancelled Cheque, Letterhead)')
+                  return
+                }
+                updateDetails.mutate(details)
+              }} disabled={updateDetails.isPending}>
                 {updateDetails.isPending ? 'Saving…' : 'Save & Continue'}
               </button>
             </div>

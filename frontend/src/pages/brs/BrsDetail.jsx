@@ -8,7 +8,7 @@ import PageHeader from '../../components/ui/PageHeader'
 import StatusBadge from '../../components/ui/StatusBadge'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
 import Modal from '../../components/ui/Modal'
-import { ArrowLeft, CheckCircle, XCircle, Clock, Download, ClipboardList, Edit2 } from 'lucide-react'
+import { ArrowLeft, CheckCircle, XCircle, Clock, Download, Edit2 } from 'lucide-react'
 import useAuthStore from '../../store/authStore'
 
 export default function BrsDetail() {
@@ -129,136 +129,102 @@ export default function BrsDetail() {
                     <td className="px-3 py-2">{d.honorarium_amount ? fmtCurrency(d.honorarium_amount) : '—'}</td>
                     <td className="px-3 py-2"><StatusBadge status={d.doctor_status} /></td>
                     <td className="px-3 py-2">
-                      <div className="flex gap-2">
-                        {d.has_signature && (
-                          <button
-                            className="text-xs text-blue-600 hover:underline flex items-center gap-1"
-                            onClick={async () => {
-                            try {
-                              const res = await brsApi.getDoctorAgreement(d.id)
-                              const data = res.data
-                              const today = new Date().toLocaleDateString('en-IN')
-                              const w = window.open('', '_blank')
-                              w.document.write(`
-<html><head><title>Agreement - ${data.doctor_name}</title>
+                      {(d.has_signature || d.survey_responses) && (
+                        <button
+                          className="text-xs text-blue-600 hover:underline flex items-center gap-1"
+                          onClick={async () => {
+                            let agreementData = null
+                            if (d.has_signature) {
+                              try { agreementData = (await brsApi.getDoctorAgreement(d.id)).data } catch(e) {}
+                            }
+                            const responses = d.survey_responses || {}
+                            const docs = d.uploaded_documents || []
+                            const today = new Date().toLocaleDateString('en-IN')
+                            const w = window.open('', '_blank')
+                            w.document.write(`
+<html><head><title>BRS Document - ${d.doctor_name}</title>
 <style>
-body{font-family:Arial,sans-serif;padding:50px 60px;max-width:800px;margin:auto;font-size:13px;line-height:1.7;color:#333}
-h2{text-align:center;font-size:16px;margin-bottom:4px}
-.subtitle{text-align:center;font-size:12px;color:#666;margin-bottom:30px}
-.to-block{margin-bottom:20px}
-.usage-block{margin-bottom:20px}
-.usage-block p{margin:2px 0}
-ol{padding-left:20px}
-ol li{margin-bottom:12px}
-.sig-section{margin-top:40px;display:flex;justify-content:space-between;border-top:1px solid #ccc;padding-top:30px}
+body{font-family:Arial,sans-serif;padding:40px 50px;max-width:800px;margin:auto;font-size:12px;line-height:1.6;color:#333}
+h2{text-align:center;font-size:15px;margin-bottom:2px}
+h3{font-size:13px;margin-top:30px;padding-bottom:5px;border-bottom:2px solid #003087;color:#003087}
+.subtitle{text-align:center;font-size:11px;color:#666;margin-bottom:25px}
+.to-block{margin-bottom:15px}
+ol{padding-left:18px;font-size:11px}
+ol li{margin-bottom:8px}
+.sig-section{margin-top:30px;display:flex;justify-content:space-between;border-top:1px solid #ccc;padding-top:20px}
 .sig-box{width:45%}
-.sig-box p{margin:4px 0}
-.sig-box img{max-height:80px;margin-top:8px}
-@media print{.no-print{display:none}body{padding:30px 40px}}
+.sig-box p{margin:3px 0;font-size:11px}
+.sig-box img{max-height:60px;margin-top:5px}
+.qa{margin-bottom:12px;padding:8px 12px;border:1px solid #e5e7eb;border-radius:4px}
+.qa .q{font-weight:bold;font-size:11px;color:#374151}
+.qa .a{color:#1f2937;padding-left:10px;margin-top:3px}
+.doc-list{margin-top:10px}
+.doc-item{padding:6px 10px;border:1px solid #e5e7eb;border-radius:4px;margin-bottom:6px;font-size:11px}
+.page-break{page-break-before:always}
+@media print{.no-print{display:none}body{padding:20px 30px}}
 </style></head><body>
+
+<!-- SECTION 1: AGREEMENT -->
+${agreementData ? `
 <h2>EXPERT SERVICES AGREEMENT (Survey)</h2>
-<p class="subtitle">BRS ID: ${brs.brs_code} / Date: ${data.agreement_signed_at ? new Date(data.agreement_signed_at).toLocaleDateString('en-IN') : today}</p>
-
-<div class="to-block">
-<p>To,</p>
-<p><strong>Dr. ${data.name_as_per_pan || data.doctor_name}</strong>,</p>
-</div>
-
-<div class="usage-block">
-<p><strong>Usage of:</strong> ${brs.survey_title || brs.title || ''}</p>
-<p><strong>Field of:</strong> ${brs.title || brs.survey_title || ''}</p>
-<p><strong>Amount:</strong> INR ${Number(data.honorarium_amount).toLocaleString('en-IN')}/-</p>
-</div>
-
+<p class="subtitle">BRS ID: ${brs.brs_code} / Date: ${agreementData.agreement_signed_at ? new Date(agreementData.agreement_signed_at).toLocaleDateString('en-IN') : today}</p>
+<div class="to-block"><p>To,</p><p><strong>Dr. ${agreementData.name_as_per_pan || agreementData.doctor_name}</strong></p></div>
+<p><strong>Usage of:</strong> ${brs.survey_title || brs.title || ''}<br/><strong>Amount:</strong> INR ${Number(agreementData.honorarium_amount).toLocaleString('en-IN')}/-</p>
 <ol>
-<li>We wish to seek your expert advice on usage of the above mentioned subject and its combination in different age group of patients and in furtherance to our discussion in this regard, we are pleased to appoint you as an Expert representing Emcure Pharmaceuticals Limited (hereinafter referred to as 'Emcure / Company').</li>
-<li>You are requested to perform the following activities as an 'Expert' (hereinafter referred to as 'purpose'):<br/><em>i. Advise and update the Company on developments and issues in the field mentioned above, in form of written opinions or expert survey reports.</em></li>
-<li>Emcure reserves the right to publish any lecture/talk given by you in such scientific congresses/conferences/meetings/seminars in any medical journals, make CDs and/or DVDs. The 'period' for your services shall begin on the date you sign this Agreement and shall continue for a period of one (1) year or such earlier period as the Company may deem appropriate. Emcure retains the right to terminate this Agreement without cause, by giving a ten (10) days written intimation to you.</li>
-<li>In exchange for you acting as our Expert in accordance with this Agreement, Emcure will pay you by cheque or e-transfer (in your name only) into your nominated account a onetime service fee <strong>INR ${Number(data.honorarium_amount).toLocaleString('en-IN')}/- (Rupees ${data.honorarium_amount ? 'as agreed' : ''})</strong> ('fees') for rendering expert services to the Company. Emcure will make such payment subject to necessary statutory deductions of withholding tax at the prevailing rates as per The Income Tax Act, 1961 and necessary certificate for the same will be provided to you.</li>
-<li>You agree not to use or disclose to third parties any confidential information which you will have access to during the course of providing service for so long as it remains unpublished.</li>
-<li>The following shall be an integral part of the deliverable to be provided by you to the Company:<br/><em>i. Your opinion/surveys on the topics for which your expert advice has been sought for under this Agreement on your letter head.</em></li>
-<li>Emcure confirms that your responsibilities as Emcure's Expert are in no way linked to or dependent on your prescribing or promoting Emcure's products. Payments and reimbursements under this Agreement strictly carry no obligation to promote any product.</li>
-<li>You agree to fulfill all the obligations under this Agreement in accordance with any professional standards, applicable laws and regulations.</li>
-<li>By signing below, you agree not to use or disclose to third parties any confidential information which you will have access to during the course of providing service.</li>
-<li>During the period of this Agreement, any documentation and data disclosed by the Company to you or created within the scope of this agreement shall be the sole and exclusive property of Emcure.</li>
-<li>You confirm that you have no conflict of interest which would prevent you from acting as an Expert in accordance with this Agreement.</li>
-<li>Emcure encourages you to be transparent about your involvement as Expert.</li>
-<li>Neither party may assign its rights or otherwise transfer this Agreement without the prior written consent of the other party.</li>
-<li>The parties are independent contractors and nothing in this Agreement implies any partnership, agency or employment relationship between the parties.</li>
-<li>This Agreement constitutes the entire agreement of the parties and supersedes any verbal or other agreements between the parties with respect to its subject matter.</li>
-<li>This Agreement is governed by and constructed in accordance with laws of India. Any dispute arising out of this Agreement shall be decided by arbitration under the Arbitration and Conciliation Act, 1996 at Pune.</li>
+<li>We wish to seek your expert advice on usage of the above mentioned subject. We are pleased to appoint you as an Expert representing Emcure Pharmaceuticals Limited.</li>
+<li>You are requested to advise and update the Company on developments and issues in the field mentioned above, in form of written opinions or expert survey reports.</li>
+<li>The period for your services shall begin on the date you sign this Agreement and shall continue for one (1) year.</li>
+<li>Emcure will pay you a onetime service fee of <strong>INR ${Number(agreementData.honorarium_amount).toLocaleString('en-IN')}/-</strong> subject to statutory deductions.</li>
+<li>You agree not to disclose confidential information to third parties.</li>
+<li>Your opinion/surveys on the topics shall be an integral part of the deliverable.</li>
+<li>Your responsibilities are in no way linked to prescribing or promoting Emcure's products.</li>
+<li>You agree to fulfill all obligations in accordance with professional standards and applicable laws.</li>
+<li>Any documentation created within the scope of this agreement shall be the property of Emcure.</li>
+<li>You confirm no conflict of interest which would prevent you from acting as an Expert.</li>
+<li>This Agreement is governed by laws of India. Disputes decided by arbitration at Pune.</li>
 </ol>
-
 <div class="sig-section">
-<div class="sig-box">
-<p><strong>HCP Name:</strong></p>
-<p>${data.name_as_per_pan || data.doctor_name}</p>
-<p style="margin-top:16px"><strong>HCP Signature:</strong></p>
-<img src="${data.signature}" alt="Doctor Signature" />
+<div class="sig-box"><p><strong>HCP Name:</strong></p><p>${agreementData.name_as_per_pan || agreementData.doctor_name}</p><p style="margin-top:12px"><strong>Signature:</strong></p><img src="${agreementData.signature}" /></div>
+<div class="sig-box"><p><strong>Emcure Authorized Signatory</strong></p><p>Name: _______________</p><p style="margin-top:12px">Sign: _______________</p></div>
 </div>
-<div class="sig-box">
-<p><strong>Emcure Authorized Signatory</strong></p>
-<p>Name: _______________</p>
-<p style="margin-top:16px">Sign: _______________</p>
+` : '<p><em>Agreement not yet signed</em></p>'}
+
+<!-- SECTION 2: SURVEY RESPONSES -->
+<div class="${agreementData ? 'page-break' : ''}">
+<h3>Survey Responses</h3>
+<p style="font-size:11px;color:#666">Doctor: ${d.doctor_name} | Completed: ${d.survey_completed_at ? new Date(d.survey_completed_at).toLocaleDateString('en-IN') : 'Pending'}</p>
+${Object.keys(responses).length > 0 ? Object.entries(responses).map(([qId, val]) => {
+  const question = typeof val === 'object' && val?.question ? val.question : 'Question ' + qId
+  const answer = typeof val === 'object' && val?.answer != null ? (Array.isArray(val.answer) ? val.answer.join(', ') : val.answer) : (typeof val === 'string' ? val : (Array.isArray(val) ? val.join(', ') : String(val || '—')))
+  return '<div class="qa"><div class="q">' + question + '</div><div class="a">' + (answer || '—') + '</div></div>'
+}).join('') : '<p><em>Survey not yet completed</em></p>'}
 </div>
-</div>
+
+<!-- SECTION 3: UPLOADED DOCUMENTS -->
+<div class="page-break">
+<h3>Uploaded Documents</h3>
+${docs.length > 0 ? docs.map(doc => {
+  const isImage = doc.document_name?.match(/\.(png|jpg|jpeg)$/i)
+  const isPdf = doc.document_name?.match(/\.pdf$/i)
+  const fileUrl = '/' + doc.file_path
+  if (isImage) {
+    return '<div class="page-break" style="text-align:center"><p style="font-size:11px;color:#666;margin-bottom:10px"><strong>' + doc.document_type.replace(/_/g, ' ').toUpperCase() + '</strong> — ' + doc.document_name + '</p><img src="' + fileUrl + '" style="max-width:100%;max-height:90vh;border:1px solid #ddd" /></div>'
+  } else if (isPdf) {
+    return '<div class="page-break"><p style="font-size:11px;color:#666;margin-bottom:10px"><strong>' + doc.document_type.replace(/_/g, ' ').toUpperCase() + '</strong> — ' + doc.document_name + '</p><iframe src="' + fileUrl + '" style="width:100%;height:90vh;border:1px solid #ddd"></iframe></div>'
+  }
+  return '<div class="page-break"><p><strong>' + doc.document_type.replace(/_/g, ' ').toUpperCase() + ':</strong> ' + doc.document_name + ' <a href="' + fileUrl + '" target="_blank">[Open]</a></p></div>'
+}).join('') : '<p><em>No documents uploaded</em></p>'}
 
 <div class="no-print" style="margin-top:30px;text-align:center">
-<button onclick="window.print()" style="padding:10px 30px;background:#003087;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:14px">Download as PDF / Print</button>
+<button onclick="window.print()" style="padding:10px 30px;background:#003087;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:14px">Download as PDF</button>
 </div>
 </body></html>`)
-                              w.document.close()
-                            } catch (e) {
-                              toast.error('Agreement not available')
-                            }
+                            w.document.close()
                           }}
                         >
-                          <Download size={12} /> Agreement
+                          <Download size={12} /> Download
                         </button>
-                        )}
-                        {d.survey_responses && (
-                          <button
-                            className="text-xs text-emerald-600 hover:underline flex items-center gap-1"
-                            onClick={() => {
-                              const w = window.open('', '_blank')
-                              const responses = d.survey_responses
-                              w.document.write(`
-<html><head><title>Survey Responses - ${d.doctor_name}</title>
-<style>
-body{font-family:Arial,sans-serif;padding:50px 60px;max-width:800px;margin:auto;font-size:13px;color:#333}
-h2{text-align:center;margin-bottom:4px}
-.subtitle{text-align:center;color:#666;font-size:12px;margin-bottom:30px}
-.info{margin-bottom:20px;padding:15px;background:#f5f8ff;border-radius:6px}
-.info p{margin:4px 0}
-.qa{margin-bottom:16px;padding:12px;border:1px solid #e5e7eb;border-radius:6px}
-.qa .q{font-weight:bold;margin-bottom:6px;color:#374151}
-.qa .a{color:#1f2937;padding-left:12px}
-@media print{.no-print{display:none}}
-</style></head><body>
-<h2>Survey Responses</h2>
-<p class="subtitle">BRS: ${brs.brs_code}</p>
-<div class="info">
-<p><strong>Doctor:</strong> ${d.doctor_name}</p>
-<p><strong>PAN:</strong> ${d.pan_number || '—'}</p>
-<p><strong>Email:</strong> ${d.email || '—'}</p>
-<p><strong>Completed:</strong> ${d.survey_completed_at ? new Date(d.survey_completed_at).toLocaleDateString('en-IN') : '—'}</p>
-</div>
-${Object.entries(responses).map(([qId, val]) => {
-  const question = typeof val === 'object' && val?.question ? val.question : `Question ${qId}`
-  const answer = typeof val === 'object' && val?.answer != null ? (Array.isArray(val.answer) ? val.answer.join(', ') : val.answer) : (typeof val === 'string' ? val : (Array.isArray(val) ? val.join(', ') : String(val || '—')))
-  return `<div class="qa"><div class="q">${question}</div><div class="a">${answer || '—'}</div></div>`
-}).join('')}
-<div class="no-print" style="margin-top:30px;text-align:center">
-<button onclick="window.print()" style="padding:10px 30px;background:#003087;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:14px">Download as PDF / Print</button>
-</div>
-</body></html>`)
-                              w.document.close()
-                            }}
-                          >
-                            <ClipboardList size={12} /> Responses
-                          </button>
-                        )}
-                      </div>
+                      )}
                     </td>
                   </tr>
                 ))}

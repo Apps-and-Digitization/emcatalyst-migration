@@ -210,6 +210,9 @@ export const brsApi = {
   doctorUpdateDetails: (token, data) => api.post(`/brs/doctor-portal/${token}/update-details`, data),
   doctorSignAgreement: (token, signature) => api.post(`/brs/doctor-portal/${token}/sign-agreement`, null, { params: { signature } }),
   doctorSubmitSurvey: (token, data) => api.post(`/brs/doctor-portal/${token}/submit-survey`, data),
+  doctorUploadDocument: (token, formData) => api.post(`/brs/doctor-portal/${token}/upload-document`, formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  doctorListDocuments: (token) => api.get(`/brs/doctor-portal/${token}/documents`),
+  doctorDeleteDocument: (token, docId) => api.delete(`/brs/doctor-portal/${token}/documents/${docId}`),
 }
 
 // Event Agreements (nested under events)

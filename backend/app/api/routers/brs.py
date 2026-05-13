@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from sqlalchemy.orm import Session
 from sqlalchemy import func, desc
 from typing import Optional, List
@@ -325,6 +325,10 @@ def get_application(app_id: int, db: Session = Depends(get_db), current_user: Us
                 "has_signature": bool(d.agreement_signature),
                 "survey_completed_at": d.survey_completed_at.isoformat() if d.survey_completed_at else None,
                 "survey_responses": d.survey_responses,
+                "uploaded_documents": [
+                    {"id": doc.id, "document_type": doc.document_type, "document_name": doc.document_name, "file_path": doc.file_path}
+                    for doc in (d.documents or [])
+                ],
             }
             for d in a.doctors
         ],
@@ -582,6 +586,83 @@ def doctor_submit_survey(token: str, data: dict, db: Session = Depends(get_db)):
 
     db.commit()
     return {"ok": True, "brs_completed": all_done}
+
+
+@router.post("/doctor-portal/{token}/upload-document")
+async def doctor_upload_document(
+    token: str,
+    document_type: str = Form(...),
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db)
+):
+    """Doctor uploads a document (PAN, Cheque, Letterhead, Others)"""
+    from app.models.brs import BrsDoctorDocument
+    import os, uuid, shutil
+
+    doc = db.query(BrsDoctor).filter(BrsDoctor.login_token == token).first()
+    if not doc:
+        raise HTTPException(404, "Invalid token")
+
+    # Validate file type
+    allowed_types = ['image/png', 'image/jpeg', 'image/jpg', 'application/pdf']
+    if file.content_type not in allowed_types:
+        raise HTTPException(400, "Only PNG, JPEG, or PDF files are allowed")
+
+    # Validate document_type
+    valid_doc_types = ['pan_copy', 'cancelled_cheque', 'letterhead', 'others']
+    if document_type not in valid_doc_types:
+        raise HTTPException(400, f"Invalid document type. Must be one of: {valid_doc_types}")
+
+    # Save file
+    upload_dir = f"uploads/brs/doctors/{doc.id}"
+    os.makedirs(upload_dir, exist_ok=True)
+    ext = os.path.splitext(file.filename)[1]
+    filename = f"{document_type}_{uuid.uuid4().hex[:8]}{ext}"
+    file_path = os.path.join(upload_dir, filename)
+
+    with open(file_path, "wb") as f:
+        shutil.copyfileobj(file.file, f)
+
+    # Save record
+    doc_record = BrsDoctorDocument(
+        brs_doctor_id=doc.id,
+        document_type=document_type,
+        document_name=file.filename,
+        file_path=file_path,
+        mime_type=file.content_type,
+    )
+    db.add(doc_record)
+    db.commit()
+    db.refresh(doc_record)
+    return {"id": doc_record.id, "document_type": document_type, "document_name": file.filename}
+
+
+@router.get("/doctor-portal/{token}/documents")
+def doctor_list_documents(token: str, db: Session = Depends(get_db)):
+    """List documents uploaded by doctor"""
+    from app.models.brs import BrsDoctorDocument
+    doc = db.query(BrsDoctor).filter(BrsDoctor.login_token == token).first()
+    if not doc:
+        raise HTTPException(404, "Invalid token")
+    return [
+        {"id": d.id, "document_type": d.document_type, "document_name": d.document_name, "file_path": d.file_path}
+        for d in doc.documents
+    ]
+
+
+@router.delete("/doctor-portal/{token}/documents/{doc_id}")
+def doctor_delete_document(token: str, doc_id: int, db: Session = Depends(get_db)):
+    """Delete an uploaded document"""
+    from app.models.brs import BrsDoctorDocument
+    doc = db.query(BrsDoctor).filter(BrsDoctor.login_token == token).first()
+    if not doc:
+        raise HTTPException(404, "Invalid token")
+    doc_record = db.query(BrsDoctorDocument).filter(BrsDoctorDocument.id == doc_id, BrsDoctorDocument.brs_doctor_id == doc.id).first()
+    if not doc_record:
+        raise HTTPException(404, "Document not found")
+    db.delete(doc_record)
+    db.commit()
+    return {"ok": True}
 
 
 # ─────────────────────────────────────────────

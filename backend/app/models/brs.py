@@ -102,6 +102,22 @@ class BrsDoctor(Base):
 
     brs_application = relationship("BrsApplication", back_populates="doctors")
     hcp_doctor = relationship("HcpDoctor")
+    documents = relationship("BrsDoctorDocument", back_populates="doctor", cascade="all, delete-orphan")
+
+
+class BrsDoctorDocument(Base):
+    """Documents uploaded by doctor (PAN, Cheque, Letterhead, etc.)"""
+    __tablename__ = "brs_doctor_documents"
+
+    id = Column(Integer, primary_key=True, index=True)
+    brs_doctor_id = Column(Integer, ForeignKey("brs_doctors.id"), nullable=False)
+    document_type = Column(String(50), nullable=False)  # pan_copy, cancelled_cheque, letterhead, others
+    document_name = Column(String(300))
+    file_path = Column(String(500))
+    mime_type = Column(String(100))
+    uploaded_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    doctor = relationship("BrsDoctor", back_populates="documents")
 
 
 class BrsSurvey(Base):
