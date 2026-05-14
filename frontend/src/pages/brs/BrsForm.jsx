@@ -25,9 +25,13 @@ export default function BrsForm() {
   const [doctorSearchOpen, setDoctorSearchOpen] = useState(false)
 
   const { data: surveys = [] } = useQuery({ queryKey: ['brs-surveys'], queryFn: () => brsApi.listSurveys().then(r => r.data) })
-  const { data: divisions = [] } = useQuery({ queryKey: ['divisions'], queryFn: () => accessApi.listDivisions().then(r => r.data) })
+  const { data: divisions = [] } = useQuery({ queryKey: ['my-divisions'], queryFn: () => accessApi.listMyDivisions().then(r => r.data) })
   const { data: therapeutics = [] } = useQuery({ queryKey: ['therapeutics'], queryFn: () => masterApi.therapeutics().then(r => r.data) })
   const { data: brands = [] } = useQuery({ queryKey: ['brands'], queryFn: () => masterApi.brands().then(r => r.data) })
+  const { data: territoryManagers = [] } = useQuery({
+    queryKey: ['territory-managers'],
+    queryFn: () => accessApi.subordinatesByRole('Territory Manager').then(r => r.data),
+  })
 
   // Load existing BRS in edit mode
   const { data: existingBrs } = useQuery({
@@ -198,7 +202,14 @@ export default function BrsForm() {
           <div className="grid grid-cols-3 gap-4">
             <div>
               <label className="label">On Field Execution By *</label>
-              <input className="input" value={form.on_field_execution_by} onChange={e => updateField('on_field_execution_by', e.target.value)} />
+              <select className="input" value={form.on_field_execution_by} onChange={e => updateField('on_field_execution_by', e.target.value)}>
+                <option value="">Select Territory Manager</option>
+                {territoryManagers.map(tm => (
+                  <option key={tm.id} value={tm.employee_id}>
+                    {tm.name} {tm.employee_id ? `(${tm.employee_id})` : ''} {tm.territory_name ? `– ${tm.territory_name}` : ''}
+                  </option>
+                ))}
+              </select>
             </div>
             <div>
               <label className="label">Start Date *</label>

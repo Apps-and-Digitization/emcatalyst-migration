@@ -2,9 +2,9 @@ import api from './client'
 
 // Auth
 export const authApi = {
-  login: (email, password) => {
+  login: (employeeId, password) => {
     const form = new URLSearchParams()
-    form.append('username', email)
+    form.append('username', employeeId)
     form.append('password', password)
     return api.post('/auth/login', form, { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } })
   },
@@ -18,6 +18,9 @@ export const authApi = {
   getUserRoles: (id) => api.get(`/auth/users/${id}/roles`),
   assignUserRole: (id, role) => api.post(`/auth/users/${id}/roles`, null, { params: { role } }),
   removeUserRole: (id, role) => api.delete(`/auth/users/${id}/roles/${role}`),
+  getUserDivisions: (id) => api.get(`/auth/users/${id}/divisions`),
+  assignUserDivision: (id, division_id) => api.post(`/auth/users/${id}/divisions`, null, { params: { division_id } }),
+  removeUserDivision: (id, division_id) => api.delete(`/auth/users/${id}/divisions/${division_id}`),
 }
 
 // Events
@@ -97,6 +100,7 @@ export const reportsApi = {
 // Access Management
 export const accessApi = {
   listDivisions: () => api.get('/access/divisions'),
+  listMyDivisions: () => api.get('/access/divisions/my'),
   createDivision: (name, code) => api.post('/access/divisions', null, { params: { name, code } }),
   listCostCenters: (division_id) => api.get('/access/cost-centers', { params: { division_id } }),
   createCostCenter: (data) => api.post('/access/cost-centers', null, { params: data }),
@@ -107,6 +111,7 @@ export const accessApi = {
   userChain: (employeeId) => api.get(`/access/hierarchy/user/${employeeId}`),
   hierarchyTree: (rootEmployeeId, depth = 3) => api.get('/access/hierarchy/tree', { params: { root_employee_id: rootEmployeeId, depth } }),
   searchEmployees: (q, limit = 20) => api.get('/access/hierarchy/search', { params: { q, limit } }),
+  subordinatesByRole: (role) => api.get('/access/hierarchy/subordinates-by-role', { params: { role } }),
 }
 
 // Promotional

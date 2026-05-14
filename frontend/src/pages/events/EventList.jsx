@@ -8,6 +8,7 @@ import { fmtDate, fmtCurrency } from '../../utils/helpers'
 import PageHeader from '../../components/ui/PageHeader'
 import StatusBadge from '../../components/ui/StatusBadge'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
+import useAuthStore from '../../store/authStore'
 import EmptyState from '../../components/ui/EmptyState'
 
 const PAGE_SIZE = 50
@@ -15,6 +16,7 @@ const PAGE_SIZE = 50
 export default function EventList() {
   const navigate = useNavigate()
   const qc = useQueryClient()
+  const { user } = useAuthStore()
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [page, setPage] = useState(1)
@@ -125,6 +127,11 @@ export default function EventList() {
                             <Trash2 size={12} /> Delete
                           </button>
                         </>
+                      )}
+                      {e.status !== 'Draft' && user?.role === 'Administrator' && (
+                        <button className="text-red-500 hover:underline text-xs flex items-center gap-1" onClick={() => { if (confirm(`Delete event ${e.event_code}? This cannot be undone.`)) deleteEvent.mutate(e.id) }}>
+                          <Trash2 size={12} /> Delete
+                        </button>
                       )}
                     </div>
                   </td>

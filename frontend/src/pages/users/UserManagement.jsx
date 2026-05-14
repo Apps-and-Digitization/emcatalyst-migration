@@ -22,6 +22,9 @@ export default function UserManagement() {
   const [editRole, setEditRole] = useState('')
   const [editRoles, setEditRoles] = useState([])
   const [editManagerId, setEditManagerId] = useState('')
+  const [editEmployeeId, setEditEmployeeId] = useState('')
+  const [editEmail, setEditEmail] = useState('')
+  const [editDivisions, setEditDivisions] = useState([])
   const [managerSearch, setManagerSearch] = useState('')
   const { register, handleSubmit, reset } = useForm()
 
@@ -37,33 +40,11 @@ export default function UserManagement() {
 
   const { data: rbacRoles = [] } = useQuery({
     queryKey: ['rbac-roles'],
-    queryFn: () => api.get('/rbac/roles').then(r => r.data),
+    queryFn: () => api.get('/rbac/roles/list').then(r => r.data),
   })
 
-  // Map RBAC role names to backend enum values for the role dropdown
-  const ROLE_MAP = {
-    'Administrator': 'Administrator',
-    'Marketing Head': 'MarketingHead',
-    'Division Head': 'DivisionHead',
-    'Compliance User': 'ComplianceUser',
-    'Finance User': 'FinanceUser',
-    'User': 'User',
-  }
-
-  // Build roles list: use RBAC roles if available, fallback to defaults
-  const ROLES = rbacRoles.length > 0
-    ? rbacRoles.filter(r => r.is_active).map(r => ({
-        label: r.name,
-        value: ROLE_MAP[r.name] || r.name,
-      }))
-    : [
-        { label: 'Administrator', value: 'Administrator' },
-        { label: 'Marketing Head', value: 'MarketingHead' },
-        { label: 'Division Head', value: 'DivisionHead' },
-        { label: 'Compliance User', value: 'ComplianceUser' },
-        { label: 'Finance User', value: 'FinanceUser' },
-        { label: 'User', value: 'User' },
-      ]
+  // All roles come from RBAC — used for both primary and additional
+  const ALL_ROLES = rbacRoles.map(r => r.name)
 
   const divisionMap = Object.fromEntries(divisions.map(d => [d.id, d.name]))
 
@@ -96,6 +77,9 @@ export default function UserManagement() {
     setEditRole(u.role)
     setEditRoles(u.roles || [])
     setEditManagerId(u.manager_id || '')
+    setEditEmployeeId(u.employee_id || '')
+    setEditEmail(u.email || '')
+    setEditDivisions(u.divisions || [])
     setEditRoleModal(true)
   }
 
@@ -156,9 +140,7 @@ export default function UserManagement() {
                     <td className="px-4 py-2.5 text-gray-500 text-xs">{divisionMap[u.division_id] || '—'}</td>
                     <td className="px-4 py-2.5 text-gray-500 text-xs">{u.manager_name || '—'}</td>
                     <td className="px-4 py-2.5">
-                      <span className="text-xs px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full">
-                        {ROLES.find(r => r.value === u.role)?.label || u.role}
-                      </span>
+                      <span className="text-xs px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full">{u.role}</span>
                     </td>
                     <td className="px-4 py-2.5">
                       <span className={`text-xs px-2 py-0.5 rounded-full ${u.is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-600'}`}>
@@ -235,32 +217,62 @@ export default function UserManagement() {
               <p className="text-sm font-medium text-gray-700">
                 {[editUser.first_name, editUser.last_name].filter(Boolean).join(' ')}
               </p>
-              <p className="text-xs text-gray-500">{editUser.email}</p>
+              <p className="text-xs text-gray-500">{editUser.employee_id}</p>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="label">Employee ID</label>
+                <input className="input" value={editEmployeeId} onChange={e => setEditEmployeeId(e.target.value)} />
+              </div>
+              <div>
+                <label className="label">Email</label>
+                <input type="email" className="input" value={editEmail} onChange={e => setEditEmail(e.target.value)} />
+              </div>
             </div>
             <div>
               <label className="label">Primary Role</label>
               <select className="input" value={editRole} onChange={e => setEditRole(e.target.value)}>
-                {ROLES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+                {ALL_ROLES.map(r => <option key={r} value={r}>{r}</option>)}
               </select>
             </div>
             <div>
-              <label className="label">Additional Roles</label>
+              <label className="label">Additional Roles (RBAC)</label>
               <div className="grid grid-cols-3 gap-2 p-3 border rounded-lg max-h-40 overflow-y-auto">
-                {ROLES.map(r => (
-                  <label key={r.value} className="flex items-center gap-2 text-xs cursor-pointer">
+                {ALL_ROLES.map(r => (
+                  <label key={r} className="flex items-center gap-2 text-xs cursor-pointer">
                     <input
                       type="checkbox"
-                      checked={editRoles.includes(r.value)}
+                      checked={editRoles.includes(r)}
                       onChange={e => {
-                        if (e.target.checked) setEditRoles(prev => [...prev, r.value])
-                        else setEditRoles(prev => prev.filter(x => x !== r.value))
+                        if (e.target.checked) setEditRoles(prev => [...prev, r])
+                        else setEditRoles(prev => prev.filter(x => x !== r))
                       }}
                     />
-                    {r.label}
+                    {r}
                   </label>
                 ))}
               </div>
-              <p className="text-xs text-gray-400 mt-1">Select additional roles (e.g. Marketing Head, Division Head for BRS access)</p>
+              <p className="text-xs text-gray-400 mt-1">Additional roles control RBAC page access</p>
+            </div>
+            <div>
+              <label className="label">Additional Divisions</label>
+              <div className="grid grid-cols-3 gap-2 p-3 border rounded-lg max-h-40 overflow-y-auto">
+                {divisions.map(d => (
+                  <label key={d.id} className="flex items-center gap-2 text-xs cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={editDivisions.includes(d.id)}
+                      disabled={d.id === editUser?.division_id}
+                      onChange={e => {
+                        if (e.target.checked) setEditDivisions(prev => [...prev, d.id])
+                        else setEditDivisions(prev => prev.filter(x => x !== d.id))
+                      }}
+                    />
+                    {d.name} {d.id === editUser?.division_id ? '(primary)' : ''}
+                  </label>
+                ))}
+              </div>
+              <p className="text-xs text-gray-400 mt-1">Additional divisions for data access</p>
             </div>
             <div>
               <label className="label">Manager (L1 Approver)</label>
@@ -298,6 +310,8 @@ export default function UserManagement() {
                     id: editUser.id,
                     data: {
                       role: editRole,
+                      employee_id: editEmployeeId || undefined,
+                      email: editEmail || undefined,
                       manager_id: editManagerId ? parseInt(editManagerId) : null,
                       is_active: document.getElementById('active-select').value === 'true',
                     }
@@ -311,6 +325,16 @@ export default function UserManagement() {
                   }
                   for (const r of toRemove) {
                     try { await authApi.removeUserRole(editUser.id, r) } catch(e) {}
+                  }
+                  // Sync additional divisions
+                  const currentDivs = editUser.divisions || []
+                  const divsToAdd = editDivisions.filter(d => !currentDivs.includes(d) && d !== editUser.division_id)
+                  const divsToRemove = currentDivs.filter(d => !editDivisions.includes(d))
+                  for (const d of divsToAdd) {
+                    try { await authApi.assignUserDivision(editUser.id, d) } catch(e) {}
+                  }
+                  for (const d of divsToRemove) {
+                    try { await authApi.removeUserDivision(editUser.id, d) } catch(e) {}
                   }
                   qc.invalidateQueries(['users'])
                   setEditRoleModal(false)
@@ -326,24 +350,33 @@ export default function UserManagement() {
 
       {/* New User Modal */}
       <Modal open={newUserModal} onClose={() => setNewUserModal(false)} title="New User" size="md">
-        <form onSubmit={handleSubmit(d => {
+        <form onSubmit={handleSubmit(async (d) => {
           const payload = { ...d }
           if (payload.manager_id) payload.manager_id = parseInt(payload.manager_id)
           else delete payload.manager_id
           if (payload.division_id) payload.division_id = parseInt(payload.division_id)
           else delete payload.division_id
-          createUser.mutate(payload)
+
+          try {
+            await authApi.createUser(payload)
+            qc.invalidateQueries(['users'])
+            setNewUserModal(false)
+            reset()
+            toast.success('User created')
+          } catch (e) {
+            toast.error(e.response?.data?.detail || 'Error creating user')
+          }
         })} className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div><label className="label">First Name</label><input className="input" {...register('first_name')} /></div>
             <div><label className="label">Last Name</label><input className="input" {...register('last_name')} /></div>
-            <div className="col-span-2">
-              <label className="label">Email *</label>
-              <input type="email" className="input" {...register('email', { required: true })} />
+            <div>
+              <label className="label">Employee ID *</label>
+              <input className="input" {...register('employee_id', { required: true })} />
             </div>
             <div>
-              <label className="label">Employee ID</label>
-              <input className="input" {...register('employee_id')} />
+              <label className="label">Email</label>
+              <input type="email" className="input" {...register('email')} />
             </div>
             <div>
               <label className="label">Password *</label>
@@ -352,7 +385,7 @@ export default function UserManagement() {
             <div>
               <label className="label">Role</label>
               <select className="input" {...register('role')}>
-                {ROLES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+                {ALL_ROLES.map(r => <option key={r} value={r}>{r}</option>)}
               </select>
             </div>
             <div>

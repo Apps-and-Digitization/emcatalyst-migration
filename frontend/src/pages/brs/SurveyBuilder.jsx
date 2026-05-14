@@ -10,6 +10,7 @@ import { brsApi, accessApi } from '../../api/endpoints'
 import api from '../../api/client'
 import PageHeader from '../../components/ui/PageHeader'
 import Modal from '../../components/ui/Modal'
+import useAuthStore from '../../store/authStore'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
 
 const QUESTION_TYPES = [
@@ -320,6 +321,8 @@ function SurveyEditor({ surveyId, onBack }) {
 export default function SurveyBuilder() {
   const navigate = useNavigate()
   const qc = useQueryClient()
+  const { user } = useAuthStore()
+  const isAdmin = user?.role === 'Administrator'
   const [activeSurveyId, setActiveSurveyId] = useState(null)
   const [showNewSurvey, setShowNewSurvey] = useState(false)
   const [showImport, setShowImport] = useState(false)
@@ -463,6 +466,15 @@ export default function SurveyBuilder() {
                   onClick={() => toggleActiveMut.mutate({ id: s.id, is_active: !s.is_active })}>
                   {s.is_active ? 'Deactivate' : 'Activate'}
                 </button>
+                {isAdmin && (
+                  <button className="btn-secondary text-xs text-red-500 hover:bg-red-50"
+                    onClick={async () => {
+                      if (!confirm(`Delete survey "${s.title}"? This cannot be undone.`)) return
+                      try { await api.delete(`/brs/surveys/${s.id}`); qc.invalidateQueries({ queryKey: ['brs-surveys'] }); toast.success('Survey deleted') } catch(e) { toast.error(e.response?.data?.detail || 'Error') }
+                    }}>
+                    <Trash2 size={12} />
+                  </button>
+                )}
               </div>
             </div>
           ))}

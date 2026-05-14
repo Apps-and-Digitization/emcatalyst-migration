@@ -1,18 +1,23 @@
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Search, Upload } from 'lucide-react'
+import { Plus, Search, Upload, Trash2 } from 'lucide-react'
 import { brsApi } from '../../api/endpoints'
+import api from '../../api/client'
 import { fmtDate } from '../../utils/helpers'
 import PageHeader from '../../components/ui/PageHeader'
 import StatusBadge from '../../components/ui/StatusBadge'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
 import EmptyState from '../../components/ui/EmptyState'
+import useAccessStore from '../../store/accessStore'
 import useAuthStore from '../../store/authStore'
 
 export default function BrsList() {
   const navigate = useNavigate()
+  const qc = useQueryClient()
+  const { accessiblePages } = useAccessStore()
   const { user } = useAuthStore()
+  const isAdmin = user?.role === 'Administrator'
   const [statusFilter, setStatusFilter] = useState('')
   const [search, setSearch] = useState('')
 
@@ -24,7 +29,8 @@ export default function BrsList() {
   const items = data?.items || []
   const filtered = items.filter(i => !search || i.title?.toLowerCase().includes(search.toLowerCase()) || i.brs_code?.toLowerCase().includes(search.toLowerCase()))
 
-  const isMarketingHead = user?.role === 'MarketingHead' || user?.roles?.includes('MarketingHead') || user?.role === 'Administrator'
+  const canCreate = accessiblePages.includes('brs_create')
+  const canBulkUpload = accessiblePages.includes('brs_bulk_upload')
 
   return (
     <div className="p-8">
@@ -36,12 +42,12 @@ export default function BrsList() {
             <button className="btn-secondary flex items-center gap-2" onClick={() => navigate('/brs/survey-builder')}>
               Survey Builder
             </button>
-            {isMarketingHead && (
+            {canBulkUpload && (
               <button className="btn-secondary flex items-center gap-2" onClick={() => navigate('/brs/bulk-upload')}>
                 <Upload size={16} /> Bulk Upload
               </button>
             )}
-            {isMarketingHead && (
+            {canCreate && (
               <button className="btn-primary flex items-center gap-2" onClick={() => navigate('/brs/new')}>
                 <Plus size={16} /> New BRS
               </button>
@@ -89,7 +95,15 @@ export default function BrsList() {
                   <td className="px-4 py-3"><StatusBadge status={item.status} /></td>
                   <td className="px-4 py-3 text-xs text-gray-500">{fmtDate(item.created_at)}</td>
                   <td className="px-4 py-3">
-                    <button className="text-blue-600 hover:underline text-xs" onClick={() => navigate(`/brs/${item.id}`)}>View</button>
+                    <div className="flex gap-2">
+                      <button className="text-blue-600 hover:underline text-xs" onClick={() => navigate(`/brs/${item.id}`)}>View</button>
+                      {isAdmin && (
+                        <button className="text-red-500 hover:text-red-700 text-xs" onClick={async () => {
+                          if (!confirm(`Delete BRS ${item.brs_code}?`)) return
+                          try { await api.delete(`/brs/${item.id}`); qc.invalidateQueries(['brs-list']); } catch(e) { alert(e.response?.data?.detail || 'Error') }
+                        }}>Delete</button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}

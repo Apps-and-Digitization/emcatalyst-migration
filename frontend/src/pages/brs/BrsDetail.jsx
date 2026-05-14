@@ -27,14 +27,24 @@ export default function BrsDetail() {
 
   const { data: canApproveData } = useQuery({
     queryKey: ['brs-can-approve', id],
-    queryFn: () => api.get(`/brs/${id}/can-approve`).then(r => r.data),
+    queryFn: () => api.get(`/brs/${id}/can-approve`).then(r => r.data).catch(() => ({ can_approve: false })),
     enabled: !!brs && brs.status === 'Submitted',
-    retry: false,
+  })
+
+  const { data: canInitiateData } = useQuery({
+    queryKey: ['brs-can-initiate'],
+    queryFn: () => api.get('/workflows/can-initiate/brs_approval').then(r => r.data).catch(() => ({ can_initiate: false })),
   })
 
   const approve = useMutation({
     mutationFn: (remarks) => brsApi.approve(id, remarks),
     onSuccess: () => { qc.invalidateQueries(['brs', id]); toast.success('BRS Approved. Doctor credentials generated.') },
+    onError: (e) => toast.error(e.response?.data?.detail || 'Error'),
+  })
+
+  const submit = useMutation({
+    mutationFn: () => brsApi.submit(id),
+    onSuccess: () => { qc.invalidateQueries(['brs', id]); toast.success('BRS submitted for approval') },
     onError: (e) => toast.error(e.response?.data?.detail || 'Error'),
   })
 
@@ -48,6 +58,7 @@ export default function BrsDetail() {
   if (!brs) return <div className="p-8 text-red-500">BRS not found</div>
 
   const canApprove = canApproveData?.can_approve === true
+  const canSubmit = canInitiateData?.can_initiate === true
 
   return (
     <div className="p-8 max-w-5xl">
@@ -61,13 +72,28 @@ export default function BrsDetail() {
           </div>
         </div>
         <div className="flex items-center gap-3">
-          {brs.status === 'Draft' && (
+          {brs.status === 'Draft' && !brs.is_bulk_imported && (
             <button className="btn-secondary flex items-center gap-1" onClick={() => navigate(`/brs/${id}/edit`)}><Edit2 size={14} /> Edit</button>
           )}
+          {brs.status === 'Draft' && brs.is_bulk_imported && canSubmit && (
+            <button className="btn-primary flex items-center gap-1" onClick={() => submit.mutate()} disabled={submit.isPending}>
+              <CheckCircle size={15} /> {submit.isPending ? 'Submitting...' : 'Submit for Approval'}
+            </button>
+          )}
           {canApprove && <>
-            <button className="btn-primary bg-emerald-600 hover:bg-emerald-700 flex items-center gap-1" onClick={() => approve.mutate('')}><CheckCircle size={15} /> Approve</button>
-            <button className="btn-danger flex items-center gap-1" onClick={() => setRejectModal(true)}><XCircle size={15} /> Reject</button>
+            <button className="btn-primary bg-emerald-600 hover:bg-emerald-700 flex items-center gap-1" onClick={() => approve.mutate('')} disabled={approve.isPending}>
+              <CheckCircle size={15} /> {approve.isPending ? 'Approving...' : 'Approve'}
+            </button>
+            <button className="btn-danger flex items-center gap-1" onClick={() => setRejectModal(true)} disabled={approve.isPending}>
+              <XCircle size={15} /> Reject
+            </button>
           </>}
+          {user?.role === 'Administrator' && (
+            <button className="btn-danger flex items-center gap-1 text-xs" onClick={async () => {
+              if (!confirm(`Delete BRS ${brs.brs_code}? This cannot be undone.`)) return
+              try { await api.delete(`/brs/${id}`); toast.success('BRS deleted'); navigate('/brs') } catch(e) { toast.error(e.response?.data?.detail || 'Error') }
+            }}><XCircle size={14} /> Delete</button>
+          )}
           <StatusBadge status={brs.status} />
         </div>
       </div>

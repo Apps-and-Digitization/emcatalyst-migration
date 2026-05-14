@@ -41,10 +41,10 @@ export default function Login() {
     return <Navigate to="/" replace />
   }
 
-  const onSubmit = async ({ email, password }) => {
+  const onSubmit = async ({ employee_id, password }) => {
     setLoading(true)
     try {
-      const res = await authApi.login(email, password)
+      const res = await authApi.login(employee_id, password)
       setAuth(res.data.user, res.data.access_token)
       toast.success(`Welcome, ${res.data.user.first_name || 'User'}!`)
 
@@ -87,14 +87,14 @@ export default function Login() {
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
           <div>
-            <label className="label">Email Address</label>
+            <label className="label">Employee ID</label>
             <input
-              type="email"
+              type="text"
               className="input"
-              placeholder="you@emcure.com"
-              {...register('email', { required: 'Email is required' })}
+              placeholder="Enter your Employee ID"
+              {...register('employee_id', { required: 'Employee ID is required' })}
             />
-            {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
+            {errors.employee_id && <p className="text-red-500 text-xs mt-1">{errors.employee_id.message}</p>}
           </div>
 
           <div>

@@ -159,7 +159,27 @@ export default function WorkflowConfig() {
                 </h2>
                 <p className="text-xs text-gray-400 mt-0.5">{selectedWf?.description}</p>
               </div>
-              <div className="flex gap-2">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <label className="text-xs text-gray-500 whitespace-nowrap">Initiator Role:</label>
+                  <select
+                    className="text-sm border rounded px-2 py-1 w-40"
+                    value={selectedWf?.initiator_role_id || ''}
+                    onChange={async (e) => {
+                      const roleId = e.target.value ? parseInt(e.target.value) : 0
+                      try {
+                        await api.put(`/workflows/${selectedWfId}`, { initiator_role_id: roleId })
+                        toast.success('Initiator role updated')
+                        await fetchData()
+                      } catch (err) { toast.error('Failed to update') }
+                    }}
+                  >
+                    <option value="">Anyone</option>
+                    {roles.filter(r => r.is_active).map(r => (
+                      <option key={r.id} value={r.id}>{r.name}</option>
+                    ))}
+                  </select>
+                </div>
                 <button
                   onClick={addStep}
                   className="flex items-center gap-1 text-sm px-3 py-1.5 border rounded-lg hover:bg-gray-50"
