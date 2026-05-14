@@ -52,6 +52,13 @@ def list_roles(db: Session = Depends(get_db), _: User = Depends(require_admin)):
     ]
 
 
+@router.get("/roles/list")
+def list_roles_public(db: Session = Depends(get_db), _: User = Depends(get_current_active_user)):
+    """Public list of active role names — accessible to any authenticated user."""
+    roles = db.query(Role).filter(Role.is_active == True).order_by(Role.name).all()
+    return [{"id": r.id, "name": r.name} for r in roles]
+
+
 @router.post("/roles", status_code=201)
 def create_role(data: RoleCreate, db: Session = Depends(get_db), _: User = Depends(require_admin)):
     existing = db.query(Role).filter(Role.name == data.name).first()

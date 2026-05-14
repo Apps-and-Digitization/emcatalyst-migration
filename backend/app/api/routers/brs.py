@@ -40,13 +40,22 @@ def _generate_brs_code(db: Session) -> str:
 
 
 def _get_user_division_ids(db: Session, user: User) -> List[int]:
-    """Get division IDs the user has access to"""
-    if user.role.value == "Administrator" or user.is_superuser:
+    """Get division IDs the user has access to (primary + additional assignments)"""
+    if user.role == "Administrator" or user.is_superuser:
+        from app.models.user import Division
+        return [d.id for d in db.query(Division).all()]
+    # BRS Admin sees all divisions
+    if _has_role(user, "BRS Admin"):
         from app.models.user import Division
         return [d.id for d in db.query(Division).all()]
     ids = set()
+    # Primary division
     if user.division_id:
         ids.add(user.division_id)
+    # Additional division assignments
+    if user.division_assignments:
+        for da in user.division_assignments:
+            ids.add(da.division_id)
     # Also include divisions from BRS apps the user created
     user_brs_divs = (
         db.query(BrsApplication.division_id)
@@ -61,9 +70,9 @@ def _get_user_division_ids(db: Session, user: User) -> List[int]:
 
 def _has_role(user: User, role_name: str) -> bool:
     """Check if user has a specific role (primary or additional)"""
-    if user.role.value == role_name:
+    if user.role == role_name:
         return True
-    if user.role.value == "Administrator":
+    if user.role == "Administrator" or user.is_superuser:
         return True
     return any(ra.role == role_name for ra in (user.role_assignments or []))
 
@@ -175,6 +184,24 @@ def update_survey(
     return {"ok": True}
 
 
+@router.delete("/surveys/{survey_id}")
+def delete_survey(survey_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    """Admin only — delete a survey and all its questions."""
+    if current_user.role != "Administrator" and not current_user.is_superuser:
+        raise HTTPException(403, "Only Administrator can delete surveys")
+    s = db.query(BrsSurvey).filter(BrsSurvey.id == survey_id).first()
+    if not s:
+        raise HTTPException(404, "Survey not found")
+    # Check if any BRS uses this survey
+    linked = db.query(BrsApplication).filter(BrsApplication.survey_id == survey_id).count()
+    if linked > 0:
+        raise HTTPException(400, f"Cannot delete — {linked} BRS application(s) use this survey. Deactivate instead.")
+    db.query(BrsSurveyQuestion).filter(BrsSurveyQuestion.survey_id == survey_id).delete()
+    db.delete(s)
+    db.commit()
+    return {"message": "Survey deleted"}
+
+
 # Survey Questions
 @router.post("/surveys/{survey_id}/questions")
 def add_question(
@@ -251,9 +278,11 @@ def create_application(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Marketing Head creates a new BRS"""
-    if not _has_role(current_user, "MarketingHead"):
-        raise HTTPException(403, "Only Marketing Head can create BRS")
+    """Create a new BRS — access controlled via workflow initiator role"""
+    from app.services.workflow_service import get_workflow, can_user_initiate
+    wf = get_workflow(db, "brs_approval")
+    if wf and not can_user_initiate(db, current_user, wf):
+        raise HTTPException(403, "You are not authorized to create BRS")
 
     survey_id = data.get("survey_id")
     if not survey_id:
@@ -351,7 +380,27 @@ def get_application(app_id: int, db: Session = Depends(get_db), current_user: Us
             for t in a.audit_trail
         ],
         "created_at": a.created_at.isoformat() if a.created_at else None,
+        "is_bulk_imported": any(t.action == "Bulk Created" for t in a.audit_trail),
     }
+
+
+@router.delete("/{app_id}")
+def delete_application(app_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    """Admin only — delete a BRS application and all related data."""
+    if current_user.role != "Administrator" and not current_user.is_superuser:
+        raise HTTPException(403, "Only Administrator can delete BRS")
+    app = db.query(BrsApplication).filter(BrsApplication.id == app_id).first()
+    if not app:
+        raise HTTPException(404, "BRS not found")
+    # Delete related records
+    from app.models.brs import BrsDoctorDocument
+    for doc in app.doctors:
+        db.query(BrsDoctorDocument).filter(BrsDoctorDocument.brs_doctor_id == doc.id).delete()
+    db.query(BrsDoctor).filter(BrsDoctor.brs_application_id == app_id).delete()
+    db.query(BrsAuditTrail).filter(BrsAuditTrail.application_id == app_id).delete()
+    db.delete(app)
+    db.commit()
+    return {"message": "BRS deleted"}
 
 
 @router.get("/{app_id}/can-approve")
@@ -434,7 +483,12 @@ def remove_doctor(app_id: int, doctor_id: int, db: Session = Depends(get_db), cu
 
 @router.post("/{app_id}/submit")
 def submit_application(app_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    """Marketing Head submits BRS for Division Head approval"""
+    """Submit BRS for approval — only the workflow initiator role can submit"""
+    from app.services.workflow_service import get_workflow, can_user_initiate
+    wf = get_workflow(db, "brs_approval")
+    if wf and not can_user_initiate(db, current_user, wf):
+        raise HTTPException(403, "You are not authorized to submit this BRS")
+
     app = db.query(BrsApplication).filter(BrsApplication.id == app_id).first()
     if not app:
         raise HTTPException(404, "BRS not found")
@@ -445,7 +499,7 @@ def submit_application(app_id: int, db: Session = Depends(get_db), current_user:
 
     old = app.status
     app.status = BrsStatus.SUBMITTED
-    _add_audit(db, app.id, "Submitted for DH Approval", old, BrsStatus.SUBMITTED, current_user.id)
+    _add_audit(db, app.id, "Submitted for Approval", old, BrsStatus.SUBMITTED, current_user.id)
     db.commit()
     return {"status": app.status}
 
@@ -479,9 +533,11 @@ def approve_application(app_id: int, remarks: str = "", db: Session = Depends(ge
     app.approved_at = datetime.utcnow()
     _add_audit(db, app.id, "Approved", old, next_status, current_user.id, remarks)
 
-    # Generate login credentials for each doctor and send email
-    from app.core.email import send_brs_doctor_credentials
+    # Generate login credentials for each doctor
     from app.core.config import settings
+
+    doctor_credentials = []
+    portal_url = f"{settings.FRONTEND_URL}/brs/doctor-login"
 
     for doc in app.doctors:
         login_id = f"brs_{app.brs_code}_{doc.id}".lower()
@@ -491,21 +547,36 @@ def approve_application(app_id: int, remarks: str = "", db: Session = Depends(ge
         doc.login_token = secrets.token_urlsafe(32)
         doc.doctor_status = "Pending"
 
-        # Send email with credentials
-        portal_url = f"{settings.FRONTEND_URL}/brs/doctor-login"
-        if doc.email:
-            send_brs_doctor_credentials(
-                doctor_email=doc.email,
-                doctor_name=doc.doctor_name,
-                brs_code=app.brs_code,
-                survey_title=app.survey.title if app.survey else "BRS Survey",
-                login_id=login_id,
-                password=password,
-                portal_url=portal_url,
-            )
+        doctor_credentials.append({
+            "doctor_name": doc.doctor_name,
+            "email": doc.email,
+            "mobile": doc.mobile,
+            "speciality": doc.speciality,
+            "login_id": login_id,
+            "password": password,
+        })
+
+    # Send ONE email to the Territory Manager (on_field_execution_by) with all doctor credentials
+    from app.core.email import send_brs_credentials_to_territory_manager
+
+    tm_employee_id = app.on_field_execution_by
+    tm_user = None
+    if tm_employee_id:
+        tm_user = db.query(User).filter(User.employee_id == tm_employee_id).first()
+
+    if tm_user and tm_user.email:
+        send_brs_credentials_to_territory_manager(
+            tm_email=tm_user.email,
+            tm_name=f"{tm_user.first_name or ''} {tm_user.last_name or ''}".strip(),
+            brs_code=app.brs_code,
+            brs_title=app.title,
+            survey_title=app.survey.title if app.survey else "BRS Survey",
+            doctor_credentials=doctor_credentials,
+            portal_url=portal_url,
+        )
 
     db.commit()
-    return {"status": app.status, "message": "Approved. Doctor credentials generated."}
+    return {"status": app.status, "message": "Approved. Doctor credentials generated and sent to Territory Manager."}
 
 
 @router.post("/{app_id}/reject")

@@ -13,15 +13,15 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 @router.post("/login")
 def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.email == form_data.username).first()
+    user = db.query(User).filter(User.employee_id == form_data.username).first()
     if not user or not verify_password(form_data.password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password",
+            detail="Incorrect Employee ID or password",
         )
     if not user.is_active:
         raise HTTPException(status_code=400, detail="Account is disabled")
-    token = create_access_token(data={"sub": user.email})
+    token = create_access_token(data={"sub": user.employee_id})
     user_data = UserOut.model_validate(user).model_dump()
     user_data["roles"] = [ra.role for ra in user.role_assignments] if user.role_assignments else []
     return {"access_token": token, "token_type": "bearer", "user": user_data}
@@ -74,6 +74,8 @@ def list_users(
             user_dict["manager_name"] = f"{u.manager.first_name or ''} {u.manager.last_name or ''}".strip()
         # Include multiple roles
         user_dict["roles"] = [ra.role for ra in u.role_assignments] if u.role_assignments else []
+        # Include additional divisions
+        user_dict["divisions"] = [da.division_id for da in u.division_assignments] if u.division_assignments else []
         result.append(user_dict)
     return result
 
@@ -84,15 +86,15 @@ def create_user(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_admin)
 ):
-    if db.query(User).filter(User.email == data.email).first():
-        raise HTTPException(status_code=400, detail="Email already registered")
+    if db.query(User).filter(User.employee_id == data.employee_id).first():
+        raise HTTPException(status_code=400, detail="Employee ID already registered")
     user = User(
-        email=data.email,
+        employee_id=data.employee_id,
+        email=data.email or f"{data.employee_id}@emcure.com",
         hashed_password=get_password_hash(data.password),
         first_name=data.first_name,
         middle_name=data.middle_name,
         last_name=data.last_name,
-        employee_id=data.employee_id,
         role=data.role,
         division_id=data.division_id,
         designation_title=data.designation_title,
@@ -152,5 +154,47 @@ def remove_user_role(user_id: int, role: str, db: Session = Depends(get_db), cur
     if not ra:
         raise HTTPException(status_code=404, detail="Role not found")
     db.delete(ra)
+    db.commit()
+    return {"ok": True}
+
+
+# ─── User Division Assignments ────────────────────────────────────────────────
+
+@router.get("/users/{user_id}/divisions")
+def get_user_divisions(user_id: int, db: Session = Depends(get_db), current_user: User = Depends(require_admin)):
+    from app.models.user import UserDivisionAssignment
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return [da.division_id for da in user.division_assignments]
+
+
+@router.post("/users/{user_id}/divisions")
+def assign_user_division(user_id: int, division_id: int, db: Session = Depends(get_db), current_user: User = Depends(require_admin)):
+    from app.models.user import UserDivisionAssignment
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    existing = db.query(UserDivisionAssignment).filter(
+        UserDivisionAssignment.user_id == user_id,
+        UserDivisionAssignment.division_id == division_id
+    ).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="Division already assigned")
+    db.add(UserDivisionAssignment(user_id=user_id, division_id=division_id))
+    db.commit()
+    return {"ok": True, "divisions": [da.division_id for da in db.query(UserDivisionAssignment).filter(UserDivisionAssignment.user_id == user_id).all()]}
+
+
+@router.delete("/users/{user_id}/divisions/{division_id}")
+def remove_user_division(user_id: int, division_id: int, db: Session = Depends(get_db), current_user: User = Depends(require_admin)):
+    from app.models.user import UserDivisionAssignment
+    da = db.query(UserDivisionAssignment).filter(
+        UserDivisionAssignment.user_id == user_id,
+        UserDivisionAssignment.division_id == division_id
+    ).first()
+    if not da:
+        raise HTTPException(status_code=404, detail="Division assignment not found")
+    db.delete(da)
     db.commit()
     return {"ok": True}

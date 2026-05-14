@@ -4,7 +4,7 @@ from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from app.db.base import get_db
 from app.core.security import decode_token
-from app.models.user import User, UserRole
+from app.models.user import User
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
@@ -21,10 +21,13 @@ def get_current_user(
     payload = decode_token(token)
     if payload is None:
         raise credentials_exception
-    email: str = payload.get("sub")
-    if email is None:
+    identifier: str = payload.get("sub")
+    if identifier is None:
         raise credentials_exception
-    user = db.query(User).filter(User.email == email).first()
+    # Try employee_id first, then email for backward compatibility
+    user = db.query(User).filter(User.employee_id == identifier).first()
+    if user is None:
+        user = db.query(User).filter(User.email == identifier).first()
     if user is None:
         raise credentials_exception
     return user
@@ -37,13 +40,16 @@ def get_current_active_user(current_user: User = Depends(get_current_user)) -> U
 
 
 def require_admin(current_user: User = Depends(get_current_active_user)) -> User:
-    if current_user.role not in (UserRole.ADMINISTRATOR, UserRole.MY_ADMIN) and not current_user.is_superuser:
+    if current_user.role not in ("Administrator",) and not current_user.is_superuser:
         raise HTTPException(status_code=403, detail="Not enough permissions")
     return current_user
 
 
 def require_finance(current_user: User = Depends(get_current_active_user)) -> User:
-    allowed = {UserRole.ADMINISTRATOR, UserRole.MY_ADMIN, UserRole.FINANCE_USER}
+    allowed = {"Administrator", "Finance User"}
     if current_user.role not in allowed and not current_user.is_superuser:
-        raise HTTPException(status_code=403, detail="Finance role required")
+        # Also check additional role assignments
+        user_roles = {ra.role for ra in (current_user.role_assignments or [])}
+        if not user_roles.intersection(allowed):
+            raise HTTPException(status_code=403, detail="Finance role required")
     return current_user

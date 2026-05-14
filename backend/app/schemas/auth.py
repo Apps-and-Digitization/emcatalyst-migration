@@ -1,6 +1,5 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 from typing import Optional
-from app.models.user import UserRole
 
 
 class Token(BaseModel):
@@ -10,22 +9,22 @@ class Token(BaseModel):
 
 
 class TokenData(BaseModel):
-    email: Optional[str] = None
+    employee_id: Optional[str] = None
 
 
 class UserLogin(BaseModel):
-    email: EmailStr
+    employee_id: str
     password: str
 
 
 class UserOut(BaseModel):
     id: int
-    email: str
+    email: Optional[str] = None
     first_name: Optional[str] = None
     middle_name: Optional[str] = None
     last_name: Optional[str] = None
-    role: UserRole
-    roles: list = []  # Multiple roles
+    role: Optional[str] = "User"
+    roles: list = []  # Additional roles
     is_active: bool
     employee_id: Optional[str] = None
     designation_title: Optional[str] = None
@@ -46,13 +45,13 @@ class UserOut(BaseModel):
 
 
 class UserCreate(BaseModel):
-    email: EmailStr
+    employee_id: str
     password: str
+    email: Optional[str] = None
     first_name: Optional[str] = None
     middle_name: Optional[str] = None
     last_name: Optional[str] = None
-    employee_id: Optional[str] = None
-    role: UserRole = UserRole.USER
+    role: str = "User"
     division_id: Optional[int] = None
     designation_title: Optional[str] = None
     manager_id: Optional[int] = None
@@ -66,10 +65,12 @@ class UserUpdate(BaseModel):
     division_id: Optional[int] = None
     cost_center_id: Optional[int] = None
     manager_id: Optional[int] = None
-    role: Optional[UserRole] = None
+    role: Optional[str] = None
     is_active: Optional[bool] = None
     office_mobile_no: Optional[str] = None
     personal_mobile_no: Optional[str] = None
     location: Optional[str] = None
     region: Optional[str] = None
     zone: Optional[str] = None
+    email: Optional[str] = None
+    employee_id: Optional[str] = None

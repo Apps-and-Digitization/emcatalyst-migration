@@ -6,6 +6,8 @@ from app.db.base import Base
 
 
 class UserRole(str, enum.Enum):
+    """Legacy enum — kept for backward compatibility during migration.
+    The role column is now a plain string referencing RBAC roles table."""
     ADMINISTRATOR = "Administrator"
     COMPLIANCE_USER = "ComplianceUser"
     DIVISION_COORDINATOR = "DivisionCoOrdinator"
@@ -99,12 +101,22 @@ class UserRoleAssignment(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 
+class UserDivisionAssignment(Base):
+    """Multiple divisions per user (additional divisions beyond primary)"""
+    __tablename__ = "user_division_assignments"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    division_id = Column(Integer, ForeignKey("divisions.id"), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
 class User(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
-    employee_id = Column(String(50), unique=True, index=True)
-    email = Column(String(200), unique=True, index=True, nullable=False)
+    employee_id = Column(String(50), unique=True, index=True, nullable=False)
+    email = Column(String(200), index=True, nullable=True)
     hashed_password = Column(String(200), nullable=False)
 
     first_name = Column(String(100))
@@ -150,7 +162,7 @@ class User(Base):
     territory_id = Column(Integer, ForeignKey("territories.id"), nullable=True)
     manager_id = Column(Integer, ForeignKey("users.id"), nullable=True)
 
-    role = Column(Enum(UserRole), default=UserRole.USER)
+    role = Column(String(100), default="User")
     is_active = Column(Boolean, default=True)
     is_superuser = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -162,3 +174,4 @@ class User(Base):
     events_initiated = relationship("Event", foreign_keys="Event.initiator_id", back_populates="initiator")
     manager = relationship("User", foreign_keys=[manager_id], remote_side="User.id", backref="direct_reports")
     role_assignments = relationship("UserRoleAssignment", backref="user", lazy="joined")
+    division_assignments = relationship("UserDivisionAssignment", backref="user", lazy="joined")

@@ -138,12 +138,15 @@ def delete_event(
     event = db.query(Event).filter(Event.id == event_id).first()
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
+    # Admin can delete any event, others can only delete drafts
     if event.status != EventStatus.DRAFT:
-        raise HTTPException(status_code=400, detail="Only draft events can be deleted")
+        if current_user.role != "Administrator" and not current_user.is_superuser:
+            raise HTTPException(status_code=400, detail="Only draft events can be deleted")
     # Delete related records
     db.query(EventDoctor).filter(EventDoctor.event_id == event_id).delete()
     db.query(EventCost).filter(EventCost.event_id == event_id).delete()
     db.query(EventDocument).filter(EventDocument.event_id == event_id).delete()
+    db.query(EventAuditTrail).filter(EventAuditTrail.event_id == event_id).delete()
     db.delete(event)
     db.commit()
     return {"message": "Event deleted"}

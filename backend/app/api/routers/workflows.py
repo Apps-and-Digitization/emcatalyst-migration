@@ -92,6 +92,8 @@ def list_workflows(db: Session = Depends(get_db), _: User = Depends(require_admi
             "workflow_label": wf.workflow_label,
             "description": wf.description,
             "is_active": wf.is_active,
+            "initiator_role_id": wf.initiator_role_id,
+            "initiator_role_name": wf.initiator_role.name if wf.initiator_role else None,
             "steps": steps,
         })
     return result
@@ -130,6 +132,27 @@ def get_workflow(workflow_id: int, db: Session = Depends(get_db), _: User = Depe
         "is_active": wf.is_active,
         "steps": steps,
     }
+
+
+class WorkflowUpdate(BaseModel):
+    initiator_role_id: Optional[int] = None
+
+
+@router.put("/{workflow_id}")
+def update_workflow(
+    workflow_id: int,
+    data: WorkflowUpdate,
+    db: Session = Depends(get_db),
+    _: User = Depends(require_admin),
+):
+    """Update workflow settings (e.g. initiator role)."""
+    wf = db.query(ApprovalWorkflow).filter(ApprovalWorkflow.id == workflow_id).first()
+    if not wf:
+        raise HTTPException(404, "Workflow not found")
+    if data.initiator_role_id is not None:
+        wf.initiator_role_id = data.initiator_role_id if data.initiator_role_id > 0 else None
+    db.commit()
+    return {"message": "Workflow updated", "initiator_role_id": wf.initiator_role_id}
 
 
 @router.put("/{workflow_id}/steps")
@@ -245,3 +268,20 @@ def check_can_approve(
         "step_label": step.step_label,
         "approver_type": step.approver_type,
     }
+
+
+@router.get("/can-initiate/{workflow_key}")
+def check_can_initiate(
+    workflow_key: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+):
+    """Check if the current user can initiate/create records for this workflow."""
+    from app.services.workflow_service import get_workflow, can_user_initiate
+
+    wf = get_workflow(db, workflow_key)
+    if not wf:
+        return {"can_initiate": False, "reason": "Workflow not found"}
+
+    can = can_user_initiate(db, current_user, wf)
+    return {"can_initiate": can, "workflow_label": wf.workflow_label}

@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from app.models.rbac import Role, Page, RolePageAccess
-from app.models.user import User, UserRole
+from app.models.user import User
 
 # Default roles to seed
 DEFAULT_ROLES = [
@@ -88,26 +88,24 @@ def seed_rbac(db: Session) -> None:
 
 def get_user_accessible_pages(db: Session, user: User) -> list[str]:
     """Get list of page_keys the user can access based on their primary role + additional roles."""
-    # Admins/superusers get everything
-    if user.is_superuser or user.role in (UserRole.ADMINISTRATOR, UserRole.MY_ADMIN):
+    # Superusers get everything
+    if user.is_superuser:
         pages = db.query(Page).filter(Page.is_active == True).all()
         return [p.page_key for p in pages]
 
-    # Collect all RBAC role names for this user (primary + additional)
+    # Collect all role names for this user (primary + additional)
     role_names = set()
 
-    # Primary role
-    primary_role_name = _map_user_role_to_rbac_role(user.role)
-    role_names.add(primary_role_name)
+    # Primary role (now a plain string like "Administrator", "User", etc.)
+    if user.role:
+        role_names.add(user.role)
 
     # Additional roles from user_role_assignments
     if user.role_assignments:
         for ra in user.role_assignments:
-            mapped = _map_assignment_to_rbac_role(ra.role)
-            if mapped:
-                role_names.add(mapped)
+            role_names.add(ra.role)
 
-    # Check if any of the additional roles is Administrator
+    # Check if user has Administrator role
     if "Administrator" in role_names:
         pages = db.query(Page).filter(Page.is_active == True).all()
         return [p.page_key for p in pages]
@@ -134,39 +132,4 @@ def get_user_accessible_pages(db: Session, user: User) -> list[str]:
     return list(set(entry.page.page_key for entry in access_entries))
 
 
-def _map_user_role_to_rbac_role(user_role: UserRole) -> str:
-    """Map the existing UserRole enum to RBAC role name."""
-    mapping = {
-        UserRole.ADMINISTRATOR: "Administrator",
-        UserRole.MY_ADMIN: "Administrator",
-        UserRole.MARKETING_HEAD: "Marketing Head",
-        UserRole.DIVISION_HEAD: "Division Head",
-        UserRole.COMPLIANCE_USER: "Compliance User",
-        UserRole.FINANCE_USER: "Finance User",
-        UserRole.USER: "User",
-        UserRole.DIVISION_COORDINATOR: "User",
-        UserRole.GST_USER: "Finance User",
-        UserRole.OPEX_USER: "Finance User",
-        UserRole.FUNCTIONAL_USER: "User",
-        UserRole.ANONYMOUS: "User",
-    }
-    return mapping.get(user_role, "User")
 
-
-def _map_assignment_to_rbac_role(role_str: str) -> str:
-    """Map a role assignment string (from user_role_assignments table) to RBAC role name."""
-    mapping = {
-        "Administrator": "Administrator",
-        "MyAdmin": "Administrator",
-        "MarketingHead": "Marketing Head",
-        "DivisionHead": "Division Head",
-        "ComplianceUser": "Compliance User",
-        "FinanceUser": "Finance User",
-        "User": "User",
-        "DivisionCoOrdinator": "User",
-        "GSTuser": "Finance User",
-        "OPEXUser": "Finance User",
-        "FunctionalUser": "User",
-        "Anonymous": "User",
-    }
-    return mapping.get(role_str, "User")

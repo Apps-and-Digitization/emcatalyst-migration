@@ -46,6 +46,27 @@ def list_divisions(db: Session = Depends(get_db), current_user: User = Depends(g
     return db.query(Division).filter(Division.is_active == True).all()
 
 
+@router.get("/divisions/my")
+def list_my_divisions(db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
+    """Return only divisions the current user has access to (primary + additional)."""
+    if current_user.is_superuser or current_user.role == "Administrator":
+        divs = db.query(Division).filter(Division.is_active == True).all()
+        return [{"id": d.id, "name": d.name, "code": d.code} for d in divs]
+
+    div_ids = set()
+    if current_user.division_id:
+        div_ids.add(current_user.division_id)
+    if current_user.division_assignments:
+        for da in current_user.division_assignments:
+            div_ids.add(da.division_id)
+
+    if not div_ids:
+        return []
+
+    divs = db.query(Division).filter(Division.id.in_(div_ids), Division.is_active == True).all()
+    return [{"id": d.id, "name": d.name, "code": d.code} for d in divs]
+
+
 @router.post("/divisions", response_model=DivisionOut)
 def create_division(name: str, code: Optional[str] = None, db: Session = Depends(get_db), current_user: User = Depends(require_admin)):
     div = Division(name=name, code=code)
@@ -222,4 +243,60 @@ def search_employees(
             "manager_designation": u.manager.designation_title if u.manager else None,
         }
         for u in users
+    ]
+
+
+@router.get("/hierarchy/subordinates-by-role")
+def get_subordinates_by_role(
+    role: str = "Territory Manager",
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Get all subordinates (recursive) of the current user who have the specified role.
+    Traverses the full hierarchy tree downward from the current user.
+    Only returns users who have the given role in their role_assignments.
+    """
+    from app.models.user import UserRoleAssignment
+
+    # Collect all subordinate user IDs recursively
+    def get_all_subordinate_ids(user_id: int, visited: set) -> set:
+        if user_id in visited:
+            return set()
+        visited.add(user_id)
+        direct_reports = db.query(User).filter(User.manager_id == user_id, User.is_active == True).all()
+        ids = set()
+        for report in direct_reports:
+            ids.add(report.id)
+            ids.update(get_all_subordinate_ids(report.id, visited))
+        return ids
+
+    subordinate_ids = get_all_subordinate_ids(current_user.id, set())
+
+    if not subordinate_ids:
+        return []
+
+    # Filter subordinates who have the specified role assignment
+    users_with_role = (
+        db.query(User)
+        .join(UserRoleAssignment, UserRoleAssignment.user_id == User.id)
+        .filter(
+            User.id.in_(subordinate_ids),
+            UserRoleAssignment.role == role,
+            User.is_active == True,
+        )
+        .all()
+    )
+
+    return [
+        {
+            "id": u.id,
+            "employee_id": u.employee_id,
+            "name": f"{u.first_name or ''} {u.last_name or ''}".strip(),
+            "designation": u.designation_title,
+            "email": u.email,
+            "territory_name": u.territory_name,
+            "location": u.office_city or u.location,
+        }
+        for u in users_with_role
     ]

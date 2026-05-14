@@ -15,12 +15,16 @@ class ApprovalWorkflow(Base):
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
+    # Who can initiate/create records for this workflow
+    initiator_role_id = Column(Integer, ForeignKey("roles.id"), nullable=True)
+
     steps = relationship(
         "ApprovalWorkflowStep",
         back_populates="workflow",
         cascade="all, delete-orphan",
         order_by="ApprovalWorkflowStep.step_order",
     )
+    initiator_role = relationship("Role", foreign_keys=[initiator_role_id])
 
 
 class ApprovalWorkflowStep(Base):

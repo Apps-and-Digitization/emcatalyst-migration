@@ -43,7 +43,9 @@ def _generate_brs_code(db: Session) -> str:
 
 
 def _has_role(user: User, role_name: str) -> bool:
-    if user.role and user.role.value == role_name:
+    if user.role == role_name:
+        return True
+    if user.role == "Administrator" or user.is_superuser:
         return True
     if user.role_assignments:
         for ra in user.role_assignments:
@@ -76,7 +78,7 @@ def download_template():
     # Example rows (2 doctors for same BRS)
     example1 = [
         "Survey Template Name", "BRS Program Title", "Division Name", "Cardiology", "BrandX",
-        "Head Office", "In Person", "Topic here", "Field Team",
+        "Head Office", "In Person", "Topic here", "EMP001",
         "2026-06-01", "2026-06-15", "Mumbai", "Hotel XYZ", "Rationale text", "Agenda text",
         "CC001", "Optional remarks",
         "UID001", "Dr John Doe", "ABCDE1234F", "john@example.com", 25000,
@@ -130,7 +132,7 @@ def download_template():
         "- budget_type: Head Office / Field",
         "- platform: In Person / Virtual / Both",
         "- topic: Topic/subject of the program",
-        "- on_field_execution_by: Who executes on field",
+        "- on_field_execution_by: Employee ID of the Territory Manager who will execute on field",
         "- start_date / end_date: YYYY-MM-DD format",
         "- city / venue: Location details",
         "- rationale: Business rationale",
@@ -159,15 +161,16 @@ async def upload_bulk_brs(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """
-    Upload an Excel file to create multiple BRS applications with doctors.
+    """Upload an Excel file to create multiple BRS applications with doctors.
     - survey_title is looked up by name
     - division_name is looked up by name
     - doctor_uid is looked up from HcpDoctor.uid_number — if not found, row is skipped
     """
-    if not _has_role(current_user, "MarketingHead"):
-        if not current_user.is_superuser and current_user.role.value not in ("Administrator", "MyAdmin"):
-            raise HTTPException(403, "Only Marketing Head can create BRS")
+    # Check RBAC: user must have access to brs_bulk_upload page
+    from app.services.rbac_service import get_user_accessible_pages
+    accessible = get_user_accessible_pages(db, current_user)
+    if "brs_bulk_upload" not in accessible:
+        raise HTTPException(403, "You do not have access to bulk upload")
 
     if not file.filename.endswith(('.xlsx', '.xls')):
         raise HTTPException(400, "Only .xlsx or .xls files are accepted")
@@ -225,6 +228,16 @@ async def upload_bulk_brs(
     uid_list = [str(r["data"].get("doctor_uid", "")).strip() for r in rows if r["data"].get("doctor_uid")]
     doctors_in_db = db.query(HcpDoctor).filter(HcpDoctor.uid_number.in_(uid_list)).all() if uid_list else []
     doctor_map = {d.uid_number.strip(): d for d in doctors_in_db if d.uid_number}
+
+    # Territory Managers by employee_id (for on_field_execution_by validation)
+    from app.models.user import UserRoleAssignment
+    tm_users = (
+        db.query(User)
+        .join(UserRoleAssignment, UserRoleAssignment.user_id == User.id)
+        .filter(UserRoleAssignment.role == "Territory Manager", User.is_active == True)
+        .all()
+    )
+    tm_map = {u.employee_id: u for u in tm_users if u.employee_id}
 
     # Group rows by BRS (title + survey_title)
     brs_groups = {}
@@ -285,6 +298,16 @@ async def upload_bulk_brs(
         start_date = _parse_date(brs_data.get("start_date"))
         end_date = _parse_date(brs_data.get("end_date"))
 
+        # Resolve on_field_execution_by (employee_id of Territory Manager)
+        on_field_value = _str_or_none(brs_data.get("on_field_execution_by"))
+        if on_field_value:
+            tm = tm_map.get(on_field_value.strip())
+            if tm:
+                on_field_value = tm.employee_id  # Store employee_id
+            else:
+                errors.append({"row": doctors[0]["_row"], "error": f"Territory Manager with employee_id '{on_field_value}' not found"})
+                on_field_value = None
+
         # Create BRS
         app = BrsApplication(
             brs_code=_generate_brs_code(db),
@@ -297,7 +320,7 @@ async def upload_bulk_brs(
             budget_type=_str_or_none(brs_data.get("budget_type")),
             platform=_str_or_none(brs_data.get("platform")),
             topic=_str_or_none(brs_data.get("topic")),
-            on_field_execution_by=_str_or_none(brs_data.get("on_field_execution_by")),
+            on_field_execution_by=on_field_value,
             start_date=start_date,
             end_date=end_date,
             city=_str_or_none(brs_data.get("city")),

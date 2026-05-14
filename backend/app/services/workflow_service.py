@@ -260,16 +260,35 @@ def _resolve_manager(db: Session, user: User, level: int) -> Optional[User]:
 
 def _user_has_rbac_role(db: Session, user: User, role_name: str) -> bool:
     """Check if user has a given RBAC role (via primary role or assignments)."""
-    from app.services.rbac_service import _map_user_role_to_rbac_role, _map_assignment_to_rbac_role
-
     # Check primary role
-    if _map_user_role_to_rbac_role(user.role) == role_name:
+    if user.role == role_name:
         return True
 
     # Check additional role assignments
     if user.role_assignments:
         for ra in user.role_assignments:
-            if _map_assignment_to_rbac_role(ra.role) == role_name:
+            if ra.role == role_name:
                 return True
 
     return False
+
+
+def can_user_initiate(db: Session, user: User, workflow: ApprovalWorkflow) -> bool:
+    """
+    Check if a user can initiate/create records for this workflow.
+    If no initiator_role_id is set, anyone can initiate.
+    If set, only users with that role (primary or additional) can initiate.
+    """
+    if user.is_superuser:
+        return True
+
+    # If no initiator role configured, allow all
+    if not workflow.initiator_role_id:
+        return True
+
+    # Check if user has the required role
+    role = db.query(Role).filter(Role.id == workflow.initiator_role_id).first()
+    if not role:
+        return True  # Role deleted, allow all
+
+    return _user_has_rbac_role(db, user, role.name)

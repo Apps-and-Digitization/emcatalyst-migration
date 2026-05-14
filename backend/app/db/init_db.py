@@ -12,22 +12,33 @@ def create_tables():
 
 
 def seed_data(db: Session):
-    from app.models.user import User, UserRole, Division, CostCenter, Function, Territory
+    from app.models.user import User, Division, CostCenter, Function, Territory
     from app.models.master import EventType, DocumentType, Designation, CompanyCode, Enumeration
 
     # Admin user
-    if not db.query(User).filter(User.email == settings.FIRST_SUPERUSER).first():
+    admin = db.query(User).filter(
+        (User.employee_id == "EMP001") | (User.email == settings.FIRST_SUPERUSER)
+    ).first()
+    if not admin:
         admin = User(
+            employee_id="EMP001",
             email=settings.FIRST_SUPERUSER,
             hashed_password=get_password_hash(settings.FIRST_SUPERUSER_PASSWORD),
             first_name="System",
             last_name="Administrator",
-            role=UserRole.ADMINISTRATOR,
+            role="Administrator",
             is_active=True,
             is_superuser=True,
-            employee_id="EMP001",
         )
         db.add(admin)
+    else:
+        # Ensure existing admin has all required fields
+        if not admin.employee_id:
+            admin.employee_id = "EMP001"
+        if not admin.is_superuser:
+            admin.is_superuser = True
+        if admin.role != "Administrator":
+            admin.role = "Administrator"
 
     # Divisions
     divisions = [
