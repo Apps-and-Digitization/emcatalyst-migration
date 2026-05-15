@@ -1,9 +1,9 @@
-import { ChevronLeft, Upload, CheckCircle, Save, Trash2 } from 'lucide-react'
+import { ChevronLeft, Upload, CheckCircle, Save, Trash2, Eye } from 'lucide-react'
 
 export default function EventFormStep4({
-  eventType, doctors, saving,
+  eventType, doctors, saving, eventId,
   preEventDocs, preDocUploads, setPreDocUploads,
-  onSaveDraft, onSubmit, onBack,
+  onSaveDraft, onSubmit, onBack, onPreview,
 }) {
   return (
     <div className="card space-y-5">
@@ -12,7 +12,7 @@ export default function EventFormStep4({
 
       {preEventDocs.length === 0 ? (
         <div className="text-center py-8 text-gray-400 text-sm border-2 border-dashed rounded-lg">
-          No pre-event document types configured for "{eventType}". You can save as draft or submit directly.
+          No pre-event document types configured for "{eventType}". You can save as draft or preview & submit.
         </div>
       ) : (
         <div className="space-y-3">
@@ -55,18 +55,14 @@ export default function EventFormStep4({
         <p>Type: {eventType || '—'} • {doctors.length} HCP(s) • {Object.keys(preDocUploads).length} doc(s) attached</p>
       </div>
 
-      <div className="bg-amber-50 rounded-lg p-3 text-sm text-amber-800">
-        <p>Submitting will send the event through: <span className="font-medium">L1 Manager → L2 Manager → Compliance</span></p>
-      </div>
-
       <div className="flex justify-between pt-2">
         <button className="btn-secondary" onClick={onBack}><ChevronLeft size={16} /> Back</button>
         <div className="flex gap-2">
           <button className="btn-secondary flex items-center gap-1" disabled={saving} onClick={onSaveDraft}>
             <Save size={14} /> Save Draft
           </button>
-          <button className="btn-primary flex items-center gap-1" disabled={saving} onClick={onSubmit}>
-            {saving ? 'Submitting…' : '✓ Submit for Approval'}
+          <button className="btn-primary flex items-center gap-1" disabled={saving} onClick={onPreview}>
+            <Eye size={14} /> Preview & Submit
           </button>
         </div>
       </div>

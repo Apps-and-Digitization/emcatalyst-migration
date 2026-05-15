@@ -2,16 +2,17 @@ import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { masterApi } from '../../api/endpoints'
 import PageHeader from '../../components/ui/PageHeader'
-import FmvParametersTab from './components/FmvParametersTab'
+import EntitiesTab from './components/EntitiesTab'
+import DivisionsTab from './components/DivisionsTab'
 import DoctorsTab from './components/DoctorsTab'
 import BrandsTab from './components/BrandsTab'
-import DocumentTypesTab from './components/DocumentTypesTab'
 import TherapeuticsTab from './components/TherapeuticsTab'
+import DocumentTypesTab from './components/DocumentTypesTab'
 import MealsTab from './components/MealsTab'
-import DivisionsTab from './components/DivisionsTab'
-import EntitiesTab from './components/EntitiesTab'
+import FmvParametersTab from './components/FmvParametersTab'
+import BudgetTab from './components/BudgetTab'
 
-const TABS = ['FMV Parameters', 'Doctors (MCL)', 'Therapeutics', 'Brands', 'Meals', 'Document Types', 'Divisions', 'Entities']
+const TABS = ['Entity', 'Division', 'Doctor', 'Brand', 'Therapeutical', 'Document Type', 'Meal', 'FMV Parameter', 'Budget']
 
 export default function Masters() {
   const [activeTab, setActiveTab] = useState(0)
@@ -34,14 +35,15 @@ export default function Masters() {
       </div>
 
       {/* Tab content */}
-      {activeTab === 0 && <FmvParametersTab />}
-      {activeTab === 1 && <DoctorsTab />}
-      {activeTab === 2 && <TherapeuticsTab />}
+      {activeTab === 0 && <EntitiesTab />}
+      {activeTab === 1 && <DivisionsTab />}
+      {activeTab === 2 && <DoctorsTab />}
       {activeTab === 3 && <BrandsTab />}
-      {activeTab === 4 && <MealsTab />}
+      {activeTab === 4 && <TherapeuticsTab />}
       {activeTab === 5 && <DocumentTypesTab />}
-      {activeTab === 6 && <DivisionsTab />}
-      {activeTab === 7 && <EntitiesTab />}
+      {activeTab === 6 && <MealsTab />}
+      {activeTab === 7 && <FmvParametersTab />}
+      {activeTab === 8 && <BudgetTab />}
     </div>
   )
 }

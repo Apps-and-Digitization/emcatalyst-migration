@@ -22,6 +22,69 @@ def _add_event_audit(db: Session, event_id: int, action: str, from_s: str, to_s:
     db.add(EventAuditTrail(event_id=event_id, action=action, from_status=from_s, to_status=to_s, performed_by_id=user_id, remarks=remarks))
 
 
+def _deduct_budget(db: Session, event, user_id: int = None):
+    """
+    Deduct budget on pre-event submission:
+    - Speaker Cost budget: sum of honorarium from all doctors
+    - Sponsorship/Event Cost budget: total event cost + sum of cab + flight + accommodation
+    Uses event_date month/year and division_id to find the matching budget rows.
+    """
+    from app.models.master import MasterBudget, BudgetAuditTrail
+    from decimal import Decimal
+
+    if not event.event_date or not event.division_id:
+        return
+
+    # Determine the month (first day of event month)
+    event_month_start = event.event_date.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    # Calculate speaker cost (sum of honorarium from all doctors)
+    speaker_cost = sum(float(d.honorarium or 0) for d in event.doctors)
+
+    # Calculate event cost (venue + AV + meals + other + cab + flight + accommodation)
+    event_cost = float(event.venue_charges or 0) + float(event.av_platform_cost or 0) + float(event.other_amount or 0)
+    # Add total meal cost
+    if event.meals:
+        total_attendees = (event.proposed_emcure_attendees or 0) + (event.num_hcps_professional_services or 0) + (event.proposed_num_hcps or 0)
+        for meal in event.meals:
+            event_cost += float(meal.cost_per_attendee or 0) * total_attendees
+    # Add travel costs from doctors
+    for d in event.doctors:
+        event_cost += float(d.cab_cost or 0) + float(d.flight_cost or 0) + float(d.accommodation_cost or 0)
+
+    # Deduct from Speaker Cost budget
+    if speaker_cost > 0:
+        speaker_budget = db.query(MasterBudget).filter(
+            MasterBudget.division_id == event.division_id,
+            MasterBudget.budget_type == "Speaker Cost",
+            MasterBudget.budget_month == event_month_start,
+            MasterBudget.is_active == True,
+        ).first()
+        if speaker_budget:
+            speaker_budget.utilized_budget = Decimal(str(float(speaker_budget.utilized_budget or 0) + speaker_cost))
+            db.add(BudgetAuditTrail(
+                budget_id=speaker_budget.id, action="Deducted", amount=speaker_cost,
+                description=f"Speaker cost \u20b9{speaker_cost:,.0f} deducted for Event {event.event_code or event.id}",
+                performed_by_id=user_id, event_code=event.event_code,
+            ))
+
+    # Deduct from Sponsorship/Event Cost budget
+    if event_cost > 0:
+        event_budget = db.query(MasterBudget).filter(
+            MasterBudget.division_id == event.division_id,
+            MasterBudget.budget_type == "Sponsorship/Event Cost",
+            MasterBudget.budget_month == event_month_start,
+            MasterBudget.is_active == True,
+        ).first()
+        if event_budget:
+            event_budget.utilized_budget = Decimal(str(float(event_budget.utilized_budget or 0) + event_cost))
+            db.add(BudgetAuditTrail(
+                budget_id=event_budget.id, action="Deducted", amount=event_cost,
+                description=f"Event cost \u20b9{event_cost:,.0f} deducted for Event {event.event_code or event.id}",
+                performed_by_id=user_id, event_code=event.event_code,
+            ))
+
+
 def generate_event_code(db: Session) -> str:
     count = db.query(Event).count() + 1
     return f"EC{datetime.now().strftime('%Y%m')}{count:04d}"
@@ -109,6 +172,11 @@ def get_event(
         data["l1_approver_name"] = f"{event.l1_approver.first_name} {event.l1_approver.last_name}"
     if event.l2_approver:
         data["l2_approver_name"] = f"{event.l2_approver.first_name} {event.l2_approver.last_name}"
+    # Add division name
+    if event.division_id:
+        from app.models.user import Division
+        div = db.query(Division).filter(Division.id == event.division_id).first()
+        data["division_name"] = div.name if div else None
     return data
 
 
@@ -127,6 +195,119 @@ def update_event(
     db.commit()
     db.refresh(event)
     return event
+
+
+@router.put("/{event_id}/change-date")
+def change_event_date(
+    event_id: int,
+    new_date: str,  # YYYY-MM-DD format
+    new_end_date: Optional[str] = None,  # YYYY-MM-DD format
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Admin only: Change event date with budget reversal and re-deduction."""
+    if current_user.role != "Administrator" and not current_user.is_superuser:
+        raise HTTPException(status_code=403, detail="Only administrators can change event dates")
+
+    event = db.query(Event).filter(Event.id == event_id).first()
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+
+    from datetime import datetime as dt
+    from app.models.master import MasterBudget, BudgetAuditTrail
+
+    new_event_date = dt.strptime(new_date, "%Y-%m-%d")
+    old_event_date = event.event_date
+
+    # Only process budget changes if event has been submitted (budget was deducted)
+    if event.status != "Draft" and event.division_id and old_event_date:
+        old_month_start = old_event_date.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        new_month_start = new_event_date.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+        # Only reverse/re-deduct if month actually changed
+        if old_month_start != new_month_start:
+            # Calculate costs (same logic as _deduct_budget)
+            speaker_cost = sum(float(d.honorarium or 0) for d in event.doctors)
+            event_cost = float(event.venue_charges or 0) + float(event.av_platform_cost or 0) + float(event.other_amount or 0)
+            if event.meals:
+                total_attendees = (event.proposed_emcure_attendees or 0) + (event.num_hcps_professional_services or 0) + (event.proposed_num_hcps or 0)
+                for meal in event.meals:
+                    event_cost += float(meal.cost_per_attendee or 0) * total_attendees
+            for d in event.doctors:
+                event_cost += float(d.cab_cost or 0) + float(d.flight_cost or 0) + float(d.accommodation_cost or 0)
+
+            # Check if new month has budget
+            new_speaker_budget = db.query(MasterBudget).filter(
+                MasterBudget.division_id == event.division_id,
+                MasterBudget.budget_type == "Speaker Cost",
+                MasterBudget.budget_month == new_month_start,
+                MasterBudget.is_active == True,
+            ).first()
+
+            new_event_budget = db.query(MasterBudget).filter(
+                MasterBudget.division_id == event.division_id,
+                MasterBudget.budget_type == "Sponsorship/Event Cost",
+                MasterBudget.budget_month == new_month_start,
+                MasterBudget.is_active == True,
+            ).first()
+
+            # Validate budget exists for new month
+            if not new_speaker_budget and not new_event_budget:
+                raise HTTPException(status_code=400, detail="No budget allocated for the new event month")
+
+            # Validate remaining budget in new month
+            if speaker_cost > 0 and new_speaker_budget:
+                remaining = float(new_speaker_budget.allocated_budget) - float(new_speaker_budget.utilized_budget or 0)
+                if speaker_cost > remaining:
+                    raise HTTPException(status_code=400, detail=f"Speaker cost (₹{speaker_cost:,.0f}) exceeds remaining Speaker budget (₹{remaining:,.0f}) for the new month")
+
+            if event_cost > 0 and new_event_budget:
+                remaining = float(new_event_budget.allocated_budget) - float(new_event_budget.utilized_budget or 0)
+                if event_cost > remaining:
+                    raise HTTPException(status_code=400, detail=f"Event cost (₹{event_cost:,.0f}) exceeds remaining Event budget (₹{remaining:,.0f}) for the new month")
+
+            # Reverse from old month
+            old_speaker_budget = db.query(MasterBudget).filter(
+                MasterBudget.division_id == event.division_id,
+                MasterBudget.budget_type == "Speaker Cost",
+                MasterBudget.budget_month == old_month_start,
+                MasterBudget.is_active == True,
+            ).first()
+
+            old_event_budget = db.query(MasterBudget).filter(
+                MasterBudget.division_id == event.division_id,
+                MasterBudget.budget_type == "Sponsorship/Event Cost",
+                MasterBudget.budget_month == old_month_start,
+                MasterBudget.is_active == True,
+            ).first()
+
+            if old_speaker_budget and speaker_cost > 0:
+                old_speaker_budget.utilized_budget = Decimal(str(max(0, float(old_speaker_budget.utilized_budget or 0) - speaker_cost)))
+                db.add(BudgetAuditTrail(budget_id=old_speaker_budget.id, action="Reversed", amount=speaker_cost, description=f"Reversed ₹{speaker_cost:,.0f} - Event {event.event_code} date changed", performed_by_id=current_user.id, event_code=event.event_code))
+
+            if old_event_budget and event_cost > 0:
+                old_event_budget.utilized_budget = Decimal(str(max(0, float(old_event_budget.utilized_budget or 0) - event_cost)))
+                db.add(BudgetAuditTrail(budget_id=old_event_budget.id, action="Reversed", amount=event_cost, description=f"Reversed ₹{event_cost:,.0f} - Event {event.event_code} date changed", performed_by_id=current_user.id, event_code=event.event_code))
+
+            # Deduct from new month
+            if new_speaker_budget and speaker_cost > 0:
+                new_speaker_budget.utilized_budget = Decimal(str(float(new_speaker_budget.utilized_budget or 0) + speaker_cost))
+                db.add(BudgetAuditTrail(budget_id=new_speaker_budget.id, action="Deducted", amount=speaker_cost, description=f"Speaker cost ₹{speaker_cost:,.0f} deducted - Event {event.event_code} date changed", performed_by_id=current_user.id, event_code=event.event_code))
+
+            if new_event_budget and event_cost > 0:
+                new_event_budget.utilized_budget = Decimal(str(float(new_event_budget.utilized_budget or 0) + event_cost))
+                db.add(BudgetAuditTrail(budget_id=new_event_budget.id, action="Deducted", amount=event_cost, description=f"Event cost ₹{event_cost:,.0f} deducted - Event {event.event_code} date changed", performed_by_id=current_user.id, event_code=event.event_code))
+
+    # Update the event dates
+    event.event_date = new_event_date
+    if new_end_date:
+        from datetime import datetime as dt2
+        event.event_end_date = dt2.strptime(new_end_date, "%Y-%m-%d")
+    # Add audit trail
+    end_info = f" to {new_end_date}" if new_end_date else ""
+    db.add(EventAuditTrail(event_id=event.id, action="Date Changed", from_status=event.status, to_status=event.status, performed_by_id=current_user.id, remarks=f"Date changed from {old_event_date.strftime('%d %b %Y') if old_event_date else 'N/A'} to {new_event_date.strftime('%d %b %Y')}{end_info}"))
+    db.commit()
+    return {"ok": True, "message": f"Event date changed to {new_event_date.strftime('%d %b %Y')}"}
 
 
 @router.delete("/{event_id}")
@@ -155,6 +336,7 @@ def delete_event(
 @router.post("/{event_id}/submit", response_model=EventOut)
 def submit_event(
     event_id: int,
+    remarks: Optional[str] = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
@@ -165,6 +347,22 @@ def submit_event(
         raise HTTPException(status_code=404, detail="Event not found")
     if event.status != EventStatus.DRAFT:
         raise HTTPException(status_code=400, detail="Only draft events can be submitted")
+
+    # Validate mandatory documents
+    from app.models.event import EventDocumentType, EventDocument
+    mandatory_docs = db.query(EventDocumentType).filter(
+        EventDocumentType.event_type == event.event_type,
+        EventDocumentType.is_mandatory == True,
+        EventDocumentType.is_active == True,
+    ).all()
+    if mandatory_docs:
+        uploaded_types = {d.document_type for d in event.documents}
+        missing = [d.document_name for d in mandatory_docs if d.document_name not in uploaded_types]
+        if missing:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Mandatory documents missing: {', '.join(missing)}. Please upload them before submitting."
+            )
 
     # Use workflow engine to determine first step
     first_step = get_first_step(db, "event_pre_approval")
@@ -195,7 +393,11 @@ def submit_event(
             event.l2_approver_id = l2.id
         event.status = EventStatus.PENDING_L1
 
-    _add_event_audit(db, event.id, "Submitted", EventStatus.DRAFT, event.status, current_user.id, "")
+    _add_event_audit(db, event.id, "Submitted", EventStatus.DRAFT, event.status, current_user.id, remarks or "")
+
+    # Budget deduction on pre-event submission
+    _deduct_budget(db, event, current_user.id)
+
     db.commit()
     db.refresh(event)
     return event
@@ -375,9 +577,80 @@ def can_approve_event(
     return {"can_approve": can, "step_label": step.step_label}
 
 
+@router.get("/permissions/can-create")
+def can_create_event(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Check if current user can create/initiate events based on workflow config."""
+    from app.services.workflow_service import get_workflow, can_user_initiate
+    wf = get_workflow(db, "event_pre_approval")
+    if not wf:
+        return {"can_create": True}  # No workflow = anyone can create
+    return {"can_create": can_user_initiate(db, current_user, wf)}
+
+
+@router.get("/permissions/workflow-steps")
+def get_event_workflow_steps(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Return the approval workflow steps for display in the UI."""
+    from app.services.workflow_service import get_workflow_steps
+    pre_steps = get_workflow_steps(db, "event_pre_approval")
+    post_steps = get_workflow_steps(db, "event_post_approval")
+    return {
+        "pre_steps": [{"step_order": s.step_order, "step_label": s.step_label, "pending_status": s.pending_status, "approved_status": s.approved_status} for s in pre_steps],
+        "post_steps": [{"step_order": s.step_order, "step_label": s.step_label, "pending_status": s.pending_status, "approved_status": s.approved_status} for s in post_steps],
+    }
+
+
+@router.get("/permissions/check-budget")
+def check_budget(
+    division_id: int,
+    event_date: str,  # YYYY-MM-DD
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Check if budget exists for the given division and event month, return remaining amounts."""
+    from app.models.master import MasterBudget
+    from datetime import datetime as dt
+
+    parsed_date = dt.strptime(event_date[:7] + "-01", "%Y-%m-%d")
+
+    speaker_budget = db.query(MasterBudget).filter(
+        MasterBudget.division_id == division_id,
+        MasterBudget.budget_type == "Speaker Cost",
+        MasterBudget.budget_month == parsed_date,
+        MasterBudget.is_active == True,
+    ).first()
+
+    event_budget = db.query(MasterBudget).filter(
+        MasterBudget.division_id == division_id,
+        MasterBudget.budget_type == "Sponsorship/Event Cost",
+        MasterBudget.budget_month == parsed_date,
+        MasterBudget.is_active == True,
+    ).first()
+
+    return {
+        "has_budget": bool(speaker_budget or event_budget),
+        "speaker_budget": {
+            "allocated": float(speaker_budget.allocated_budget) if speaker_budget else 0,
+            "utilized": float(speaker_budget.utilized_budget or 0) if speaker_budget else 0,
+            "remaining": float(speaker_budget.allocated_budget) - float(speaker_budget.utilized_budget or 0) if speaker_budget else 0,
+        } if speaker_budget else None,
+        "event_budget": {
+            "allocated": float(event_budget.allocated_budget) if event_budget else 0,
+            "utilized": float(event_budget.utilized_budget or 0) if event_budget else 0,
+            "remaining": float(event_budget.allocated_budget) - float(event_budget.utilized_budget or 0) if event_budget else 0,
+        } if event_budget else None,
+    }
+
+
 @router.post("/{event_id}/submit-post-event", response_model=EventOut)
 def submit_post_event(
     event_id: int,
+    remarks: Optional[str] = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
@@ -389,7 +662,7 @@ def submit_post_event(
         raise HTTPException(status_code=400, detail=f"Event must be Pre-Approved or Post-Event Pending, got {event.status}")
     old = event.status
     event.status = EventStatus.POST_L1
-    _add_event_audit(db, event.id, "Post-Event Documents Submitted", old, EventStatus.POST_L1, current_user.id, "Post-event documents uploaded")
+    _add_event_audit(db, event.id, "Post-Event Documents Submitted", old, EventStatus.POST_L1, current_user.id, remarks or "Post-event documents uploaded")
     db.commit()
     db.refresh(event)
     return event
@@ -629,6 +902,7 @@ def add_cost(event_id: int, data: EventCostCreate, db: Session = Depends(get_db)
 async def upload_document(
     event_id: int,
     document_type: str = Form(...),
+    stage: str = Form("pre"),
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
@@ -654,12 +928,13 @@ async def upload_document(
         document_name=file.filename,
         file_path=file_path,
         mime_type=file.content_type,
+        stage=stage,
         uploaded_by_id=current_user.id
     )
     db.add(doc)
     db.commit()
     db.refresh(doc)
-    return {"id": doc.id, "document_name": doc.document_name, "file_path": doc.file_path}
+    return {"id": doc.id, "document_name": doc.document_name, "file_path": doc.file_path, "stage": doc.stage}
 
 
 # Agreements (sub-module of Event)

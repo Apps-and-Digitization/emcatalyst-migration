@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { Toaster } from 'react-hot-toast'
+import { Toaster, toast as hotToast } from 'react-hot-toast'
 import { useEffect } from 'react'
 import useAuthStore from './store/authStore'
 import useAccessStore from './store/accessStore'
@@ -70,7 +70,34 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            duration: 3000,
+            error: { duration: 6000 },
+          }}
+        >
+          {(t) => (
+            <div
+              className={`${t.visible ? 'animate-enter' : 'animate-leave'} bg-white shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5`}
+              style={{ maxWidth: '360px', ...(t.type === 'error' ? { background: '#FEF2F2', border: '1px solid #FECACA' } : {}) }}
+            >
+              <div className="p-3 flex-1 min-w-0">
+                <p className={`text-sm font-medium break-words whitespace-pre-wrap ${t.type === 'error' ? 'text-red-800' : t.type === 'success' ? 'text-green-800' : 'text-gray-900'}`}>
+                  {typeof t.message === 'function' ? t.message(t) : t.message}
+                </p>
+              </div>
+              {t.type === 'error' && (
+                <button
+                  onClick={() => hotToast.dismiss(t.id)}
+                  className="px-3 flex items-center border-l border-red-200 text-red-500 hover:text-red-700 text-lg font-bold"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+          )}
+        </Toaster>
         <ErrorBoundary>
           <AccessLoader>
             <Routes>

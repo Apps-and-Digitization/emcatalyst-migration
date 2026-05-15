@@ -36,7 +36,7 @@ export default function EventForm() {
   const isSponsorship = eventType === 'Corporate Sponsorship'
 
   // Queries
-  const { data: divisions = [] } = useQuery({ queryKey: ['divisions'], queryFn: () => accessApi.listDivisions().then(r => r.data) })
+  const { data: divisions = [] } = useQuery({ queryKey: ['my-divisions'], queryFn: () => accessApi.listMyDivisions().then(r => r.data) })
   const { data: therapeutics = [] } = useQuery({ queryKey: ['therapeutics'], queryFn: () => masterApi.therapeutics().then(r => r.data) })
   const { data: brands = [] } = useQuery({ queryKey: ['brands'], queryFn: () => masterApi.brands().then(r => r.data) })
   const { data: fmvParams = {} } = useQuery({ queryKey: ['fmv-parameters'], queryFn: () => masterApi.fmvParameters().then(r => r.data) })
@@ -57,8 +57,8 @@ export default function EventForm() {
     if (existingEvent && isEditMode) {
       const fields = ['event_type','event_title','division_id','therapeutic_area','brand','budget_type','on_field_execution_by','platform','topic','city','venue','state','rationale','promotional_material_approved','agenda','proposed_emcure_attendees','num_hcps_professional_services','proposed_num_hcps','conference_type','solicited_unsolicited','sponsorship_type','sponsorship_amount','advance_payment_reason','advance_payment_amount','cost_center','meal_type','meal_cost_per_attendee','minimum_guarantee_pax','venue_charges','av_platform_cost','other_amount','other_amount_description','btc_facility']
       fields.forEach(f => { if (existingEvent[f] != null) setValue(f, String(existingEvent[f])) })
-      if (existingEvent.event_date) setValue('event_date', existingEvent.event_date.slice(0, 16))
-      if (existingEvent.event_end_date) setValue('event_end_date', existingEvent.event_end_date.slice(0, 16))
+      if (existingEvent.event_date) setValue('event_date', existingEvent.event_date.slice(0, 10))
+      if (existingEvent.event_end_date) setValue('event_end_date', existingEvent.event_end_date.slice(0, 10))
       if (existingEvent.advance_payment) setValue('advance_payment', 'Yes')
       if (existingEvent.is_division_involved) setValue('is_division_involved', 'Yes')
       // Load doctors with FMV point fields mapped
@@ -175,7 +175,27 @@ export default function EventForm() {
       }
 
       toast.success('Event saved')
-      if (andContinue) setStep(s => s + 1)
+      if (andContinue) {
+        // Budget check when moving from Step 2 (index 1) to Step 3 (index 2)
+        if (step === 1) {
+          const divId = payload.division_id || getValues('division_id')
+          const eventDate = payload.event_date || getValues('event_date')
+          if (divId && eventDate) {
+            try {
+              const budgetRes = await eventsApi.checkBudget(divId, eventDate)
+              const budgetData = budgetRes.data
+              if (!budgetData.has_budget) {
+                toast.error('No budget allocated for the selected division and event month. Please contact admin to allocate budget.')
+                setSaving(false)
+                return
+              }
+            } catch (err) {
+              // If budget check fails, allow to proceed (non-blocking)
+            }
+          }
+        }
+        setStep(s => s + 1)
+      }
     } catch (e) {
       toast.error(e.response?.data?.detail || 'Error saving')
     }
@@ -185,6 +205,7 @@ export default function EventForm() {
   const addDoctor = useMutation({
     mutationFn: (data) => eventsApi.addDoctor(eventId, data),
     onSuccess: (res) => { setDoctors(prev => [...prev, res.data]); toast.success('HCP added') },
+    onError: (err) => toast.error(err.response?.data?.detail || 'Failed to add doctor. Make sure the event is saved first.'),
   })
 
   // Upload documents and optionally submit
@@ -291,6 +312,7 @@ export default function EventForm() {
           saving={saving}
           getValues={getValues}
           watch={watch}
+          setValue={setValue}
           doctors={doctors}
           setDoctors={setDoctors}
           fmvParams={fmvParams}
@@ -301,6 +323,15 @@ export default function EventForm() {
           addDoctor={addDoctor}
           onSave={saveEvent}
           onBack={() => setStep(1)}
+          checkBudget={async () => {
+            const divId = getValues('division_id')
+            const eventDate = getValues('event_date')
+            if (!divId || !eventDate) return null
+            try {
+              const res = await eventsApi.checkBudget(divId, eventDate)
+              return res.data
+            } catch { return null }
+          }}
         />
       )}
 
@@ -310,11 +341,23 @@ export default function EventForm() {
           eventType={eventType}
           doctors={doctors}
           saving={saving}
+          eventId={eventId}
           preEventDocs={preEventDocs}
           preDocUploads={preDocUploads}
           setPreDocUploads={setPreDocUploads}
           onSaveDraft={handleSaveDraft}
-          onSubmit={handleSubmitEvent}
+          onPreview={async () => {
+            // Validate mandatory documents before preview
+            const mandatoryDocs = preEventDocs.filter(d => d.is_mandatory)
+            const missingDocs = mandatoryDocs.filter(d => !preDocUploads[d.id])
+            if (missingDocs.length > 0) {
+              toast.error(`Mandatory documents missing: ${missingDocs.map(d => d.name).join(', ')}`)
+              return
+            }
+            // Save draft first (upload docs), then navigate to preview
+            await handleSaveDraft()
+            if (eventId) navigate(`/events/${eventId}`)
+          }}
           onBack={() => setStep(2)}
         />
       )}

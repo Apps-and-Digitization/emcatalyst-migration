@@ -29,6 +29,8 @@ export default function BrsDetail() {
     queryKey: ['brs-can-approve', id],
     queryFn: () => api.get(`/brs/${id}/can-approve`).then(r => r.data).catch(() => ({ can_approve: false })),
     enabled: !!brs && brs.status === 'Submitted',
+    staleTime: 0,
+    gcTime: 0,
   })
 
   const { data: canInitiateData } = useQuery({

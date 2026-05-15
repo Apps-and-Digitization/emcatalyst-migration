@@ -8,7 +8,7 @@ export const fmtDate = (d) => {
 
 export const fmtDateTime = (d) => {
   if (!d) return '—'
-  try { return format(typeof d === 'string' ? parseISO(d) : d, 'dd MMM yyyy, HH:mm') }
+  try { return format(typeof d === 'string' ? parseISO(d) : d, 'dd MMM yyyy, hh:mm a') }
   catch { return '—' }
 }
 
@@ -18,7 +18,7 @@ export const fmtCurrency = (amount, currency = 'INR') => {
 }
 
 export const statusBadgeClass = (status) => {
-  const s = (status || '').toLowerCase().replace(/\s+/g, '_')
+  const s = (status || '').toLowerCase().replace(/[\s-]+/g, '_')
   const map = {
     // Event statuses
     draft: 'badge-draft',
@@ -27,6 +27,16 @@ export const statusBadgeClass = (status) => {
     pre_approved: 'badge-approved',
     rejected: 'badge-rejected',
     pending: 'badge-pending',
+    pending_l1: 'badge-pending',
+    pending_l2: 'badge-under-review',
+    pending_compliance: 'badge-compliance',
+    post_l1: 'badge-info',
+    post_l2: 'badge-agreement',
+    post_compliance: 'badge-compliance',
+    post_coordinator: 'badge-finance',
+    post_gst: 'badge-finance',
+    post_finance: 'badge-finance',
+    'post_event_pending': 'badge-pending',
     under_review: 'badge-under-review',
     compliance_approved: 'badge-compliance',
     finance_approved: 'badge-finance',

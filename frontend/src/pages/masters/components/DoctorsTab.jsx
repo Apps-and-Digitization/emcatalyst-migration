@@ -6,10 +6,13 @@ import { masterApi, accessApi } from '../../../api/endpoints'
 import api from '../../../api/client'
 import LoadingSpinner from '../../../components/ui/LoadingSpinner'
 import Modal from '../../../components/ui/Modal'
+import useAuthStore from '../../../store/authStore'
 
 const PAGE_SIZE = 50
 
 export default function DoctorsTab() {
+  const { user } = useAuthStore()
+  const isAdmin = user?.role === 'Administrator' || user?.is_superuser
   const qc = useQueryClient()
   const [search, setSearch] = useState('')
   const [stateFilter, setStateFilter] = useState('')
@@ -210,9 +213,9 @@ export default function DoctorsTab() {
                       <button className="text-xs text-[var(--color-primary)] hover:underline" onClick={() => setSelectedDoc(d)}>
                         <Edit2 size={12} />
                       </button>
-                      <button className="text-xs text-red-500 hover:underline" onClick={(ev) => { ev.stopPropagation(); if (confirm('Delete this doctor?')) deleteDoctor.mutate(d.id) }}>
+                      {isAdmin && <button className="text-xs text-red-500 hover:underline" onClick={(ev) => { ev.stopPropagation(); if (confirm('Delete this doctor?')) deleteDoctor.mutate(d.id) }}>
                         <Trash2 size={12} />
-                      </button>
+                      </button>}
                     </div>
                   </td>
                 </tr>

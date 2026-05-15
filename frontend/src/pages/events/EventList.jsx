@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Search, CalendarDays, ChevronLeft, ChevronRight, Edit2, Trash2 } from 'lucide-react'
+import { Plus, Search, CalendarDays, ChevronLeft, ChevronRight, Edit2, Trash2, Calendar } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { eventsApi, masterApi } from '../../api/endpoints'
 import { fmtDate, fmtCurrency } from '../../utils/helpers'
@@ -20,6 +20,9 @@ export default function EventList() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [page, setPage] = useState(1)
+  const [changeDateEvent, setChangeDateEvent] = useState(null)
+  const [newDate, setNewDate] = useState('')
+  const [newEndDate, setNewEndDate] = useState('')
 
   const { data: allEvents = [], isLoading } = useQuery({
     queryKey: ['events', statusFilter],
@@ -32,10 +35,23 @@ export default function EventList() {
     onError: (e) => toast.error(e.response?.data?.detail || 'Error deleting event'),
   })
 
+  const changeDateMutation = useMutation({
+    mutationFn: ({ id, new_date, new_end_date }) => eventsApi.changeDate(id, new_date, new_end_date),
+    onSuccess: (res) => { qc.invalidateQueries(['events']); toast.success(res.data?.message || 'Date changed'); setChangeDateEvent(null) },
+    onError: (e) => toast.error(e.response?.data?.detail || 'Error changing date'),
+  })
+
   const { data: divisions = [] } = useQuery({
     queryKey: ['master-divisions'],
     queryFn: () => masterApi.divisions().then(r => r.data),
   })
+
+  const { data: canCreateData } = useQuery({
+    queryKey: ['events-can-create'],
+    queryFn: () => eventsApi.canCreate().then(r => r.data),
+  })
+
+  const canCreate = canCreateData?.can_create !== false
 
   const divisionMap = Object.fromEntries(divisions.map(d => [d.id, d.name]))
 
@@ -60,9 +76,11 @@ export default function EventList() {
         title="Events"
         subtitle="Manage medical events, CMEs, conferences and workshops"
         actions={
-          <button className="btn-primary flex items-center gap-2" onClick={() => navigate('/events/new')}>
-            <Plus size={16} /> New Event
-          </button>
+          canCreate && (
+            <button className="btn-primary flex items-center gap-2" onClick={() => navigate('/events/new')}>
+              <Plus size={16} /> New Event
+            </button>
+          )
         }
       />
 
@@ -133,6 +151,11 @@ export default function EventList() {
                           <Trash2 size={12} /> Delete
                         </button>
                       )}
+                      {user?.role === 'Administrator' && (
+                        <button className="text-amber-600 hover:underline text-xs flex items-center gap-1" onClick={() => { setChangeDateEvent(e); setNewDate(e.event_date?.slice(0, 10) || ''); setNewEndDate(e.event_end_date?.slice(0, 10) || '') }}>
+                          <Calendar size={12} /> Change Date
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -160,6 +183,38 @@ export default function EventList() {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Change Date Modal */}
+      {changeDateEvent && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm">
+            <h3 className="text-lg font-semibold mb-1">Change Event Date</h3>
+            <p className="text-sm text-gray-500 mb-4">
+              {changeDateEvent.event_code} — {changeDateEvent.event_title}
+            </p>
+            <div className="space-y-3 mb-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+                <input type="date" className="input w-full" value={newDate} onChange={e => setNewDate(e.target.value)} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+                <input type="date" className="input w-full" value={newEndDate} onChange={e => setNewEndDate(e.target.value)} />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <button className="btn-secondary text-sm" onClick={() => setChangeDateEvent(null)}>Cancel</button>
+              <button
+                className="btn-primary text-sm"
+                disabled={!newDate || !newEndDate || changeDateMutation.isPending}
+                onClick={() => changeDateMutation.mutate({ id: changeDateEvent.id, new_date: newDate, new_end_date: newEndDate })}
+              >
+                {changeDateMutation.isPending ? 'Saving…' : 'Save'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

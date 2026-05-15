@@ -4,7 +4,7 @@ import toast from 'react-hot-toast'
 
 const HCP_ROLES = ['Speaker', 'Moderator', 'Chairperson', 'Panellist', 'Advisor', 'Consultant', 'Others']
 
-export default function NonMclDoctorTable({ doctors, setDoctors, fmvParams, addDoctor }) {
+export default function NonMclDoctorTable({ doctors, setDoctors, fmvParams, addDoctor, hcpLimit = 0 }) {
   const [showNonMcl, setShowNonMcl] = useState(false)
   const [nonMclForm, setNonMclForm] = useState({ first_name: '', last_name: '', speciality: '', qualification: '', email: '', pan: '', role: '', experience: '', address: '' })
 
@@ -17,7 +17,13 @@ export default function NonMclDoctorTable({ doctors, setDoctors, fmvParams, addD
           <h3 className="font-semibold text-lg">Non-MCL HCP Doctor Details</h3>
           <p className="text-xs text-gray-500 mt-1">Selection Procedure For Non MCL HCP</p>
         </div>
-        <button className="btn-secondary flex items-center gap-1 text-sm" onClick={() => setShowNonMcl(true)}><Plus size={14} /> Add Non-MCL HCP</button>
+        <button className="btn-secondary flex items-center gap-1 text-sm" onClick={() => {
+          if (hcpLimit > 0 && doctors.length >= hcpLimit) {
+            toast.error(`Cannot add more doctors. Limit is ${hcpLimit} (HCPs Delivering Professional Services)`)
+            return
+          }
+          setShowNonMcl(true)
+        }}><Plus size={14} /> Add Non-MCL HCP</button>
       </div>
 
       {showNonMcl && (
@@ -36,6 +42,10 @@ export default function NonMclDoctorTable({ doctors, setDoctors, fmvParams, addD
           <div className="flex gap-2">
             <button className="btn-primary text-sm flex items-center gap-1" onClick={() => {
               if (!nonMclForm.first_name) { toast.error('First name is required'); return }
+              if (hcpLimit > 0 && doctors.length >= hcpLimit) {
+                toast.error(`Cannot add more doctors. Limit is ${hcpLimit} (HCPs Delivering Professional Services)`)
+                return
+              }
               addDoctor.mutate({
                 doctor_name: `${nonMclForm.first_name} ${nonMclForm.last_name}`.trim(),
                 specialization: nonMclForm.speciality || '',
@@ -74,12 +84,12 @@ export default function NonMclDoctorTable({ doctors, setDoctors, fmvParams, addD
                   <tr key={d.id || `n${i}`} className="hover:bg-gray-50">
                     <td className="px-2 py-1.5 font-medium whitespace-nowrap">{d.doctor_name}</td>
                     <td className="px-2 py-1.5 text-gray-500">{d.email || '—'}</td>
-                    <td className="px-2 py-1.5"><select className="input py-0 px-0.5 text-xs w-16" value={d.fmv_expertise_pts || ''} onChange={e => upd('fmv_expertise_pts', parseInt(e.target.value) || 0)}><option value="">-</option>{(fmvParams['Area of Expertise'] || []).map(o => <option key={o.id} value={o.points}>{o.option_code}({o.points})</option>)}</select></td>
-                    <td className="px-2 py-1.5"><select className="input py-0 px-0.5 text-xs w-16" value={d.fmv_clinical_pts || ''} onChange={e => upd('fmv_clinical_pts', parseInt(e.target.value) || 0)}><option value="">-</option>{(fmvParams['Clinical Practice Experience'] || []).map(o => <option key={o.id} value={o.points}>{o.option_code}({o.points})</option>)}</select></td>
-                    <td className="px-2 py-1.5"><select className="input py-0 px-0.5 text-xs w-16" value={d.fmv_publications_pts || ''} onChange={e => upd('fmv_publications_pts', parseInt(e.target.value) || 0)}><option value="">-</option>{(fmvParams['Publications in Literature'] || []).map(o => <option key={o.id} value={o.points}>{o.option_code}({o.points})</option>)}</select></td>
-                    <td className="px-2 py-1.5"><select className="input py-0 px-0.5 text-xs w-16" value={d.fmv_congress_pts || ''} onChange={e => upd('fmv_congress_pts', parseInt(e.target.value) || 0)}><option value="">-</option>{(fmvParams['Prior Experience of Congresses'] || []).map(o => <option key={o.id} value={o.points}>{o.option_code}({o.points})</option>)}</select></td>
-                    <td className="px-2 py-1.5"><select className="input py-0 px-0.5 text-xs w-16" value={d.fmv_position_pts || ''} onChange={e => upd('fmv_position_pts', parseInt(e.target.value) || 0)}><option value="">-</option>{(fmvParams['Professional Position'] || []).map(o => <option key={o.id} value={o.points}>{o.option_code}({o.points})</option>)}</select></td>
-                    <td className="px-2 py-1.5"><select className="input py-0 px-0.5 text-xs w-16" value={d.fmv_investigator_pts || ''} onChange={e => upd('fmv_investigator_pts', parseInt(e.target.value) || 0)}><option value="">-</option>{(fmvParams['Investigator Experience'] || []).map(o => <option key={o.id} value={o.points}>{o.option_code}({o.points})</option>)}</select></td>
+                    <td className="px-2 py-1.5"><select className="input py-0 px-0.5 text-xs w-44" value={d.fmv_expertise_pts || ''} onChange={e => upd('fmv_expertise_pts', parseInt(e.target.value) || 0)}><option value="">-</option>{(fmvParams['Area of Expertise'] || []).map(o => <option key={o.id} value={o.points}>{o.option_code}) {o.option_label}</option>)}</select></td>
+                    <td className="px-2 py-1.5"><select className="input py-0 px-0.5 text-xs w-44" value={d.fmv_clinical_pts || ''} onChange={e => upd('fmv_clinical_pts', parseInt(e.target.value) || 0)}><option value="">-</option>{(fmvParams['Clinical Practice Experience'] || []).map(o => <option key={o.id} value={o.points}>{o.option_code}) {o.option_label}</option>)}</select></td>
+                    <td className="px-2 py-1.5"><select className="input py-0 px-0.5 text-xs w-44" value={d.fmv_publications_pts || ''} onChange={e => upd('fmv_publications_pts', parseInt(e.target.value) || 0)}><option value="">-</option>{(fmvParams['Publications in literature'] || []).map(o => <option key={o.id} value={o.points}>{o.option_code}) {o.option_label}</option>)}</select></td>
+                    <td className="px-2 py-1.5"><select className="input py-0 px-0.5 text-xs w-44" value={d.fmv_congress_pts || ''} onChange={e => upd('fmv_congress_pts', parseInt(e.target.value) || 0)}><option value="">-</option>{(fmvParams['Prior experience of Congresses'] || []).map(o => <option key={o.id} value={o.points}>{o.option_code}) {o.option_label}</option>)}</select></td>
+                    <td className="px-2 py-1.5"><select className="input py-0 px-0.5 text-xs w-44" value={d.fmv_position_pts || ''} onChange={e => upd('fmv_position_pts', parseInt(e.target.value) || 0)}><option value="">-</option>{(fmvParams['Professional Position'] || []).map(o => <option key={o.id} value={o.points}>{o.option_code}) {o.option_label}</option>)}</select></td>
+                    <td className="px-2 py-1.5"><select className="input py-0 px-0.5 text-xs w-44" value={d.fmv_investigator_pts || ''} onChange={e => upd('fmv_investigator_pts', parseInt(e.target.value) || 0)}><option value="">-</option>{(fmvParams['Experience as an investigator in clinical trials'] || []).map(o => <option key={o.id} value={o.points}>{o.option_code}) {o.option_label}</option>)}</select></td>
                     <td className="px-2 py-1.5 font-bold text-center">{pts}</td>
                     <td className="px-2 py-1.5"><span className="px-1 py-0.5 bg-amber-100 text-amber-700 rounded text-xs font-bold">{cat}</span></td>
                     <td className="px-2 py-1.5 whitespace-nowrap">{rate.toLocaleString('en-IN')}</td>

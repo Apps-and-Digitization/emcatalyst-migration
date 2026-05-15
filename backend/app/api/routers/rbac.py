@@ -98,7 +98,17 @@ def deactivate_role(role_id: int, db: Session = Depends(get_db), _: User = Depen
         raise HTTPException(status_code=400, detail="Cannot deactivate Administrator role")
     role.is_active = False
     db.commit()
-    return {"message": "Role deactivated"}
+    return {"message": f"Role '{role.name}' deactivated"}
+
+
+@router.put("/roles/{role_id}/reactivate")
+def reactivate_role(role_id: int, db: Session = Depends(get_db), _: User = Depends(require_admin)):
+    role = db.query(Role).filter(Role.id == role_id).first()
+    if not role:
+        raise HTTPException(status_code=404, detail="Role not found")
+    role.is_active = True
+    db.commit()
+    return {"message": f"Role '{role.name}' reactivated"}
 
 
 # --- Pages Endpoint ---

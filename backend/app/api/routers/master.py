@@ -9,7 +9,8 @@ from app.models.master import (
     EventType, DocumentType, Designation, CompanyCode, Enumeration,
     HcpDoctor, FmvCriteria, FmvParameter, MasterSpeciality, MasterHcpRole,
     MasterTherapeutic, MasterState,
-    MasterBrand, MasterMeal, MasterCity, MasterSponsorshipType
+    MasterBrand, MasterMeal, MasterCity, MasterSponsorshipType, BrandDivision,
+    MasterBudget,
 )
 from app.models.user import Division, Entity
 from app.api.deps import get_current_active_user
@@ -786,14 +787,14 @@ class BrandOut(BaseModel):
     id: int
     mendix_id: Optional[str] = None
     name: str
-    therapeutic_area: Optional[str] = None
+    divisions: list = []
     is_active: bool = True
 
     class Config:
         from_attributes = True
 
 
-@router.get("/brands", response_model=List[BrandOut])
+@router.get("/brands")
 def list_brands(
     q: Optional[str] = Query(None),
     db: Session = Depends(get_db),
@@ -802,44 +803,78 @@ def list_brands(
     query = db.query(MasterBrand).filter(MasterBrand.is_active == True)
     if q:
         query = query.filter(MasterBrand.name.ilike(f"%{q}%"))
-    return query.order_by(MasterBrand.name).all()
+    brands = query.order_by(MasterBrand.name).all()
+    result = []
+    for b in brands:
+        result.append({
+            "id": b.id,
+            "mendix_id": b.mendix_id,
+            "name": b.name,
+            "divisions": [{"id": d.id, "name": d.name} for d in b.divisions],
+            "is_active": b.is_active,
+        })
+    return result
 
 
-@router.post("/brands", response_model=BrandOut)
+@router.post("/brands")
 def create_brand(
     name: str,
-    therapeutic_area: Optional[str] = None,
+    division_ids: Optional[str] = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_admin)
 ):
-    brand = MasterBrand(name=name, therapeutic_area=therapeutic_area)
+    from app.models.master import BrandDivision
+    brand = MasterBrand(name=name)
     db.add(brand)
+    db.flush()
+    # Add division associations
+    if division_ids:
+        for did in division_ids.split(','):
+            did = did.strip()
+            if did:
+                db.add(BrandDivision(brand_id=brand.id, division_id=int(did)))
     db.commit()
     db.refresh(brand)
-    return brand
+    return {
+        "id": brand.id,
+        "name": brand.name,
+        "divisions": [{"id": d.id, "name": d.name} for d in brand.divisions],
+    }
 
 
-@router.put("/brands/{brand_id}", response_model=BrandOut)
+@router.put("/brands/{brand_id}")
 def update_brand(
     brand_id: int,
     name: Optional[str] = None,
-    therapeutic_area: Optional[str] = None,
+    division_ids: Optional[str] = None,
     is_active: Optional[bool] = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_admin)
 ):
+    from app.models.master import BrandDivision
     brand = db.query(MasterBrand).filter(MasterBrand.id == brand_id).first()
     if not brand:
         raise HTTPException(status_code=404, detail="Brand not found")
     if name is not None:
         brand.name = name
-    if therapeutic_area is not None:
-        brand.therapeutic_area = therapeutic_area
     if is_active is not None:
         brand.is_active = is_active
+    # Update division associations (replace all)
+    if division_ids is not None:
+        db.query(BrandDivision).filter(BrandDivision.brand_id == brand_id).delete()
+        if division_ids:  # not empty string
+            for did in division_ids.split(','):
+                did = did.strip()
+                if did:
+                    db.add(BrandDivision(brand_id=brand_id, division_id=int(did)))
     db.commit()
     db.refresh(brand)
-    return brand
+    return {
+        "id": brand.id,
+        "name": brand.name,
+        "divisions": [{"id": d.id, "name": d.name} for d in brand.divisions],
+        "is_active": brand.is_active,
+    }
 
 
 # --- Meals ---
@@ -1144,3 +1179,126 @@ def list_all_hcp_doctors(
         d["divisions"] = [{"id": div.id, "name": div.name} for div in doc.divisions]
         result.append(d)
     return {"items": result, "total": total}
+
+# --- Budget Master ---
+
+@router.get("/budgets")
+def list_budgets(
+    division_id: Optional[int] = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    q = db.query(MasterBudget).filter(MasterBudget.is_active == True)
+    if division_id:
+        q = q.filter(MasterBudget.division_id == division_id)
+    budgets = q.order_by(MasterBudget.budget_month.desc()).all()
+    return [{
+        "id": b.id, "division_id": b.division_id,
+        "division_name": b.division.name if b.division else None,
+        "budget_type": b.budget_type,
+        "budget_month": b.budget_month.strftime("%Y-%m") if b.budget_month else None,
+        "allocated_budget": float(b.allocated_budget),
+        "utilized_budget": float(b.utilized_budget or 0),
+        "remaining_budget": float(b.allocated_budget) - float(b.utilized_budget or 0),
+        "is_active": b.is_active,
+    } for b in budgets]
+
+
+@router.get("/budgets/{budget_id}/audit-trail")
+def get_budget_audit_trail(
+    budget_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    from app.models.master import BudgetAuditTrail
+    trails = db.query(BudgetAuditTrail).filter(BudgetAuditTrail.budget_id == budget_id).order_by(BudgetAuditTrail.created_at.desc()).all()
+    return [{
+        "id": t.id, "action": t.action, "amount": float(t.amount) if t.amount else None,
+        "description": t.description, "event_code": t.event_code,
+        "performed_by": f"{t.performed_by.first_name} {t.performed_by.last_name}" if t.performed_by else "System",
+        "created_at": t.created_at.isoformat() if t.created_at else None,
+    } for t in trails]
+
+
+@router.post("/budgets")
+def create_budget(
+    division_id: int,
+    budget_type: str,
+    budget_month: str,  # "YYYY-MM" format
+    allocated_budget: float,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    from datetime import datetime as dt
+    from app.models.master import BudgetAuditTrail
+    parsed_month = dt.strptime(budget_month + "-01", "%Y-%m-%d")
+    b = MasterBudget(
+        division_id=division_id, budget_type=budget_type,
+        budget_month=parsed_month, allocated_budget=allocated_budget
+    )
+    db.add(b)
+    db.flush()
+    db.add(BudgetAuditTrail(
+        budget_id=b.id, action="Created", amount=b.allocated_budget,
+        description=f"Budget created with \u20b9{float(b.allocated_budget):,.0f} allocation",
+        performed_by_id=current_user.id
+    ))
+    db.commit()
+    db.refresh(b)
+    return {"id": b.id}
+
+
+@router.put("/budgets/{budget_id}")
+def update_budget(
+    budget_id: int,
+    division_id: Optional[int] = None,
+    budget_type: Optional[str] = None,
+    budget_month: Optional[str] = None,  # "YYYY-MM" format
+    allocated_budget: Optional[float] = None,
+    is_active: Optional[bool] = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    from app.models.master import BudgetAuditTrail
+    b = db.query(MasterBudget).filter(MasterBudget.id == budget_id).first()
+    if not b:
+        raise HTTPException(status_code=404, detail="Budget not found")
+    old_allocated = float(b.allocated_budget) if b.allocated_budget else 0
+    if division_id is not None:
+        b.division_id = division_id
+    if budget_type is not None:
+        b.budget_type = budget_type
+    if budget_month is not None:
+        from datetime import datetime as dt
+        b.budget_month = dt.strptime(budget_month + "-01", "%Y-%m-%d")
+    if allocated_budget is not None:
+        b.allocated_budget = allocated_budget
+    if is_active is not None:
+        b.is_active = is_active
+    # Add audit trail if allocated_budget changed
+    if allocated_budget is not None and allocated_budget != old_allocated:
+        diff = allocated_budget - old_allocated
+        direction = "increased" if diff > 0 else "decreased"
+        db.add(BudgetAuditTrail(
+            budget_id=b.id, action="Updated", amount=abs(diff),
+            description=f"Allocated budget {direction} from \u20b9{old_allocated:,.0f} to \u20b9{allocated_budget:,.0f}",
+            performed_by_id=current_user.id
+        ))
+    db.commit()
+    return {"ok": True}
+
+
+@router.delete("/budgets/{budget_id}")
+def delete_budget(
+    budget_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    if current_user.role != "Administrator" and not current_user.is_superuser:
+        raise HTTPException(status_code=403, detail="Only admin can delete budgets")
+    b = db.query(MasterBudget).filter(MasterBudget.id == budget_id).first()
+    if not b:
+        raise HTTPException(status_code=404, detail="Budget not found")
+    db.delete(b)
+    db.commit()
+    return {"ok": True}

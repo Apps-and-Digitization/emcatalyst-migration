@@ -47,7 +47,7 @@ export default function EventFormStep1({
         </div>
         <div>
           <label className="label">Cost-Center</label>
-          <input className="input bg-gray-50" value={selectedDiv?.costcenter || watch('cost_center') || ''} disabled />
+          <input className="input bg-gray-50" value={selectedDiv?.costcenter || ''} disabled />
           <input type="hidden" {...register('cost_center')} />
         </div>
       </div>
@@ -63,8 +63,21 @@ export default function EventFormStep1({
           {errors.event_type && <p className="text-xs text-red-500 mt-1">{errors.event_type.message}</p>}
         </div>
         <div>
-          <label className="label">Title of the Program *</label>
-          <input className="input" {...register('event_title', { required: 'Required' })} />
+          {isCME ? (
+            <>
+              <label className="label">Event Category *</label>
+              <select className="input" {...register('event_title', { required: 'Required' })}>
+                <option value="">Select category</option>
+                <option value="CME Event">CME Event</option>
+                <option value="Hospital">Hospital</option>
+              </select>
+            </>
+          ) : (
+            <>
+              <label className="label">Title of the Program *</label>
+              <input className="input" {...register('event_title', { required: 'Required' })} />
+            </>
+          )}
           {errors.event_title && <p className="text-xs text-red-500 mt-1">{errors.event_title.message}</p>}
         </div>
         <div>
@@ -82,7 +95,7 @@ export default function EventFormStep1({
           <label className="label">Brand Center *</label>
           <select className="input" {...register('brand', { required: 'Required' })}>
             <option value="">Select</option>
-            {brands.map(b => <option key={b.id} value={b.name}>{b.name}</option>)}
+            {brands.filter(b => selectedDivisionId && b.divisions?.some(d => String(d.id) === String(selectedDivisionId))).map(b => <option key={b.id} value={b.name}>{b.name}</option>)}
           </select>
         </div>
         <div>

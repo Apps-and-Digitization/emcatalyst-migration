@@ -129,6 +129,60 @@ def seed_data(db: Session):
     db.commit()
     logger.info("Seed data loaded.")
 
+    # Seed FMV Parameters
+    _seed_fmv_parameters(db)
+
+
+def _seed_fmv_parameters(db: Session):
+    from app.models.master import FmvParameter
+
+    # Only seed if table is empty
+    if db.query(FmvParameter).count() > 0:
+        return
+
+    fmv_data = [
+        # 1. Clinical Practice Experience
+        ("Clinical Practice Experience", "A", "More than 15 Years post graduation", 4, 1),
+        ("Clinical Practice Experience", "B", "11 to 15 Years post graduation", 3, 2),
+        ("Clinical Practice Experience", "C", "5 to 10 Years post graduation", 2, 3),
+        ("Clinical Practice Experience", "D", "≤ 5 Years after post graduation", 1, 4),
+        # 2. Publications in literature
+        ("Publications in literature", "A", "More than 25 publications and/or member of editorial board of any peer reviewed publications", 4, 1),
+        ("Publications in literature", "B", "10 to 25 publications and/or member of editorial board of any peer reviewed publications", 3, 2),
+        ("Publications in literature", "C", "Less than 10 publications", 2, 3),
+        ("Publications in literature", "D", "No Publications", 1, 4),
+        # 3. Prior experience of Congresses
+        ("Prior experience of Congresses", "A", "Member or past member at international level medical congresses or meeting (excluding poster presentation)", 4, 1),
+        ("Prior experience of Congresses", "B", "Member or past member at national level medical congresses or meeting (excluding poster presentation)", 3, 2),
+        ("Prior experience of Congresses", "C", "Member or past member of state level medical congresses or meetings (excluding poster presentation)", 2, 3),
+        ("Prior experience of Congresses", "D", "No or low experience", 1, 4),
+        # 4. Professional Position
+        ("Professional Position", "A", "Senior Consultant/Director/HOD of multispecialty hospital", 4, 1),
+        ("Professional Position", "B", "Consultant with > 15 years duration of practice or Associate professor", 3, 2),
+        ("Professional Position", "C", "HCP/Consultant with < 15 years duration of practice or Lecturer at hospital or institute", 2, 3),
+        ("Professional Position", "D", "Non physician HCP", 1, 4),
+        # 5. Experience as an investigator in clinical trials
+        ("Experience as an investigator in clinical trials", "A", "Primary investigator for 2 or more clinical trials", 4, 1),
+        ("Experience as an investigator in clinical trials", "B", "Clinical trial experience", 3, 2),
+        ("Experience as an investigator in clinical trials", "C", "No experience", 2, 3),
+        # 6. Area of Expertise
+        ("Area of Expertise", "A", "Super-specialty", 4, 1),
+        ("Area of Expertise", "B", "Specialty", 3, 2),
+        ("Area of Expertise", "C", "General Practitioners", 2, 3),
+    ]
+
+    for param_name, option_code, option_label, points, sort_order in fmv_data:
+        db.add(FmvParameter(
+            parameter_name=param_name,
+            option_code=option_code,
+            option_label=option_label,
+            points=points,
+            sort_order=sort_order,
+        ))
+
+    db.commit()
+    logger.info("FMV Parameters seeded.")
+
 
 if __name__ == "__main__":
     from app.db.base import SessionLocal

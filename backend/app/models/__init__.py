@@ -9,7 +9,7 @@ from app.models.master import (
     Designation, EventType, DocumentType, Enumeration,
     HcpDoctor, HcpDoctorDivision, FmvCriteria, FmvParameter, MasterSpeciality, MasterHcpRole,
     MasterTherapeutic, MasterState,
-    MasterBrand, MasterMeal, MasterCity, MasterSponsorshipType
+    MasterBrand, MasterMeal, MasterCity, MasterSponsorshipType, BudgetAuditTrail
 )
 from app.models.brs import (
     BrsApplication, BrsSurvey, BrsSurveyQuestion,

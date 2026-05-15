@@ -97,6 +97,50 @@ def my_team(db: Session = Depends(get_db), current_user: User = Depends(get_curr
     ]
 
 
+@router.get("/hierarchy/full")
+def my_full_hierarchy(db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
+    """Returns all users in the current user's hierarchy — managers above and all subordinates below."""
+    result = []
+    seen_ids = set()
+
+    def add_user(u, relation):
+        if u.id in seen_ids:
+            return
+        seen_ids.add(u.id)
+        result.append({
+            "id": u.id, "employee_id": u.employee_id,
+            "name": f"{u.first_name or ''} {u.last_name or ''}".strip(),
+            "designation": u.designation_title,
+            "department": u.department,
+            "email": u.email,
+            "relation": relation,
+        })
+
+    # Add current user
+    add_user(current_user, "self")
+
+    # Walk up the chain (managers)
+    user = current_user
+    while user.manager_id:
+        mgr = db.query(User).filter(User.id == user.manager_id, User.is_active == True).first()
+        if not mgr or mgr.id in seen_ids:
+            break
+        add_user(mgr, "manager")
+        user = mgr
+
+    # Walk down (all subordinates recursively)
+    def get_subordinates(manager_id):
+        subs = db.query(User).filter(User.manager_id == manager_id, User.is_active == True).all()
+        for s in subs:
+            if s.id not in seen_ids:
+                add_user(s, "subordinate")
+                get_subordinates(s.id)
+
+    get_subordinates(current_user.id)
+
+    return result
+
+
 @router.get("/hierarchy/user/{employee_id}")
 def get_user_chain(employee_id: str, db: Session = Depends(get_db),
                    current_user: User = Depends(get_current_active_user)):

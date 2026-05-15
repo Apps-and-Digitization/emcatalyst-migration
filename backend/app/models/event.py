@@ -218,6 +218,7 @@ class EventDocument(Base):
     file_path = Column(String(500))
     file_size = Column(Integer)
     mime_type = Column(String(100))
+    stage = Column(String(10), default="pre")  # "pre" or "post"
     uploaded_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     uploaded_at = Column(DateTime(timezone=True), server_default=func.now())
 

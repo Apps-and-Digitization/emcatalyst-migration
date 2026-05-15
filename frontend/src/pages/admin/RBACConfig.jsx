@@ -184,25 +184,80 @@ export default function RBACConfig() {
             )}
 
             <div className="space-y-1">
-              {roles.map((role) => (
-                <button
+              {roles.filter(r => r.is_active).map((role) => (
+                <div
                   key={role.id}
-                  onClick={() => setSelectedRoleId(role.id)}
-                  className={`w-full text-left px-3 py-2 rounded text-sm transition-colors ${
+                  className={`flex items-center gap-1 rounded text-sm transition-colors ${
                     selectedRoleId === role.id
-                      ? 'bg-[var(--color-primary-50)] text-[var(--color-primary)] font-medium border border-[var(--color-primary-100)]'
-                      : 'hover:bg-gray-50 text-gray-700'
+                      ? 'bg-[var(--color-primary-50)] border border-[var(--color-primary-100)]'
+                      : 'hover:bg-gray-50'
                   }`}
                 >
-                  <div className="flex items-center justify-between">
-                    <span>{role.name}</span>
-                    <span className="text-xs bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded-full">
-                      {accessCount(role.id)}
-                    </span>
-                  </div>
-                </button>
+                  <button
+                    onClick={() => setSelectedRoleId(role.id)}
+                    className={`flex-1 text-left px-3 py-2 ${
+                      selectedRoleId === role.id
+                        ? 'text-[var(--color-primary)] font-medium'
+                        : 'text-gray-700'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span>{role.name}</span>
+                      <span className="text-xs bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded-full">
+                        {accessCount(role.id)}
+                      </span>
+                    </div>
+                  </button>
+                  {role.name !== 'Administrator' && (
+                    <button
+                      onClick={async (e) => {
+                        e.stopPropagation()
+                        if (!confirm(`Disable role "${role.name}"? It will be hidden from dropdowns.`)) return
+                        try {
+                          await api.delete(`/rbac/roles/${role.id}`)
+                          toast.success(`Role "${role.name}" disabled`)
+                          await fetchData()
+                        } catch (err) {
+                          toast.error(err.response?.data?.detail || 'Failed to disable role')
+                        }
+                      }}
+                      className="px-2 py-1 text-red-400 hover:text-red-600 shrink-0"
+                      title="Disable role"
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
+                </div>
               ))}
             </div>
+
+            {/* Disabled roles */}
+            {roles.filter(r => !r.is_active).length > 0 && (
+              <div className="mt-4 pt-3 border-t">
+                <p className="text-xs font-medium text-gray-400 uppercase mb-2">Disabled Roles</p>
+                <div className="space-y-1">
+                  {roles.filter(r => !r.is_active).map(role => (
+                    <div key={role.id} className="flex items-center justify-between px-3 py-1.5 rounded bg-gray-50 text-sm text-gray-400">
+                      <span className="line-through">{role.name}</span>
+                      <button
+                        onClick={async () => {
+                          try {
+                            await api.put(`/rbac/roles/${role.id}/reactivate`)
+                            toast.success(`Role "${role.name}" re-enabled`)
+                            await fetchData()
+                          } catch (err) {
+                            toast.error(err.response?.data?.detail || 'Failed to re-enable role')
+                          }
+                        }}
+                        className="text-xs text-emerald-500 hover:text-emerald-700 font-medium"
+                      >
+                        Enable
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

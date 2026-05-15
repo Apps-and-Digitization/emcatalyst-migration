@@ -192,6 +192,7 @@ class EventDocumentOut(BaseModel):
     document_name: Optional[str] = None
     file_path: Optional[str] = None
     mime_type: Optional[str] = None
+    stage: Optional[str] = "pre"
     uploaded_at: Optional[datetime] = None
 
     class Config:
@@ -213,6 +214,16 @@ class EventOut(EventBase):
     rejection_reason: Optional[str] = None
     step: int
     actual_amount: Optional[Decimal]
+    # Cost fields
+    venue_charges: Optional[Decimal] = None
+    av_platform_cost: Optional[Decimal] = None
+    other_amount: Optional[Decimal] = None
+    other_amount_description: Optional[str] = None
+    btc_facility: Optional[str] = None
+    minimum_guarantee_pax: Optional[int] = None
+    meal_cost_per_attendee: Optional[Decimal] = None
+    meal_type: Optional[str] = None
+    # Timestamps
     created_at: datetime
     updated_at: Optional[datetime]
     doctors: List[EventDoctorOut] = []

@@ -34,11 +34,15 @@ export const authApi = {
 // Events
 export const eventsApi = {
   list: (params) => api.get('/events/', { params }),
+  canCreate: () => api.get('/events/permissions/can-create'),
+  workflowSteps: () => api.get('/events/permissions/workflow-steps'),
+  checkBudget: (division_id, event_date) => api.get('/events/permissions/check-budget', { params: { division_id, event_date } }),
   create: (data) => api.post('/events/', data),
   get: (id) => api.get(`/events/${id}`),
   update: (id, data) => api.put(`/events/${id}`, data),
+  changeDate: (id, new_date, new_end_date) => api.put(`/events/${id}/change-date`, null, { params: { new_date, new_end_date } }),
   delete: (id) => api.delete(`/events/${id}`),
-  submit: (id) => api.post(`/events/${id}/submit`),
+  submit: (id, remarks) => api.post(`/events/${id}/submit`, null, { params: { remarks } }),
   approveL1: (id, remarks) => api.post(`/events/${id}/approve-l1`, null, { params: { remarks } }),
   approveL2: (id, remarks) => api.post(`/events/${id}/approve-l2`, null, { params: { remarks } }),
   approveCompliance: (id, remarks) => api.post(`/events/${id}/approve-compliance`, null, { params: { remarks } }),
@@ -50,7 +54,7 @@ export const eventsApi = {
   approvePostFinance: (id, remarks) => api.post(`/events/${id}/approve-post-finance`, null, { params: { remarks } }),
   approve: (id, remarks) => api.post(`/events/${id}/approve`, null, { params: { remarks } }),
   reject: (id, reason) => api.post(`/events/${id}/reject`, null, { params: { reason } }),
-  submitPostEvent: (id) => api.post(`/events/${id}/submit-post-event`),
+  submitPostEvent: (id, remarks) => api.post(`/events/${id}/submit-post-event`, null, { params: { remarks } }),
   addDoctor: (eventId, data) => api.post(`/events/${eventId}/doctors`, data),
   updateDoctor: (eventId, doctorId, data) => api.put(`/events/${eventId}/doctors/${doctorId}`, data),
   listDoctors: (eventId) => api.get(`/events/${eventId}/doctors`),
@@ -74,6 +78,7 @@ export const accessApi = {
   // Hierarchy
   myChain: () => api.get('/access/hierarchy/my-chain'),
   myTeam: () => api.get('/access/hierarchy/team'),
+  fullHierarchy: () => api.get('/access/hierarchy/full'),
   userChain: (employeeId) => api.get(`/access/hierarchy/user/${employeeId}`),
   hierarchyTree: (rootEmployeeId, depth = 3) => api.get('/access/hierarchy/tree', { params: { root_employee_id: rootEmployeeId, depth } }),
   searchEmployees: (q, limit = 20) => api.get('/access/hierarchy/search', { params: { q, limit } }),
@@ -148,6 +153,12 @@ export const masterApi = {
   createDivision: (data) => api.post('/master/divisions', null, { params: data }),
   updateDivision: (id, data) => api.put(`/master/divisions/${id}`, null, { params: data }),
   deleteDivision: (id) => api.delete(`/master/divisions/${id}`),
+  // Budgets
+  budgets: (params) => api.get('/master/budgets', { params }),
+  createBudget: (data) => api.post('/master/budgets', null, { params: data }),
+  updateBudget: (id, data) => api.put(`/master/budgets/${id}`, null, { params: data }),
+  deleteBudget: (id) => api.delete(`/master/budgets/${id}`),
+  budgetAuditTrail: (budgetId) => api.get(`/master/budgets/${budgetId}/audit-trail`),
 }
 
 // BRS Module

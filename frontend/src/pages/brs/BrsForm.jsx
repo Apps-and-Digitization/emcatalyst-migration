@@ -200,7 +200,7 @@ export default function BrsForm() {
               <label className="label">Brand *</label>
               <select className="input" value={form.brand} onChange={e => updateField('brand', e.target.value)}>
                 <option value="">Select</option>
-                {brands.map(b => <option key={b.id} value={b.name}>{b.name}</option>)}
+                {brands.filter(b => form.division_id && b.divisions?.some(d => String(d.id) === String(form.division_id))).map(b => <option key={b.id} value={b.name}>{b.name}</option>)}
               </select>
             </div>
             <div>
