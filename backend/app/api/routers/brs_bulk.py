@@ -38,8 +38,19 @@ ALL_COLUMNS = BRS_GROUP_FIELDS + DOCTOR_FIELDS
 
 
 def _generate_brs_code(db: Session) -> str:
-    count = db.query(BrsApplication).count() + 1
-    return f"BRS{datetime.now().strftime('%y%m')}{count:04d}"
+    from sqlalchemy import desc as desc_order
+    prefix = f"BRS{datetime.now().strftime('%Y%m')}"
+    last = (db.query(BrsApplication)
+            .filter(BrsApplication.brs_code.like(f"{prefix}%"))
+            .order_by(desc_order(BrsApplication.brs_code))
+            .first())
+    seq = 1
+    if last and last.brs_code:
+        try:
+            seq = int(last.brs_code[len(prefix):]) + 1
+        except ValueError:
+            pass
+    return f"{prefix}{seq:04d}"
 
 
 def _has_role(user: User, role_name: str) -> bool:
@@ -366,6 +377,9 @@ async def upload_bulk_brs(
 
         # Add doctors from MCL
         doctor_count = 0
+        total_honorarium = Decimal("0")
+        survey_limit = survey.total_honorarium_amount or Decimal("0")
+
         for doc_entry in doctors:
             hcp = doc_entry["hcp_doctor"]
             honorarium = None
@@ -375,6 +389,13 @@ async def upload_bulk_brs(
                 except (InvalidOperation, ValueError):
                     errors.append({"row": doc_entry["_row"], "error": f"Invalid honorarium_amount: {doc_entry['honorarium_amount']}"})
                     continue
+
+            # Check honorarium limit
+            if honorarium and survey_limit > 0:
+                if total_honorarium + honorarium > survey_limit:
+                    errors.append({"row": doc_entry["_row"], "error": f"Total honorarium (₹{total_honorarium + honorarium:,.0f}) would exceed survey limit of ₹{survey_limit:,.0f}"})
+                    continue
+                total_honorarium += honorarium
 
             doctor = BrsDoctor(
                 brs_application_id=app.id,

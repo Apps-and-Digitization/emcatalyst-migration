@@ -159,11 +159,23 @@ function AgreementDocument({ doctor, brs, survey }) {
 
 export default function SurveyPortal() {
   const { token } = useParams()
-  const [step, setStep] = useState('details')
+  const [step, setStep] = useState('otp')
+  const [otpVerified, setOtpVerified] = useState(false)
+  const [otpValue, setOtpValue] = useState('')
+  const [otpSending, setOtpSending] = useState(false)
+  const [otpVerifying, setOtpVerifying] = useState(false)
+  const [otpSent, setOtpSent] = useState(false)
+  const [otpMessage, setOtpMessage] = useState('')
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ['doctor-portal', token],
     queryFn: () => brsApi.doctorPortalGet(token).then(r => r.data),
+  })
+
+  // Check OTP status on load
+  const { data: otpStatus } = useQuery({
+    queryKey: ['doctor-otp-status', token],
+    queryFn: () => brsApi.doctorOtpStatus(token).then(r => r.data),
   })
 
   // Load existing uploaded documents
@@ -175,6 +187,42 @@ export default function SurveyPortal() {
   useEffect(() => {
     if (existingDocs) setUploadedDocs(existingDocs)
   }, [existingDocs])
+
+  useEffect(() => {
+    if (otpStatus?.verified) {
+      setOtpVerified(true)
+      setStep('details')
+    }
+  }, [otpStatus])
+
+  const handleSendOtp = async () => {
+    setOtpSending(true)
+    try {
+      const res = await brsApi.doctorSendOtp(token)
+      setOtpSent(true)
+      setOtpMessage(res.data.message)
+      toast.success(res.data.message)
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to send OTP')
+    } finally {
+      setOtpSending(false)
+    }
+  }
+
+  const handleVerifyOtp = async () => {
+    if (!otpValue || otpValue.length !== 6) { toast.error('Enter a valid 6-digit OTP'); return }
+    setOtpVerifying(true)
+    try {
+      await brsApi.doctorVerifyOtp(token, otpValue)
+      setOtpVerified(true)
+      setStep('details')
+      toast.success('OTP verified successfully')
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Invalid OTP')
+    } finally {
+      setOtpVerifying(false)
+    }
+  }
 
   const [details, setDetails] = useState({})
   const [uploadedDocs, setUploadedDocs] = useState([])
@@ -224,11 +272,13 @@ export default function SurveyPortal() {
     </div>
   )
 
-  // Set initial step based on status
-  if (step === 'details' && doctor.agreement_signed) {
-    setTimeout(() => setStep('survey'), 0)
-  } else if (step === 'details' && doctor.doctor_status === 'Details Updated') {
-    setTimeout(() => setStep('agreement'), 0)
+  // Set initial step based on status (only if OTP is verified)
+  if (otpVerified && step === 'details') {
+    if (doctor.agreement_signed) {
+      setTimeout(() => setStep('survey'), 0)
+    } else if (doctor.doctor_status === 'Details Updated') {
+      setTimeout(() => setStep('agreement'), 0)
+    }
   }
 
   return (
@@ -243,23 +293,71 @@ export default function SurveyPortal() {
         {/* Progress */}
         <div className="flex items-center gap-4 mb-6">
           {[
+            { key: 'otp', label: 'Verify Email', icon: Edit2 },
             { key: 'details', label: 'Update Details', icon: Edit2 },
             { key: 'agreement', label: 'Sign Agreement', icon: FileSignature },
             { key: 'survey', label: 'Fill Survey', icon: ClipboardList },
-          ].map((s, i) => (
-            <div key={s.key} className="flex items-center gap-2 flex-1">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                step === s.key ? 'bg-[var(--color-primary)] text-white' :
-                (s.key === 'details' && (step === 'agreement' || step === 'survey')) ||
-                (s.key === 'agreement' && step === 'survey') ? 'bg-emerald-500 text-white' : 'bg-gray-200 text-gray-500'
-              }`}>
-                <s.icon size={14} />
+          ].map((s, i, arr) => {
+            const stepOrder = ['otp', 'details', 'agreement', 'survey']
+            const currentIdx = stepOrder.indexOf(step)
+            const thisIdx = stepOrder.indexOf(s.key)
+            const isCompleted = thisIdx < currentIdx
+            const isCurrent = s.key === step
+            return (
+              <div key={s.key} className="flex items-center gap-2 flex-1">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                  isCurrent ? 'bg-[var(--color-primary)] text-white' :
+                  isCompleted ? 'bg-emerald-500 text-white' : 'bg-gray-200 text-gray-500'
+                }`}>
+                  <s.icon size={14} />
+                </div>
+                <span className={`text-xs ${isCurrent ? 'font-semibold' : 'text-gray-400'}`}>{s.label}</span>
+                {i < arr.length - 1 && <div className="flex-1 h-px bg-gray-200" />}
               </div>
-              <span className={`text-xs ${step === s.key ? 'font-semibold' : 'text-gray-400'}`}>{s.label}</span>
-              {i < 2 && <div className="flex-1 h-px bg-gray-200" />}
-            </div>
-          ))}
+            )
+          })}
         </div>
+
+        {/* Step: OTP Verification */}
+        {step === 'otp' && (
+          <div className="card space-y-4 text-center max-w-md mx-auto">
+            <h3 className="font-semibold text-lg">Email Verification</h3>
+            <p className="text-sm text-gray-500">To proceed, we need to verify your email address. Click the button below to receive a One-Time Password (OTP).</p>
+
+            {!otpSent ? (
+              <div className="space-y-3">
+                <p className="text-xs text-gray-400">OTP will be sent to your registered email address.</p>
+                <button className="btn-primary" onClick={handleSendOtp} disabled={otpSending}>
+                  {otpSending ? 'Sending…' : 'Generate & Send OTP'}
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <p className="text-sm text-emerald-600 font-medium">{otpMessage}</p>
+                <div>
+                  <label className="label text-center">Enter 6-digit OTP</label>
+                  <input
+                    type="text"
+                    className="input text-center text-xl tracking-widest font-mono"
+                    maxLength={6}
+                    value={otpValue}
+                    onChange={e => setOtpValue(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                    placeholder="• • • • • •"
+                  />
+                </div>
+                <button className="btn-primary w-full" onClick={handleVerifyOtp} disabled={otpVerifying}>
+                  {otpVerifying ? 'Verifying…' : 'Verify OTP'}
+                </button>
+                <div className="pt-2 border-t">
+                  <p className="text-xs text-gray-400 mb-2">Didn't receive the email?</p>
+                  <button className="text-sm text-[var(--color-primary)] hover:underline font-medium" onClick={handleSendOtp} disabled={otpSending}>
+                    {otpSending ? 'Sending…' : 'Resend OTP'}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Step: Update Details */}
         {step === 'details' && (

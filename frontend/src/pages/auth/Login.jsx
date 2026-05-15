@@ -120,6 +120,38 @@ export default function Login() {
           </button>
         </form>
 
+        {/* Divider */}
+        <div className="flex items-center gap-3 my-5">
+          <div className="flex-1 h-px" style={{ background: 'var(--color-neutral-200)' }}></div>
+          <span className="text-xs" style={{ color: 'var(--color-neutral-400)' }}>or</span>
+          <div className="flex-1 h-px" style={{ background: 'var(--color-neutral-200)' }}></div>
+        </div>
+
+        {/* Microsoft SSO Button */}
+        <button
+          type="button"
+          onClick={async () => {
+            try {
+              const res = await authApi.microsoftLogin()
+              window.location.href = res.data.auth_url
+            } catch (err) {
+              toast.error(err.response?.data?.detail || 'Microsoft login not available')
+            }
+          }}
+          className="w-full flex items-center justify-center gap-3 py-3 rounded-full border transition-all duration-150 text-sm font-semibold"
+          style={{ borderColor: 'var(--color-neutral-300)', color: 'var(--color-neutral-800)' }}
+          onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--color-primary)'; e.currentTarget.style.color = 'var(--color-primary)' }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--color-neutral-300)'; e.currentTarget.style.color = 'var(--color-neutral-800)' }}
+        >
+          <svg width="18" height="18" viewBox="0 0 21 21" xmlns="http://www.w3.org/2000/svg">
+            <rect x="1" y="1" width="9" height="9" fill="#f25022"/>
+            <rect x="11" y="1" width="9" height="9" fill="#7fba00"/>
+            <rect x="1" y="11" width="9" height="9" fill="#00a4ef"/>
+            <rect x="11" y="11" width="9" height="9" fill="#ffb900"/>
+          </svg>
+          Sign in with Microsoft
+        </button>
+
         <div className="text-center mt-4">
           <button
             type="button"

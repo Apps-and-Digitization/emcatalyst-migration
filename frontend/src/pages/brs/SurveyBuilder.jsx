@@ -494,6 +494,84 @@ function SurveyEditor({ surveyId, onBack }) {
         )}
       </div>
 
+      {/* Approval Documents */}
+      <div className="card p-5 mb-5">
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <h4 className="font-semibold text-sm text-gray-700">Approval Documents</h4>
+            <p className="text-xs text-gray-400">
+              {survey?.approval_status === 'Approved'
+                ? <span className="text-emerald-600 font-medium">✓ Approved — both documents uploaded</span>
+                : <span className="text-amber-600 font-medium">⚠ Pending — upload both documents to proceed</span>
+              }
+            </p>
+          </div>
+          <span className={`text-xs px-2 py-0.5 rounded ${survey?.approval_status === 'Approved' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+            {survey?.approval_status || 'Pending Approval'}
+          </span>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="border rounded-lg p-4">
+            <p className="text-xs font-medium text-gray-700 mb-2">Medical Team Approval <span className="text-red-500">*</span></p>
+            {survey?.medical_approval_file ? (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-emerald-600 font-medium">✓ Uploaded</span>
+                <a href={`/${survey.medical_approval_file.replace(/\\/g, '/')}`} target="_blank" rel="noreferrer" className="text-xs text-[var(--color-primary)] hover:underline">View</a>
+                <button className="text-xs text-red-500 hover:underline" onClick={async () => {
+                  try {
+                    await brsApi.removeSurveyApproval(surveyId, 'medical_approval')
+                    toast.success('Medical approval removed')
+                    qc.invalidateQueries({ queryKey: ['brs-survey', surveyId] })
+                    qc.invalidateQueries({ queryKey: ['brs-surveys'] })
+                  } catch (err) { toast.error('Failed to remove') }
+                }}>Remove</button>
+              </div>
+            ) : (
+              <input type="file" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" className="text-xs"
+                onChange={async (e) => {
+                  const file = e.target.files[0]
+                  if (!file) return
+                  try {
+                    await brsApi.uploadSurveyApproval(surveyId, 'medical_approval', file)
+                    toast.success('Medical approval uploaded')
+                    qc.invalidateQueries({ queryKey: ['brs-survey', surveyId] })
+                    qc.invalidateQueries({ queryKey: ['brs-surveys'] })
+                  } catch (err) { toast.error(err.response?.data?.detail || 'Upload failed') }
+                }} />
+            )}
+          </div>
+          <div className="border rounded-lg p-4">
+            <p className="text-xs font-medium text-gray-700 mb-2">Ethical Team Approval <span className="text-red-500">*</span></p>
+            {survey?.ethical_approval_file ? (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-emerald-600 font-medium">✓ Uploaded</span>
+                <a href={`/${survey.ethical_approval_file.replace(/\\/g, '/')}`} target="_blank" rel="noreferrer" className="text-xs text-[var(--color-primary)] hover:underline">View</a>
+                <button className="text-xs text-red-500 hover:underline" onClick={async () => {
+                  try {
+                    await brsApi.removeSurveyApproval(surveyId, 'ethical_approval')
+                    toast.success('Ethical approval removed')
+                    qc.invalidateQueries({ queryKey: ['brs-survey', surveyId] })
+                    qc.invalidateQueries({ queryKey: ['brs-surveys'] })
+                  } catch (err) { toast.error('Failed to remove') }
+                }}>Remove</button>
+              </div>
+            ) : (
+              <input type="file" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" className="text-xs"
+                onChange={async (e) => {
+                  const file = e.target.files[0]
+                  if (!file) return
+                  try {
+                    await brsApi.uploadSurveyApproval(surveyId, 'ethical_approval', file)
+                    toast.success('Ethical approval uploaded')
+                    qc.invalidateQueries({ queryKey: ['brs-survey', surveyId] })
+                    qc.invalidateQueries({ queryKey: ['brs-surveys'] })
+                  } catch (err) { toast.error(err.response?.data?.detail || 'Upload failed') }
+                }} />
+            )}
+          </div>
+        </div>
+      </div>
+
       {/* Mapped Doctors */}
       <div className="card p-5 mb-5">
         <div className="flex items-center justify-between mb-3">
@@ -501,11 +579,16 @@ function SurveyEditor({ surveyId, onBack }) {
             <h4 className="font-semibold text-sm text-gray-700">Mapped Doctors</h4>
             <p className="text-xs text-gray-400">{mappedDoctors.length} doctor(s) mapped to this survey</p>
           </div>
-          <button className="btn-secondary text-xs" onClick={() => setShowDoctorManager(!showDoctorManager)}>
+          <button className="btn-secondary text-xs" onClick={() => setShowDoctorManager(!showDoctorManager)}
+            disabled={survey?.approval_status !== 'Approved'}
+            title={survey?.approval_status !== 'Approved' ? 'Upload both approval documents first' : ''}>
             {showDoctorManager ? 'Hide' : 'Manage Doctors'}
           </button>
         </div>
-        {showDoctorManager && (
+        {survey?.approval_status !== 'Approved' && (
+          <p className="text-xs text-amber-600 bg-amber-50 p-2 rounded">Upload both Medical and Ethical approval documents to manage doctors.</p>
+        )}
+        {showDoctorManager && survey?.approval_status === 'Approved' && (
           <SurveyDoctorManager surveyId={surveyId} mappedDoctors={mappedDoctors} onRefresh={refetchDoctors} />
         )}
       </div>
@@ -574,7 +657,9 @@ function SurveyEditor({ surveyId, onBack }) {
         </div>
       ) : (
         <button className="w-full border-2 border-dashed border-gray-300 rounded-lg py-4 text-sm text-gray-500 hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] flex items-center justify-center gap-2 transition-colors"
-          onClick={() => setAddingQuestion(true)}>
+          onClick={() => setAddingQuestion(true)}
+          disabled={survey?.approval_status !== 'Approved'}
+          title={survey?.approval_status !== 'Approved' ? 'Upload both approval documents first' : ''}>
           <Plus size={16} /> Add Question
         </button>
       )}
@@ -710,9 +795,14 @@ export default function SurveyBuilder() {
             <div key={s.id} className="card p-5 hover:shadow-md transition-shadow">
               <div className="flex items-start justify-between mb-3">
                 <h4 className="font-semibold text-gray-800 flex-1 pr-2">{s.title}</h4>
-                <span className={`text-xs px-2 py-0.5 rounded shrink-0 ${s.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-                  {s.is_active ? 'Active' : 'Inactive'}
-                </span>
+                <div className="flex gap-1.5 shrink-0">
+                  <span className={`text-xs px-2 py-0.5 rounded ${s.approval_status === 'Approved' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+                    {s.approval_status || 'Pending Approval'}
+                  </span>
+                  <span className={`text-xs px-2 py-0.5 rounded ${s.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                    {s.is_active ? 'Active' : 'Inactive'}
+                  </span>
+                </div>
               </div>
               {s.description && <p className="text-xs text-gray-500 mb-3">{s.description}</p>}
               <div className="flex items-center gap-3 text-xs text-gray-500 mb-4">

@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, B
 from sqlalchemy.orm import Session
 from sqlalchemy import func, desc
 from typing import Optional, List
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import secrets
 import string
 from slowapi import Limiter
@@ -100,9 +100,11 @@ def _generate_password(length=8):
 # ─────────────────────────────────────────────
 
 @router.get("/surveys")
-def list_surveys(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def list_surveys(approved_only: bool = False, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     div_ids = _get_user_division_ids(db, current_user)
     q = db.query(BrsSurvey).filter(BrsSurvey.is_active == True)
+    if approved_only:
+        q = q.filter(BrsSurvey.approval_status == "Approved")
     if div_ids:
         from sqlalchemy import or_
         q = q.filter(or_(BrsSurvey.division_id.in_(div_ids), BrsSurvey.division_id.is_(None)))
@@ -120,6 +122,9 @@ def list_surveys(db: Session = Depends(get_db), current_user: User = Depends(get
             "division_id": s.division_id,
             "division_name": div_map.get(s.division_id, None),
             "is_active": s.is_active,
+            "approval_status": s.approval_status or "Pending Approval",
+            "medical_approval_file": s.medical_approval_file,
+            "ethical_approval_file": s.ethical_approval_file,
             "question_count": len(s.questions),
             "doctor_count": len(s.doctor_mappings) if s.doctor_mappings else 0,
             "created_at": s.created_at.isoformat() if s.created_at else None,
@@ -164,6 +169,9 @@ def get_survey(survey_id: int, db: Session = Depends(get_db), current_user: User
         "division_id": s.division_id,
         "division_name": division_name,
         "is_active": s.is_active,
+        "approval_status": s.approval_status or "Pending Approval",
+        "medical_approval_file": s.medical_approval_file,
+        "ethical_approval_file": s.ethical_approval_file,
         "requires_agreement_download": s.requires_agreement_download,
         "agreement_template": s.agreement_template or "",
         "questions": [
@@ -199,6 +207,88 @@ def update_survey(
     s.updated_at = datetime.now(timezone.utc)
     db.commit()
     return {"ok": True}
+
+
+@router.post("/surveys/{survey_id}/upload-approval")
+def upload_survey_approval(
+    survey_id: int,
+    document_type: str = Form(...),  # medical_approval or ethical_approval
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Upload Medical Team Approval or Ethical Team Approval document for a survey."""
+    import os, uuid, shutil
+
+    s = db.query(BrsSurvey).filter(BrsSurvey.id == survey_id).first()
+    if not s:
+        raise HTTPException(404, "Survey not found")
+
+    if document_type not in ("medical_approval", "ethical_approval"):
+        raise HTTPException(400, "document_type must be 'medical_approval' or 'ethical_approval'")
+
+    # Save file
+    upload_dir = os.path.join("uploads", "survey_approvals", str(survey_id))
+    os.makedirs(upload_dir, exist_ok=True)
+    ext = os.path.splitext(file.filename)[1] if file.filename else ".pdf"
+    filename = f"{document_type}_{uuid.uuid4().hex[:8]}{ext}"
+    file_path = os.path.join(upload_dir, filename)
+
+    with open(file_path, "wb") as f:
+        shutil.copyfileobj(file.file, f)
+
+    # Update survey record
+    if document_type == "medical_approval":
+        s.medical_approval_file = file_path
+    else:
+        s.ethical_approval_file = file_path
+
+    # Auto-approve if both documents are uploaded
+    if s.medical_approval_file and s.ethical_approval_file:
+        s.approval_status = "Approved"
+
+    db.commit()
+    return {
+        "ok": True,
+        "document_type": document_type,
+        "file_path": file_path,
+        "approval_status": s.approval_status,
+    }
+
+
+@router.delete("/surveys/{survey_id}/approval-document/{document_type}")
+def remove_survey_approval_document(
+    survey_id: int,
+    document_type: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Remove an uploaded approval document and revert approval status."""
+    import os
+
+    s = db.query(BrsSurvey).filter(BrsSurvey.id == survey_id).first()
+    if not s:
+        raise HTTPException(404, "Survey not found")
+
+    if document_type not in ("medical_approval", "ethical_approval"):
+        raise HTTPException(400, "document_type must be 'medical_approval' or 'ethical_approval'")
+
+    # Delete the file
+    file_path = s.medical_approval_file if document_type == "medical_approval" else s.ethical_approval_file
+    if file_path and os.path.exists(file_path):
+        os.remove(file_path)
+
+    # Clear the field
+    if document_type == "medical_approval":
+        s.medical_approval_file = None
+    else:
+        s.ethical_approval_file = None
+
+    # Revert approval status since a document is now missing
+    s.approval_status = "Pending Approval"
+    db.commit()
+
+    return {"ok": True, "approval_status": s.approval_status}
 
 
 @router.delete("/surveys/{survey_id}")
@@ -542,6 +632,16 @@ def add_doctor(app_id: int, data: dict = Body(...), db: Session = Depends(get_db
     if app.status != BrsStatus.DRAFT:
         raise HTTPException(400, "Can only add doctors in Draft status")
 
+    # Honorarium limit validation
+    new_honorarium = float(data.get("honorarium_amount") or 0)
+    if app.survey and app.survey.total_honorarium_amount and app.survey.total_honorarium_amount > 0:
+        existing_total = sum(float(d.honorarium_amount or 0) for d in app.doctors)
+        if existing_total + new_honorarium > float(app.survey.total_honorarium_amount):
+            raise HTTPException(
+                400,
+                f"Total honorarium (₹{existing_total + new_honorarium:,.0f}) would exceed survey limit of ₹{float(app.survey.total_honorarium_amount):,.0f}"
+            )
+
     doc = BrsDoctor(
         brs_application_id=app_id,
         hcp_doctor_id=data.get("hcp_doctor_id"),
@@ -564,6 +664,19 @@ def update_doctor(app_id: int, doctor_id: int, data: dict = Body(...), db: Sessi
     doc = db.query(BrsDoctor).filter(BrsDoctor.id == doctor_id, BrsDoctor.brs_application_id == app_id).first()
     if not doc:
         raise HTTPException(404, "Doctor not found")
+
+    # Honorarium limit validation if honorarium is being updated
+    if "honorarium_amount" in data and data["honorarium_amount"] is not None:
+        app = db.query(BrsApplication).filter(BrsApplication.id == app_id).first()
+        if app and app.survey and app.survey.total_honorarium_amount and app.survey.total_honorarium_amount > 0:
+            new_honorarium = float(data["honorarium_amount"])
+            existing_total = sum(float(d.honorarium_amount or 0) for d in app.doctors if d.id != doctor_id)
+            if existing_total + new_honorarium > float(app.survey.total_honorarium_amount):
+                raise HTTPException(
+                    400,
+                    f"Total honorarium (₹{existing_total + new_honorarium:,.0f}) would exceed survey limit of ₹{float(app.survey.total_honorarium_amount):,.0f}"
+                )
+
     for field in ["doctor_name", "name_as_per_pan", "pan_number", "email", "mobile", "speciality", "honorarium_amount"]:
         if field in data and data[field] is not None:
             setattr(doc, field, data[field])
@@ -600,6 +713,17 @@ def submit_application(app_id: int, db: Session = Depends(get_db), current_user:
         raise HTTPException(400, "Only Draft BRS can be submitted")
     if not app.doctors:
         raise HTTPException(400, "At least one doctor must be added before submission")
+
+    # Honorarium limit validation on submit
+    if app.survey and app.survey.total_honorarium_amount and app.survey.total_honorarium_amount > 0:
+        # Re-query doctors to get fresh data
+        fresh_doctors = db.query(BrsDoctor).filter(BrsDoctor.brs_application_id == app_id).all()
+        total_honorarium = sum(float(d.honorarium_amount or 0) for d in fresh_doctors)
+        if total_honorarium > float(app.survey.total_honorarium_amount):
+            raise HTTPException(
+                400,
+                f"Total honorarium (₹{total_honorarium:,.0f}) exceeds survey limit of ₹{float(app.survey.total_honorarium_amount):,.0f}. Please reduce doctor honorariums before submitting."
+            )
 
     old = app.status
     app.status = BrsStatus.SUBMITTED
@@ -730,7 +854,101 @@ def doctor_login(request: Request, data: dict, db: Session = Depends(get_db)):
         raise HTTPException(401, "Invalid credentials")
     if not verify_password(password, doc.login_password):
         raise HTTPException(401, "Invalid credentials")
-    return {"token": doc.login_token, "doctor_id": doc.id, "doctor_name": doc.doctor_name}
+    return {"token": doc.login_token, "doctor_id": doc.id, "doctor_name": doc.doctor_name, "email": doc.email}
+
+
+# In-memory OTP store (for production, use Redis or DB)
+_otp_store = {}  # {token: {"otp": "123456", "expires": datetime, "verified": bool}}
+
+import random
+
+
+@router.post("/doctor-portal/{token}/send-otp")
+@limiter.limit("5/minute")
+def doctor_send_otp(request: Request, token: str, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+    """Send OTP to doctor's email for verification"""
+    from app.core.email import send_email
+
+    doc = db.query(BrsDoctor).filter(BrsDoctor.login_token == token).first()
+    if not doc:
+        raise HTTPException(404, "Invalid token")
+    if not doc.email:
+        raise HTTPException(400, "No email address on file for this doctor. Please contact the administrator.")
+
+    # Generate 6-digit OTP
+    otp = str(random.randint(100000, 999999))
+    _otp_store[token] = {
+        "otp": otp,
+        "expires": datetime.now(timezone.utc) + timedelta(minutes=10),
+        "verified": False,
+    }
+
+    # Send OTP email
+    subject = "EMCatalyst — Your OTP for Survey Portal"
+    body_html = f"""
+<html><body style="font-family:'Poppins',Arial,sans-serif;color:#212529;background:#f8f9fa;margin:0;padding:24px;">
+<div style="max-width:450px;margin:auto;border:1px solid #e9ecef;border-radius:12px;overflow:hidden;background:#fff;box-shadow:0 4px 12px rgba(0,0,0,.10);">
+  <div style="background:#ed1c24;padding:24px;text-align:center;">
+    <h2 style="color:#fff;margin:0;font-size:20px;font-weight:700;">EMCatalyst</h2>
+    <p style="color:rgba(255,255,255,.8);margin:4px 0 0;font-size:11px;">Doctor Survey Portal</p>
+  </div>
+  <div style="padding:32px;text-align:center;">
+    <p style="font-size:14px;color:#6c757d;margin:0 0 20px;">Dear Dr. {doc.doctor_name},</p>
+    <p style="font-size:14px;color:#6c757d;margin:0 0 24px;">Your One-Time Password (OTP) for the BRS Survey Portal is:</p>
+    <div style="background:#fff0f0;border:2px solid #ed1c24;border-radius:12px;padding:20px;margin:0 auto;display:inline-block;">
+      <span style="font-size:32px;font-weight:700;letter-spacing:8px;color:#ed1c24;">{otp}</span>
+    </div>
+    <p style="font-size:12px;color:#adb5bd;margin:20px 0 0;">This OTP is valid for 10 minutes. Do not share it with anyone.</p>
+  </div>
+  <div style="background:#f8f9fa;padding:12px;text-align:center;font-size:11px;color:#adb5bd;border-top:1px solid #e9ecef;">
+    © Emcure Pharmaceuticals Ltd.
+  </div>
+</div>
+</body></html>
+"""
+    body_text = f"Dear Dr. {doc.doctor_name},\n\nYour OTP: {otp}\n\nValid for 10 minutes."
+    background_tasks.add_task(send_email, doc.email, subject, body_html, body_text)
+
+    # Mask email for display
+    email = doc.email
+    parts = email.split("@")
+    masked = parts[0][:2] + "***" + "@" + parts[1] if len(parts) == 2 else "***"
+
+    return {"ok": True, "message": f"OTP sent to {masked}"}
+
+
+@router.post("/doctor-portal/{token}/verify-otp")
+@limiter.limit("10/minute")
+def doctor_verify_otp(request: Request, token: str, data: dict = Body(...), db: Session = Depends(get_db)):
+    """Verify the OTP entered by the doctor"""
+    doc = db.query(BrsDoctor).filter(BrsDoctor.login_token == token).first()
+    if not doc:
+        raise HTTPException(404, "Invalid token")
+
+    otp_entry = _otp_store.get(token)
+    if not otp_entry:
+        raise HTTPException(400, "No OTP generated. Please request a new OTP.")
+
+    if datetime.now(timezone.utc) > otp_entry["expires"]:
+        del _otp_store[token]
+        raise HTTPException(400, "OTP has expired. Please request a new one.")
+
+    entered_otp = str(data.get("otp", "")).strip()
+    if entered_otp != otp_entry["otp"]:
+        raise HTTPException(400, "Invalid OTP. Please try again.")
+
+    # Mark as verified
+    _otp_store[token]["verified"] = True
+    return {"ok": True, "message": "OTP verified successfully"}
+
+
+@router.get("/doctor-portal/{token}/otp-status")
+def doctor_otp_status(token: str):
+    """Check if OTP has been verified for this session"""
+    otp_entry = _otp_store.get(token)
+    if otp_entry and otp_entry.get("verified"):
+        return {"verified": True}
+    return {"verified": False}
 
 
 @router.get("/doctor-portal/{token}")

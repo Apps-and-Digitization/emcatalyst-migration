@@ -4,6 +4,8 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field, field_validator
 from slowapi import Limiter
 from slowapi.util import get_remote_address
+import httpx
+import urllib.parse
 from app.db.base import get_db
 from app.core.security import verify_password, create_access_token, get_password_hash, decode_token
 from app.core.email import send_email
@@ -333,3 +335,99 @@ def remove_user_division(user_id: int, division_id: int, db: Session = Depends(g
     db.delete(da)
     db.commit()
     return {"ok": True}
+
+
+# ─── Microsoft SSO (Azure AD) ─────────────────────────────────────────────────
+
+AZURE_AUTHORITY = f"https://login.microsoftonline.com/{settings.AZURE_TENANT_ID}"
+AZURE_TOKEN_URL = f"{AZURE_AUTHORITY}/oauth2/v2.0/token"
+AZURE_AUTHORIZE_URL = f"{AZURE_AUTHORITY}/oauth2/v2.0/authorize"
+
+
+@router.get("/microsoft/login")
+def microsoft_login():
+    """Return the Microsoft OAuth2 authorization URL for the frontend to redirect to."""
+    if not settings.AZURE_CLIENT_ID:
+        raise HTTPException(status_code=501, detail="Microsoft SSO not configured")
+
+    redirect_uri = settings.AZURE_REDIRECT_URI or f"{settings.FRONTEND_URL}/auth/microsoft/callback"
+    params = {
+        "client_id": settings.AZURE_CLIENT_ID,
+        "response_type": "code",
+        "redirect_uri": redirect_uri,
+        "response_mode": "query",
+        "scope": "openid profile email User.Read",
+        "state": "emcatalyst_sso",
+    }
+    auth_url = f"{AZURE_AUTHORIZE_URL}?{urllib.parse.urlencode(params)}"
+    return {"auth_url": auth_url}
+
+
+class MicrosoftCallbackRequest(BaseModel):
+    code: str
+
+
+@router.post("/microsoft/callback")
+async def microsoft_callback(data: MicrosoftCallbackRequest, db: Session = Depends(get_db)):
+    """Exchange the authorization code for tokens, get user info, and login."""
+    if not settings.AZURE_CLIENT_ID:
+        raise HTTPException(status_code=501, detail="Microsoft SSO not configured")
+
+    redirect_uri = settings.AZURE_REDIRECT_URI or f"{settings.FRONTEND_URL}/auth/microsoft/callback"
+
+    # Exchange code for access token
+    token_data = {
+        "client_id": settings.AZURE_CLIENT_ID,
+        "client_secret": settings.AZURE_CLIENT_SECRET,
+        "code": data.code,
+        "redirect_uri": redirect_uri,
+        "grant_type": "authorization_code",
+        "scope": "openid profile email User.Read",
+    }
+
+    async with httpx.AsyncClient() as client:
+        token_resp = await client.post(AZURE_TOKEN_URL, data=token_data)
+        if token_resp.status_code != 200:
+            detail = token_resp.json().get("error_description", "Failed to get token from Microsoft")
+            raise HTTPException(status_code=400, detail=detail)
+
+        tokens = token_resp.json()
+        access_token = tokens.get("access_token")
+
+        # Get user profile from Microsoft Graph
+        graph_resp = await client.get(
+            "https://graph.microsoft.com/v1.0/me",
+            headers={"Authorization": f"Bearer {access_token}"}
+        )
+        if graph_resp.status_code != 200:
+            raise HTTPException(status_code=400, detail="Failed to get user info from Microsoft")
+
+        ms_user = graph_resp.json()
+
+    # Extract identifiers from Microsoft response
+    # employeeId field from Azure AD, or fallback to email
+    employee_id = ms_user.get("employeeId") or ms_user.get("onPremisesSamAccountName")
+    email = ms_user.get("mail") or ms_user.get("userPrincipalName")
+
+    # Try to find user by employee_id first, then by email
+    user = None
+    if employee_id:
+        user = db.query(User).filter(User.employee_id == employee_id).first()
+
+    if not user and email:
+        user = db.query(User).filter(User.email == email).first()
+
+    if not user:
+        raise HTTPException(
+            status_code=401,
+            detail="No EMCatalyst account found for this Microsoft account. Please contact your administrator."
+        )
+
+    if not user.is_active:
+        raise HTTPException(status_code=400, detail="Account is disabled")
+
+    # Generate app token and return
+    token = create_access_token(data={"sub": user.employee_id})
+    user_data = UserOut.model_validate(user).model_dump()
+    user_data["roles"] = [ra.role for ra in user.role_assignments] if user.role_assignments else []
+    return {"access_token": token, "token_type": "bearer", "user": user_data}

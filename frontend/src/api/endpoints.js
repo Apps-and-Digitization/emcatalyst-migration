@@ -18,6 +18,8 @@ export const authApi = {
     api.post('/auth/reset-password', { token, new_password }),
   adminResetPassword: (userId, new_password) =>
     api.post(`/auth/users/${userId}/reset-password`, { new_password }),
+  microsoftLogin: () => api.get('/auth/microsoft/login'),
+  microsoftCallback: (code) => api.post('/auth/microsoft/callback', { code }),
   listUsers: (params) => api.get('/auth/users', { params }),
   createUser: (data) => api.post('/auth/users', data),
   updateUser: (id, data) => api.put(`/auth/users/${id}`, data),
@@ -203,10 +205,18 @@ export const brsApi = {
   removeDoctor: (appId, doctorId) => api.delete(`/brs/${appId}/doctors/${doctorId}`),
   getDoctorAgreement: (doctorId) => api.get(`/brs/doctors/${doctorId}/agreement`),
   // Survey Builder
-  listSurveys: () => api.get('/brs/surveys'),
+  listSurveys: (params) => api.get('/brs/surveys', { params }),
   createSurvey: (data) => api.post('/brs/surveys', null, { params: data }),
   getSurvey: (id) => api.get(`/brs/surveys/${id}`),
   updateSurvey: (id, data) => api.put(`/brs/surveys/${id}`, null, { params: data }),
+  uploadSurveyApproval: (surveyId, documentType, file) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('document_type', documentType)
+    return api.post(`/brs/surveys/${surveyId}/upload-approval`, formData, { headers: { 'Content-Type': 'multipart/form-data' } })
+  },
+  removeSurveyApproval: (surveyId, documentType) =>
+    api.delete(`/brs/surveys/${surveyId}/approval-document/${documentType}`),
   addQuestion: (surveyId, data) => {
     const params = { question_text: data.question_text, question_type: data.question_type, is_required: data.is_required, min_duration_seconds: data.min_duration_seconds, video_url: data.video_url }
     const url = new URL(`http://x/brs/surveys/${surveyId}/questions`)
@@ -217,6 +227,9 @@ export const brsApi = {
   deleteQuestion: (surveyId, questionId) => api.delete(`/brs/surveys/${surveyId}/questions/${questionId}`),
   // Doctor Portal (public)
   doctorLogin: (login_id, password) => api.post('/brs/doctor-login', { login_id, password }),
+  doctorSendOtp: (token) => api.post(`/brs/doctor-portal/${token}/send-otp`),
+  doctorVerifyOtp: (token, otp) => api.post(`/brs/doctor-portal/${token}/verify-otp`, { otp }),
+  doctorOtpStatus: (token) => api.get(`/brs/doctor-portal/${token}/otp-status`),
   doctorPortalGet: (token) => api.get(`/brs/doctor-portal/${token}`),
   doctorUpdateDetails: (token, data) => api.post(`/brs/doctor-portal/${token}/update-details`, data),
   doctorSignAgreement: (token, signature) => api.post(`/brs/doctor-portal/${token}/sign-agreement`, null, { params: { signature } }),

@@ -24,7 +24,7 @@ export default function BrsForm() {
   const [doctors, setDoctors] = useState([])
   const [doctorSearchOpen, setDoctorSearchOpen] = useState(false)
 
-  const { data: surveys = [] } = useQuery({ queryKey: ['brs-surveys'], queryFn: () => brsApi.listSurveys().then(r => r.data) })
+  const { data: surveys = [] } = useQuery({ queryKey: ['brs-surveys-approved'], queryFn: () => brsApi.listSurveys({ approved_only: true }).then(r => r.data) })
   const { data: divisions = [] } = useQuery({ queryKey: ['my-divisions'], queryFn: () => accessApi.listMyDivisions().then(r => r.data) })
   const { data: therapeutics = [] } = useQuery({ queryKey: ['therapeutics'], queryFn: () => masterApi.therapeutics().then(r => r.data) })
   const { data: brands = [] } = useQuery({ queryKey: ['brands'], queryFn: () => masterApi.brands().then(r => r.data) })
@@ -101,11 +101,27 @@ export default function BrsForm() {
   // Submit
   const submitBrs = async () => {
     if (doctors.length === 0) { toast.error('Add at least one doctor'); return }
+
+    // Frontend-side honorarium limit check
+    const selectedSurvey = surveys.find(s => s.id === parseInt(form.survey_id))
+    const surveyLimit = selectedSurvey?.total_honorarium_amount || (existingBrs?.total_honorarium_amount) || 0
+    if (surveyLimit > 0) {
+      const totalHonorarium = doctors.reduce((sum, d) => sum + (parseFloat(d.honorarium_amount) || 0), 0)
+      if (totalHonorarium > surveyLimit) {
+        toast.error(`Total honorarium (₹${totalHonorarium.toLocaleString('en-IN')}) exceeds survey limit of ₹${surveyLimit.toLocaleString('en-IN')}`)
+        return
+      }
+    }
+
     // Save doctor details
     for (const doc of doctors) {
       try {
         await brsApi.updateDoctor(brsId, doc.id, { name_as_per_pan: doc.name_as_per_pan, pan_number: doc.pan_number, email: doc.email, honorarium_amount: doc.honorarium_amount ? parseFloat(doc.honorarium_amount) : null })
-      } catch (e) {}
+      } catch (e) {
+        const detail = e.response?.data?.detail || 'Error saving doctor details'
+        toast.error(`${doc.doctor_name}: ${detail}`)
+        return // Stop submission if any doctor update fails
+      }
     }
     try {
       await brsApi.submit(brsId)

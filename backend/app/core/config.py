@@ -21,6 +21,12 @@ class Settings(BaseSettings):
 
     FRONTEND_URL: str = "http://localhost:5173"
 
+    # Azure AD / Microsoft SSO
+    AZURE_CLIENT_ID: str = ""
+    AZURE_CLIENT_SECRET: str = ""
+    AZURE_TENANT_ID: str = ""
+    AZURE_REDIRECT_URI: str = ""  # Will default to {FRONTEND_URL}/auth/microsoft/callback
+
     class Config:
         env_file = ".env"
 
