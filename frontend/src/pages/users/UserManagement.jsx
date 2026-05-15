@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, Search, Users, ChevronLeft, ChevronRight, Edit2 } from 'lucide-react'
+import { Plus, Search, Users, ChevronLeft, ChevronRight, Edit2, KeyRound } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
 import { authApi, masterApi } from '../../api/endpoints'
@@ -26,6 +26,9 @@ export default function UserManagement() {
   const [editEmail, setEditEmail] = useState('')
   const [editDivisions, setEditDivisions] = useState([])
   const [managerSearch, setManagerSearch] = useState('')
+  const [resetPwUser, setResetPwUser] = useState(null)
+  const [resetPwValue, setResetPwValue] = useState('')
+  const [resetPwLoading, setResetPwLoading] = useState(false)
   const { register, handleSubmit, reset } = useForm()
 
   const { data: users = [], isLoading } = useQuery({
@@ -154,6 +157,13 @@ export default function UserManagement() {
                           onClick={() => openEditRole(u)}
                         >
                           <Edit2 size={12} /> Edit
+                        </button>
+                        <button
+                          className="text-xs text-amber-600 hover:underline flex items-center gap-1"
+                          onClick={() => { setResetPwUser(u); setResetPwValue('') }}
+                          title="Reset Password"
+                        >
+                          <KeyRound size={12} /> Password
                         </button>
                         <button
                           className="text-xs text-gray-400 hover:text-gray-700 hover:underline"
@@ -419,6 +429,53 @@ export default function UserManagement() {
             </button>
           </div>
         </form>
+      </Modal>
+
+      {/* Admin Reset Password Modal */}
+      <Modal open={!!resetPwUser} onClose={() => setResetPwUser(null)} title="Reset User Password">
+        {resetPwUser && (
+          <div className="space-y-4">
+            <div>
+              <p className="text-sm font-medium text-gray-700">
+                {[resetPwUser.first_name, resetPwUser.last_name].filter(Boolean).join(' ')}
+              </p>
+              <p className="text-xs text-gray-500">{resetPwUser.employee_id} · {resetPwUser.email}</p>
+            </div>
+            <div>
+              <label className="label">New Password</label>
+              <input
+                type="password"
+                className="input"
+                value={resetPwValue}
+                onChange={e => setResetPwValue(e.target.value)}
+                placeholder="Min 8 characters"
+              />
+              <p className="text-xs text-gray-400 mt-1">This will immediately change the user's password.</p>
+            </div>
+            <div className="flex justify-end gap-2">
+              <button className="btn-secondary" onClick={() => setResetPwUser(null)}>Cancel</button>
+              <button
+                className="btn-primary"
+                disabled={resetPwLoading || resetPwValue.length < 8}
+                onClick={async () => {
+                  setResetPwLoading(true)
+                  try {
+                    await authApi.adminResetPassword(resetPwUser.id, resetPwValue)
+                    toast.success(`Password reset for ${resetPwUser.first_name}`)
+                    setResetPwUser(null)
+                    setResetPwValue('')
+                  } catch (e) {
+                    toast.error(e.response?.data?.detail || 'Failed to reset password')
+                  } finally {
+                    setResetPwLoading(false)
+                  }
+                }}
+              >
+                {resetPwLoading ? 'Resetting…' : 'Reset Password'}
+              </button>
+            </div>
+          </div>
+        )}
       </Modal>
     </div>
   )

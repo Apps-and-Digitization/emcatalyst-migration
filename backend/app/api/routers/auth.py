@@ -1,15 +1,18 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi import APIRouter, Depends, HTTPException, status, Request, BackgroundTasks
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field, field_validator
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from app.db.base import get_db
-from app.core.security import verify_password, create_access_token, get_password_hash
+from app.core.security import verify_password, create_access_token, get_password_hash, decode_token
+from app.core.email import send_email
+from app.core.config import settings
 from app.models.user import User
 from app.schemas.auth import Token, UserLogin, UserOut, UserCreate, UserUpdate
 from app.api.deps import get_current_active_user, require_admin
 from typing import List
+from datetime import timedelta
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 limiter = Limiter(key_func=get_remote_address)
@@ -77,6 +80,118 @@ def change_password(
     current_user.hashed_password = get_password_hash(data.new_password)
     db.commit()
     return {"message": "Password updated successfully"}
+
+
+class AdminResetPasswordRequest(BaseModel):
+    new_password: str = Field(min_length=8, max_length=128)
+
+
+@router.post("/users/{user_id}/reset-password")
+def admin_reset_password(
+    user_id: int,
+    data: AdminResetPasswordRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin)
+):
+    """Admin can reset any user's password."""
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    user.hashed_password = get_password_hash(data.new_password)
+    db.commit()
+    return {"message": f"Password reset for {user.first_name} {user.last_name}"}
+
+
+class ForgotPasswordRequest(BaseModel):
+    employee_id: str
+
+
+@router.post("/forgot-password")
+@limiter.limit("5/minute")
+def forgot_password(
+    request: Request,
+    data: ForgotPasswordRequest,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db)
+):
+    """Send a password reset link to the user's email."""
+    user = db.query(User).filter(User.employee_id == data.employee_id).first()
+    # Always return success to prevent user enumeration
+    if not user or not user.email:
+        return {"message": "If an account with that Employee ID exists, a reset link has been sent to the registered email."}
+
+    # Create a short-lived token (30 minutes)
+    reset_token = create_access_token(
+        data={"sub": user.employee_id, "purpose": "password_reset"},
+        expires_delta=timedelta(minutes=30)
+    )
+    reset_link = f"{settings.FRONTEND_URL}/reset-password?token={reset_token}"
+
+    # Send email in background
+    subject = "Password Reset — EMCatalyst"
+    body_html = f"""
+<html><body style="font-family:'Poppins',Arial,sans-serif;color:#212529;background:#f8f9fa;margin:0;padding:24px;">
+<div style="max-width:500px;margin:auto;border:1px solid #e9ecef;border-radius:12px;overflow:hidden;background:#fff;box-shadow:0 4px 12px rgba(0,0,0,.10);">
+  <div style="background:#ed1c24;padding:28px;text-align:center;">
+    <h2 style="color:#fff;margin:0;font-size:22px;font-weight:700;letter-spacing:0.5px;">EMCatalyst</h2>
+    <p style="color:rgba(255,255,255,.8);margin:4px 0 0;font-size:12px;">Emcure Pharmaceuticals</p>
+  </div>
+  <div style="padding:32px;">
+    <p style="font-size:15px;margin:0 0 16px;">Hi <strong>{user.first_name or 'User'}</strong>,</p>
+    <p style="font-size:14px;color:#6c757d;line-height:1.6;">We received a request to reset your password. Click the button below to set a new password:</p>
+    <div style="text-align:center;margin:32px 0;">
+      <a href="{reset_link}" style="background:#ed1c24;color:#fff;padding:14px 32px;border-radius:9999px;
+         text-decoration:none;font-size:14px;font-weight:600;display:inline-block;box-shadow:0 4px 16px rgba(237,28,36,.25);">Reset Password</a>
+    </div>
+    <p style="font-size:12px;color:#adb5bd;margin:0 0 8px;">This link expires in 30 minutes. If you didn't request this, you can safely ignore this email.</p>
+    <p style="font-size:11px;color:#ced4da;word-break:break-all;">Link: {reset_link}</p>
+  </div>
+  <div style="background:#f8f9fa;padding:16px;text-align:center;font-size:11px;color:#adb5bd;border-top:1px solid #e9ecef;">
+    © Emcure Pharmaceuticals Ltd. | This email is auto-generated.
+  </div>
+</div>
+</body></html>
+"""
+    body_text = f"Hi {user.first_name or 'User'},\n\nReset your password: {reset_link}\n\nThis link expires in 30 minutes."
+    background_tasks.add_task(send_email, user.email, subject, body_html, body_text)
+
+    return {"message": "If an account with that Employee ID exists, a reset link has been sent to the registered email."}
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str = Field(min_length=8, max_length=128)
+
+    @field_validator("new_password")
+    @classmethod
+    def password_strength(cls, v):
+        if not any(c.isupper() for c in v):
+            raise ValueError("Password must contain at least one uppercase letter")
+        if not any(c.islower() for c in v):
+            raise ValueError("Password must contain at least one lowercase letter")
+        if not any(c.isdigit() for c in v):
+            raise ValueError("Password must contain at least one digit")
+        return v
+
+
+@router.post("/reset-password")
+def reset_password(
+    data: ResetPasswordRequest,
+    db: Session = Depends(get_db)
+):
+    """Reset password using the token from the email link."""
+    payload = decode_token(data.token)
+    if not payload or payload.get("purpose") != "password_reset":
+        raise HTTPException(status_code=400, detail="Invalid or expired reset link")
+
+    employee_id = payload.get("sub")
+    user = db.query(User).filter(User.employee_id == employee_id).first()
+    if not user:
+        raise HTTPException(status_code=400, detail="Invalid or expired reset link")
+
+    user.hashed_password = get_password_hash(data.new_password)
+    db.commit()
+    return {"message": "Password has been reset successfully. You can now login with your new password."}
 
 
 @router.get("/users")

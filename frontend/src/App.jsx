@@ -9,6 +9,7 @@ import ErrorBoundary from './components/ErrorBoundary'
 import Layout from './components/layout/Layout'
 import ProtectedRoute from './components/ProtectedRoute'
 import Login from './pages/auth/Login'
+import ResetPassword from './pages/auth/ResetPassword'
 import Dashboard from './pages/Dashboard'
 import EventList from './pages/events/EventList'
 import EventForm from './pages/events/EventForm'
@@ -81,6 +82,7 @@ export default function App() {
           <AccessLoader>
             <Routes>
               <Route path="/login" element={<Login />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/unauthorized" element={<Unauthorized />} />
               <Route path="/" element={<PrivateRoute><Layout /></PrivateRoute>}>
                 <Route index element={<ProtectedRoute pageKey="dashboard"><Dashboard /></ProtectedRoute>} />

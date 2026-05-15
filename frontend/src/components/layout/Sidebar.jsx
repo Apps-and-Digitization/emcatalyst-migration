@@ -1,11 +1,14 @@
 import { NavLink, useNavigate } from 'react-router-dom'
+import { useState } from 'react'
 import {
   LayoutDashboard, CalendarDays, FileText, Users, Building2,
   BarChart3, Megaphone, Shield, LogOut, Database, ClipboardList,
-  GitBranch, Settings, Workflow
+  GitBranch, Settings, Workflow, KeyRound
 } from 'lucide-react'
+import toast from 'react-hot-toast'
 import useAuthStore from '../../store/authStore'
 import useAccessStore from '../../store/accessStore'
+import { authApi } from '../../api/endpoints'
 
 const navGroups = [
   {
@@ -47,11 +50,31 @@ export default function Sidebar() {
   const { user, logout } = useAuthStore()
   const { accessiblePages, loaded } = useAccessStore()
   const navigate = useNavigate()
+  const [showChangePw, setShowChangePw] = useState(false)
+  const [pwForm, setPwForm] = useState({ old_password: '', new_password: '', confirm_password: '' })
+  const [pwLoading, setPwLoading] = useState(false)
 
   const handleLogout = () => {
     logout()
     useAccessStore.getState().clearAccess()
     navigate('/login', { replace: true })
+  }
+
+  const handleChangePassword = async () => {
+    if (!pwForm.old_password || !pwForm.new_password) { toast.error('Fill all fields'); return }
+    if (pwForm.new_password !== pwForm.confirm_password) { toast.error('Passwords do not match'); return }
+    if (pwForm.new_password.length < 8) { toast.error('Password must be at least 8 characters'); return }
+    setPwLoading(true)
+    try {
+      await authApi.changePassword(pwForm.old_password, pwForm.new_password)
+      toast.success('Password changed successfully')
+      setShowChangePw(false)
+      setPwForm({ old_password: '', new_password: '', confirm_password: '' })
+    } catch (e) {
+      toast.error(e.response?.data?.detail || 'Failed to change password')
+    } finally {
+      setPwLoading(false)
+    }
   }
 
   const hasAccess = (pageKey) => {
@@ -72,7 +95,7 @@ export default function Sidebar() {
       {/* App Name */}
       <div className="px-5 py-4" style={{ borderBottom: '1px solid var(--color-neutral-200)' }}>
         <div className="flex items-center gap-2">
-          <span style={{ color: 'var(--color-primary)', fontWeight: 800, fontSize: 18 }}>EMCatalyst</span>
+          <span style={{ color: 'var(--color-primary)', fontWeight: 800, fontSize: 18 }}>Catalyst</span>
         </div>
         <p style={{ fontSize: 11, color: 'var(--color-neutral-500)', marginTop: 2 }}>Emcure Pharmaceuticals</p>
       </div>
@@ -150,6 +173,16 @@ export default function Sidebar() {
           </div>
         </div>
         <button
+          onClick={() => setShowChangePw(true)}
+          className="w-full flex items-center gap-2 text-[13px] py-1.5 px-2 rounded-lg transition-all duration-150 mb-1"
+          style={{ color: 'var(--color-neutral-600)' }}
+          onMouseEnter={e => { e.currentTarget.style.background = 'var(--color-primary-50)'; e.currentTarget.style.color = 'var(--color-primary)' }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--color-neutral-600)' }}
+        >
+          <KeyRound size={15} />
+          Change Password
+        </button>
+        <button
           onClick={handleLogout}
           className="w-full flex items-center gap-2 text-[13px] py-1.5 px-2 rounded-lg transition-all duration-150"
           style={{ color: 'var(--color-neutral-600)' }}
@@ -160,6 +193,41 @@ export default function Sidebar() {
           Sign out
         </button>
       </div>
+
+      {/* Change Password Modal */}
+      {showChangePw && (
+        <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/40" onClick={() => setShowChangePw(false)}>
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6" onClick={e => e.stopPropagation()}>
+            <h3 className="text-lg font-bold mb-4" style={{ color: 'var(--color-neutral-900)' }}>Change Password</h3>
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-medium text-gray-600 block mb-1">Current Password</label>
+                <input type="password" className="input" value={pwForm.old_password}
+                  onChange={e => setPwForm(f => ({ ...f, old_password: e.target.value }))}
+                  placeholder="Enter current password" />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-gray-600 block mb-1">New Password</label>
+                <input type="password" className="input" value={pwForm.new_password}
+                  onChange={e => setPwForm(f => ({ ...f, new_password: e.target.value }))}
+                  placeholder="Min 8 chars, uppercase, lowercase, digit" />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-gray-600 block mb-1">Confirm New Password</label>
+                <input type="password" className="input" value={pwForm.confirm_password}
+                  onChange={e => setPwForm(f => ({ ...f, confirm_password: e.target.value }))}
+                  placeholder="Re-enter new password" />
+              </div>
+            </div>
+            <div className="flex gap-3 justify-end mt-5">
+              <button className="btn-secondary text-sm" onClick={() => setShowChangePw(false)}>Cancel</button>
+              <button className="btn-primary text-sm" onClick={handleChangePassword} disabled={pwLoading}>
+                {pwLoading ? 'Saving…' : 'Change Password'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </aside>
   )
 }

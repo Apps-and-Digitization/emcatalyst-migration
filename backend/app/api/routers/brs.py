@@ -10,7 +10,7 @@ from slowapi.util import get_remote_address
 
 from app.db.base import get_db
 from app.api.deps import get_current_user
-from app.models.user import User, UserRoleAssignment
+from app.models.user import User, UserRoleAssignment, Division
 from app.models.brs import (
     BrsApplication, BrsStatus, BrsSurvey, BrsSurveyQuestion,
     BrsQuestionType, BrsAuditTrail, BrsDoctor
@@ -107,11 +107,18 @@ def list_surveys(db: Session = Depends(get_db), current_user: User = Depends(get
         from sqlalchemy import or_
         q = q.filter(or_(BrsSurvey.division_id.in_(div_ids), BrsSurvey.division_id.is_(None)))
     surveys = q.order_by(desc(BrsSurvey.created_at)).all()
+    # Build division lookup
+    div_ids_set = {s.division_id for s in surveys if s.division_id}
+    div_map = {}
+    if div_ids_set:
+        divs = db.query(Division).filter(Division.id.in_(div_ids_set)).all()
+        div_map = {d.id: d.name for d in divs}
     return [
         {
             "id": s.id, "title": s.title, "description": s.description,
             "total_honorarium_amount": float(s.total_honorarium_amount or 0),
             "division_id": s.division_id,
+            "division_name": div_map.get(s.division_id, None),
             "is_active": s.is_active,
             "question_count": len(s.questions),
             "doctor_count": len(s.doctor_mappings) if s.doctor_mappings else 0,
@@ -147,10 +154,15 @@ def get_survey(survey_id: int, db: Session = Depends(get_db), current_user: User
     s = db.query(BrsSurvey).filter(BrsSurvey.id == survey_id).first()
     if not s:
         raise HTTPException(404, "Survey not found")
+    division_name = None
+    if s.division_id:
+        div = db.query(Division).filter(Division.id == s.division_id).first()
+        division_name = div.name if div else None
     return {
         "id": s.id, "title": s.title, "description": s.description,
         "total_honorarium_amount": float(s.total_honorarium_amount or 0),
         "division_id": s.division_id,
+        "division_name": division_name,
         "is_active": s.is_active,
         "requires_agreement_download": s.requires_agreement_download,
         "agreement_template": s.agreement_template or "",

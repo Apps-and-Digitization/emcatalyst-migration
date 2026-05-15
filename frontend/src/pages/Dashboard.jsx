@@ -42,7 +42,7 @@ export default function Dashboard() {
           Welcome back, {user?.first_name || 'User'} 👋
         </h1>
         <p className="text-gray-500 text-sm mt-1">
-          Here's what's happening in EMCatalyst today.
+          Here's what's happening in Catalyst today.
         </p>
       </div>
 

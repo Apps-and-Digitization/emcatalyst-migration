@@ -391,17 +391,25 @@ function SurveyEditor({ surveyId, onBack }) {
     queryFn: () => brsApi.getSurvey(surveyId).then(r => r.data),
   })
 
+  const { data: divisions = [] } = useQuery({
+    queryKey: ['divisions'],
+    queryFn: () => accessApi.listDivisions().then(r => r.data),
+  })
+
   const { data: mappedDoctors = [], refetch: refetchDoctors } = useQuery({
     queryKey: ['survey-doctors', surveyId],
     queryFn: () => api.get(`/brs/surveys/${surveyId}/doctors`).then(r => r.data),
   })
 
   const [editingMeta, setEditingMeta] = useState(false)
-  const [meta, setMeta] = useState({ title: '', description: '', total_honorarium_amount: 0, agreement_template: '' })
+  const [meta, setMeta] = useState({ title: '', description: '', total_honorarium_amount: 0, division_id: '', agreement_template: '' })
 
   const updateMeta = useMutation({
-    mutationFn: () => brsApi.updateSurvey(surveyId, meta),
-    onSuccess: () => { toast.success('Survey updated'); setEditingMeta(false); qc.invalidateQueries({ queryKey: ['brs-survey', surveyId] }) },
+    mutationFn: () => brsApi.updateSurvey(surveyId, {
+      ...meta,
+      division_id: meta.division_id ? parseInt(meta.division_id) : undefined,
+    }),
+    onSuccess: () => { toast.success('Survey updated'); setEditingMeta(false); qc.invalidateQueries({ queryKey: ['brs-survey', surveyId] }); qc.invalidateQueries({ queryKey: ['brs-surveys'] }) },
   })
 
   const addQMut = useMutation({
@@ -443,6 +451,14 @@ function SurveyEditor({ surveyId, onBack }) {
             <textarea className="input" rows={2} value={meta.description}
               onChange={e => setMeta(m => ({ ...m, description: e.target.value }))}
               placeholder="Description" />
+            <div>
+              <label className="label text-xs">Division</label>
+              <select className="input" value={meta.division_id}
+                onChange={e => setMeta(m => ({ ...m, division_id: e.target.value }))}>
+                <option value="">No Division</option>
+                {divisions.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+              </select>
+            </div>
             <input className="input" type="number" value={meta.total_honorarium_amount}
               onChange={e => setMeta(m => ({ ...m, total_honorarium_amount: parseFloat(e.target.value) || 0 }))}
               placeholder="Total Honorarium Amount (₹)" />
@@ -462,13 +478,16 @@ function SurveyEditor({ surveyId, onBack }) {
             <div>
               <h3 className="font-bold text-lg text-gray-900">{survey?.title}</h3>
               {survey?.description && <p className="text-sm text-gray-500 mt-1">{survey.description}</p>}
+              {survey?.division_name && (
+                <p className="text-sm text-gray-600 mt-1">Division: <span className="font-medium">{survey.division_name}</span></p>
+              )}
               {survey?.total_honorarium_amount > 0 && (
                 <p className="text-sm text-green-700 mt-1">Total Honorarium: ₹{survey.total_honorarium_amount.toLocaleString('en-IN')}</p>
               )}
               <p className="text-xs text-gray-400 mt-1">{survey?.questions?.length || 0} questions</p>
             </div>
             <button className="btn-secondary text-sm flex items-center gap-1"
-              onClick={() => { setMeta({ title: survey.title, description: survey.description || '', total_honorarium_amount: survey.total_honorarium_amount || 0, agreement_template: survey.agreement_template || '' }); setEditingMeta(true) }}>
+              onClick={() => { setMeta({ title: survey.title, description: survey.description || '', total_honorarium_amount: survey.total_honorarium_amount || 0, division_id: survey.division_id || '', agreement_template: survey.agreement_template || '' }); setEditingMeta(true) }}>
               <Edit3 size={14} /> Edit
             </button>
           </div>
@@ -699,6 +718,7 @@ export default function SurveyBuilder() {
               <div className="flex items-center gap-3 text-xs text-gray-500 mb-4">
                 <span>{s.question_count} questions</span>
                 <span>{s.doctor_count || 0} doctors</span>
+                {s.division_name && <span className="font-medium text-gray-600">{s.division_name}</span>}
                 {s.total_honorarium_amount > 0 && (
                   <span>Limit: ₹{s.total_honorarium_amount.toLocaleString('en-IN')}</span>
                 )}

@@ -30,6 +30,9 @@ export default function Login() {
   const { token, setAuth } = useAuthStore()
   const { accessiblePages, loaded } = useAccessStore()
   const [loading, setLoading] = useState(false)
+  const [showForgot, setShowForgot] = useState(false)
+  const [forgotId, setForgotId] = useState('')
+  const [forgotLoading, setForgotLoading] = useState(false)
   const { register, handleSubmit, formState: { errors } } = useForm()
 
   // If already logged in, redirect to first accessible page
@@ -81,7 +84,7 @@ export default function Login() {
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl mb-4" style={{ background: 'var(--color-primary-50)', border: '1px solid var(--color-primary-100)' }}>
             <span style={{ color: 'var(--color-primary)', fontWeight: 800, fontSize: 18 }}>EM</span>
           </div>
-          <h1 className="text-2xl font-bold" style={{ color: 'var(--color-neutral-900)' }}>EMCatalyst</h1>
+          <h1 className="text-2xl font-bold" style={{ color: 'var(--color-neutral-900)' }}>Catalyst</h1>
           <p className="text-sm mt-1" style={{ color: 'var(--color-neutral-500)' }}>Emcure Pharmaceuticals — Event Management</p>
         </div>
 
@@ -116,6 +119,61 @@ export default function Login() {
             {loading ? 'Signing in…' : 'Sign In'}
           </button>
         </form>
+
+        <div className="text-center mt-4">
+          <button
+            type="button"
+            onClick={() => setShowForgot(true)}
+            className="text-sm hover:underline"
+            style={{ color: 'var(--color-primary)' }}
+          >
+            Forgot Password?
+          </button>
+        </div>
+
+        {/* Forgot Password Modal */}
+        {showForgot && (
+          <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/40" onClick={() => setShowForgot(false)}>
+            <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6" onClick={e => e.stopPropagation()}>
+              <h3 className="text-lg font-bold mb-2" style={{ color: 'var(--color-neutral-900)' }}>Forgot Password</h3>
+              <p className="text-sm text-gray-500 mb-4">Enter your Employee ID and we'll send a reset link to your registered email.</p>
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs font-medium text-gray-600 block mb-1">Employee ID</label>
+                  <input
+                    type="text"
+                    className="input"
+                    value={forgotId}
+                    onChange={e => setForgotId(e.target.value)}
+                    placeholder="Enter your Employee ID"
+                  />
+                </div>
+              </div>
+              <div className="flex gap-3 justify-end mt-5">
+                <button className="btn-secondary text-sm" onClick={() => setShowForgot(false)}>Cancel</button>
+                <button
+                  className="btn-primary text-sm"
+                  disabled={forgotLoading || !forgotId.trim()}
+                  onClick={async () => {
+                    setForgotLoading(true)
+                    try {
+                      const res = await authApi.forgotPassword(forgotId.trim())
+                      toast.success(res.data.message)
+                      setShowForgot(false)
+                      setForgotId('')
+                    } catch (e) {
+                      toast.error(e.response?.data?.detail || 'Something went wrong')
+                    } finally {
+                      setForgotLoading(false)
+                    }
+                  }}
+                >
+                  {forgotLoading ? 'Sending…' : 'Send Reset Link'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         <p className="text-center text-xs mt-6" style={{ color: 'var(--color-neutral-400)' }}>
           © {new Date().getFullYear()} Emcure Pharmaceuticals Ltd. All rights reserved.

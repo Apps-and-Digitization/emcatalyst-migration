@@ -12,6 +12,12 @@ export const authApi = {
   updateMe: (data) => api.put('/auth/me', data),
   changePassword: (old_password, new_password) =>
     api.post('/auth/change-password', { old_password, new_password }),
+  forgotPassword: (employee_id) =>
+    api.post('/auth/forgot-password', { employee_id }),
+  resetPassword: (token, new_password) =>
+    api.post('/auth/reset-password', { token, new_password }),
+  adminResetPassword: (userId, new_password) =>
+    api.post(`/auth/users/${userId}/reset-password`, { new_password }),
   listUsers: (params) => api.get('/auth/users', { params }),
   createUser: (data) => api.post('/auth/users', data),
   updateUser: (id, data) => api.put(`/auth/users/${id}`, data),
