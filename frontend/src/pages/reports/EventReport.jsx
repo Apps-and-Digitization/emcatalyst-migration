@@ -7,6 +7,8 @@ import { reportsApi } from '../../api/endpoints'
 import { accessApi } from '../../api/endpoints'
 import PageHeader from '../../components/ui/PageHeader'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
+import Pagination from '../../components/ui/Pagination'
+import usePagination from '../../hooks/usePagination'
 
 export default function EventReport() {
   const [filters, setFilters] = useState({ division_id: '', status: '', from_date: '', to_date: '' })
@@ -27,6 +29,8 @@ export default function EventReport() {
       return reportsApi.eventReport(params).then(r => r.data)
     },
   })
+
+  const { paginatedItems, page, pageSize, total, setPage, setPageSize } = usePagination(reportData, 50)
 
   const exportToExcel = () => {
     const headers = [
@@ -122,9 +126,9 @@ export default function EventReport() {
       ) : (
         <div className="bg-white rounded-lg border overflow-hidden">
           <div className="px-4 py-3 border-b flex items-center justify-between">
-            <span className="text-sm text-gray-600">{reportData.length} records found</span>
+            <span className="text-sm text-gray-600">{total} records found</span>
           </div>
-          <div className="overflow-auto max-h-[calc(100vh-380px)]">
+          <div className="overflow-auto max-h-[calc(100vh-420px)]">
             <table className="w-full text-xs">
               <thead className="bg-gray-50 sticky top-0">
                 <tr>
@@ -141,7 +145,7 @@ export default function EventReport() {
                 </tr>
               </thead>
               <tbody>
-                {reportData.map((r, i) => (
+                {paginatedItems.map((r, i) => (
                   <tr key={i} className="border-t hover:bg-gray-50">
                     <td className="px-3 py-2 text-gray-700">{r.company_name}</td>
                     <td className="px-3 py-2 text-gray-700">{r.division}</td>
@@ -157,12 +161,15 @@ export default function EventReport() {
                     <td className="px-3 py-2 text-gray-600">{r.initiator_name}</td>
                   </tr>
                 ))}
-                {reportData.length === 0 && (
+                {paginatedItems.length === 0 && (
                   <tr><td colSpan={10} className="px-4 py-8 text-center text-gray-400">No records found</td></tr>
                 )}
               </tbody>
             </table>
           </div>
+          {total > 0 && (
+            <Pagination page={page} pageSize={pageSize} total={total} onPageChange={setPage} onPageSizeChange={setPageSize} />
+          )}
         </div>
       )}
     </div>

@@ -34,6 +34,16 @@ import MasterBudget from './pages/masters/MasterBudget'
 import EventReport from './pages/reports/EventReport'
 import CmeEventReport from './pages/reports/CmeEventReport'
 import FmvParameterReport from './pages/reports/FmvParameterReport'
+import VendorList from './pages/vendor/VendorList'
+import VendorOrderNumbers from './pages/vendor/VendorOrderNumbers'
+import VendorTypeOfServices from './pages/vendor/VendorTypeOfServices'
+import VendorGLAccounts from './pages/vendor/VendorGLAccounts'
+import VendorWithholdingTax from './pages/vendor/VendorWithholdingTax'
+import VendorWithholdingTaxView from './pages/vendor/VendorWithholdingTaxView'
+import VendorHsnSacCodes from './pages/vendor/VendorHsnSacCodes'
+import VendorBusinessPlaces from './pages/vendor/VendorBusinessPlaces'
+import VendorBusinessAreas from './pages/vendor/VendorBusinessAreas'
+import VendorTaxCodes from './pages/vendor/VendorTaxCodes'
 import BrsList from './pages/brs/BrsList'
 import BrsForm from './pages/brs/BrsForm'
 import BrsDetail from './pages/brs/BrsDetail'
@@ -144,6 +154,17 @@ export default function App() {
                 <Route path="reports/events" element={<ProtectedRoute pageKey="reports_events"><EventReport /></ProtectedRoute>} />
                 <Route path="reports/cme-events" element={<ProtectedRoute pageKey="reports_cme_events"><CmeEventReport /></ProtectedRoute>} />
                 <Route path="reports/fmv-parameters" element={<ProtectedRoute pageKey="reports_fmv_parameters"><FmvParameterReport /></ProtectedRoute>} />
+                <Route path="vendor/vendors" element={<ProtectedRoute pageKey="vendor_vendors"><VendorList /></ProtectedRoute>} />
+                <Route path="vendor/order-numbers" element={<ProtectedRoute pageKey="vendor_order_numbers"><VendorOrderNumbers /></ProtectedRoute>} />
+                <Route path="vendor/type-of-services" element={<ProtectedRoute pageKey="vendor_type_of_services"><VendorTypeOfServices /></ProtectedRoute>} />
+                <Route path="vendor/gl-accounts" element={<ProtectedRoute pageKey="vendor_gl_accounts"><VendorGLAccounts /></ProtectedRoute>} />
+                <Route path="vendor/withholding-tax" element={<ProtectedRoute pageKey="vendor_withholding_tax"><VendorWithholdingTax /></ProtectedRoute>} />
+                <Route path="vendor/vendor-wht" element={<ProtectedRoute pageKey="vendor_vendor_wht"><VendorWithholdingTaxView /></ProtectedRoute>} />
+                <Route path="vendor/hsn-sac-codes" element={<ProtectedRoute pageKey="vendor_hsn_sac_codes"><VendorHsnSacCodes /></ProtectedRoute>} />
+                <Route path="vendor/business-places" element={<ProtectedRoute pageKey="vendor_business_places"><VendorBusinessPlaces /></ProtectedRoute>} />
+                <Route path="vendor/business-areas" element={<ProtectedRoute pageKey="vendor_business_areas"><VendorBusinessAreas /></ProtectedRoute>} />
+                <Route path="vendor/tax-codes" element={<ProtectedRoute pageKey="vendor_tax_codes"><VendorTaxCodes /></ProtectedRoute>} />
+                <Route path="vendor/hsn-sac-codes" element={<ProtectedRoute pageKey="vendor_hsn_sac_codes"><VendorHsnSacCodes /></ProtectedRoute>} />
                 <Route path="brs" element={<ProtectedRoute pageKey="brs_list"><BrsList /></ProtectedRoute>} />
                 <Route path="brs/new" element={<ProtectedRoute pageKey="brs_create"><BrsForm /></ProtectedRoute>} />
                 <Route path="brs/bulk-upload" element={<ProtectedRoute pageKey="brs_bulk_upload"><BrsBulkUpload /></ProtectedRoute>} />

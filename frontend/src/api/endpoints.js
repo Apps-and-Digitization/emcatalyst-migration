@@ -231,3 +231,60 @@ export const reportsApi = {
   cmeEventReport: (params) => api.get('/reports/cme-events', { params }),
   fmvParameterReport: (params) => api.get('/reports/fmv-parameters', { params }),
 }
+
+// Vendor Module
+export const vendorApi = {
+  // Vendors
+  vendors: (q, page, page_size) => api.get('/vendor/vendors', { params: { q, page, page_size } }),
+  vendor: (id) => api.get(`/vendor/vendors/${id}`),
+  importVendors: () => api.post('/vendor/vendors/import'),
+  updateVendor: (id, data) => api.put(`/vendor/vendors/${id}`, null, { params: data }),
+  deleteVendor: (id) => api.delete(`/vendor/vendors/${id}`),
+  addWithholdingTax: (vendorId, data) => api.post(`/vendor/vendors/${vendorId}/withholding-taxes`, null, { params: data }),
+  removeWithholdingTax: (vendorId, taxId) => api.delete(`/vendor/vendors/${vendorId}/withholding-taxes/${taxId}`),
+  setVendorWithholdingTaxes: (vendorId, ids) => api.put(`/vendor/vendors/${vendorId}/withholding-taxes`, null, { params: { withholding_tax_ids: ids } }),
+  // GL Accounts (parent)
+  glAccounts: () => api.get('/vendor/gl-accounts'),
+  createGlAccount: (data) => api.post('/vendor/gl-accounts', null, { params: data }),
+  deleteGlAccount: (id) => api.delete(`/vendor/gl-accounts/${id}`),
+  // Type of Services (child of GL Account)
+  typeOfServices: (gl_account_id) => api.get('/vendor/type-of-services', { params: { gl_account_id } }),
+  createTypeOfService: (data) => api.post('/vendor/type-of-services', null, { params: data }),
+  updateTypeOfService: (id, data) => api.put(`/vendor/type-of-services/${id}`, null, { params: data }),
+  deleteTypeOfService: (id) => api.delete(`/vendor/type-of-services/${id}`),
+  // Order Numbers (child of Type of Service)
+  orderNumbers: (type_of_service_id) => api.get('/vendor/order-numbers', { params: { type_of_service_id } }),
+  createOrderNumber: (data) => api.post('/vendor/order-numbers', null, { params: data }),
+  updateOrderNumber: (id, data) => api.put(`/vendor/order-numbers/${id}`, null, { params: data }),
+  deleteOrderNumber: (id) => api.delete(`/vendor/order-numbers/${id}`),
+  // Withholding Tax (standalone)
+  withholdingTaxes: () => api.get('/vendor/withholding-taxes'),
+  createWithholdingTax: (data) => api.post('/vendor/withholding-taxes', null, { params: data }),
+  updateWithholdingTax: (id, data) => api.put(`/vendor/withholding-taxes/${id}`, null, { params: data }),
+  deleteWithholdingTax: (id) => api.delete(`/vendor/withholding-taxes/${id}`),
+  // HSN/SAC Codes
+  hsnSacCodes: () => api.get('/vendor/hsn-sac-codes'),
+  createHsnSacCode: (data) => api.post('/vendor/hsn-sac-codes', null, { params: data }),
+  updateHsnSacCode: (id, data) => api.put(`/vendor/hsn-sac-codes/${id}`, null, { params: data }),
+  deleteHsnSacCode: (id) => api.delete(`/vendor/hsn-sac-codes/${id}`),
+  // Business Places
+  businessPlaces: () => api.get('/vendor/business-places'),
+  createBusinessPlace: (name) => api.post('/vendor/business-places', null, { params: { name } }),
+  updateBusinessPlace: (id, data) => api.put(`/vendor/business-places/${id}`, null, { params: data }),
+  deleteBusinessPlace: (id) => api.delete(`/vendor/business-places/${id}`),
+  // Business Areas
+  businessAreas: () => api.get('/vendor/business-areas'),
+  createBusinessArea: (name) => api.post('/vendor/business-areas', null, { params: { name } }),
+  updateBusinessArea: (id, data) => api.put(`/vendor/business-areas/${id}`, null, { params: data }),
+  deleteBusinessArea: (id) => api.delete(`/vendor/business-areas/${id}`),
+  // Tax Codes
+  taxCodes: () => api.get('/vendor/tax-codes'),
+  createTaxCode: (code) => api.post('/vendor/tax-codes', null, { params: { code } }),
+  updateTaxCode: (id, data) => api.put(`/vendor/tax-codes/${id}`, null, { params: data }),
+  deleteTaxCode: (id) => api.delete(`/vendor/tax-codes/${id}`),
+  // HANSA Codes
+  hansaCodes: () => api.get('/vendor/hansa-codes'),
+  createHansaCode: (code) => api.post('/vendor/hansa-codes', null, { params: { code } }),
+  updateHansaCode: (id, data) => api.put(`/vendor/hansa-codes/${id}`, null, { params: data }),
+  deleteHansaCode: (id) => api.delete(`/vendor/hansa-codes/${id}`),
+}

@@ -6,6 +6,8 @@ import { saveAs } from 'file-saver'
 import { reportsApi } from '../../api/endpoints'
 import PageHeader from '../../components/ui/PageHeader'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
+import Pagination from '../../components/ui/Pagination'
+import usePagination from '../../hooks/usePagination'
 
 export default function FmvParameterReport() {
   const [filters, setFilters] = useState({ from_date: '', to_date: '' })
@@ -19,6 +21,8 @@ export default function FmvParameterReport() {
       return reportsApi.fmvParameterReport(params).then(r => r.data)
     },
   })
+
+  const { paginatedItems, page, pageSize, total, setPage, setPageSize } = usePagination(reportData, 50)
 
   const exportToExcel = () => {
     const headers = [
@@ -92,7 +96,7 @@ export default function FmvParameterReport() {
       ) : (
         <div className="bg-white rounded-lg border overflow-hidden">
           <div className="px-4 py-3 border-b flex items-center justify-between">
-            <span className="text-sm text-gray-600">{reportData.length} records found</span>
+            <span className="text-sm text-gray-600">{total} records found</span>
           </div>
           <div className="overflow-auto max-h-[calc(100vh-380px)]">
             <table className="w-full text-xs">
@@ -113,7 +117,7 @@ export default function FmvParameterReport() {
                 </tr>
               </thead>
               <tbody>
-                {reportData.map((r, i) => (
+                {paginatedItems.map((r, i) => (
                   <tr key={i} className="border-t hover:bg-gray-50">
                     <td className="px-3 py-2 font-mono text-gray-800">{r.event_code}</td>
                     <td className="px-3 py-2">
@@ -141,6 +145,9 @@ export default function FmvParameterReport() {
               </tbody>
             </table>
           </div>
+          {total > 0 && (
+            <Pagination page={page} pageSize={pageSize} total={total} onPageChange={setPage} onPageSizeChange={setPageSize} />
+          )}
         </div>
       )}
     </div>

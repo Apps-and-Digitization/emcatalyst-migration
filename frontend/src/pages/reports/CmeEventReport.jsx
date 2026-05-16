@@ -6,6 +6,8 @@ import { saveAs } from 'file-saver'
 import { reportsApi, accessApi } from '../../api/endpoints'
 import PageHeader from '../../components/ui/PageHeader'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
+import Pagination from '../../components/ui/Pagination'
+import usePagination from '../../hooks/usePagination'
 
 export default function CmeEventReport() {
   const [filters, setFilters] = useState({ division_id: '', from_date: '', to_date: '' })
@@ -25,6 +27,8 @@ export default function CmeEventReport() {
       return reportsApi.cmeEventReport(params).then(r => r.data)
     },
   })
+
+  const { paginatedItems, page, pageSize, total, setPage, setPageSize } = usePagination(reportData, 50)
 
   const exportToExcel = () => {
     const headers = [
@@ -101,7 +105,7 @@ export default function CmeEventReport() {
       ) : (
         <div className="bg-white rounded-lg border overflow-hidden">
           <div className="px-4 py-3 border-b flex items-center justify-between">
-            <span className="text-sm text-gray-600">{reportData.length} records found</span>
+            <span className="text-sm text-gray-600">{total} records found</span>
           </div>
           <div className="overflow-auto max-h-[calc(100vh-380px)]">
             <table className="w-full text-xs">
@@ -124,7 +128,7 @@ export default function CmeEventReport() {
                 </tr>
               </thead>
               <tbody>
-                {reportData.map((r, i) => (
+                {paginatedItems.map((r, i) => (
                   <tr key={i} className="border-t hover:bg-gray-50">
                     <td className="px-3 py-2 text-gray-700">{r.division}</td>
                     <td className="px-3 py-2 font-mono text-gray-800">{r.event_code}</td>
@@ -144,12 +148,15 @@ export default function CmeEventReport() {
                     </td>
                   </tr>
                 ))}
-                {reportData.length === 0 && (
+                {paginatedItems.length === 0 && (
                   <tr><td colSpan={14} className="px-4 py-8 text-center text-gray-400">No records found</td></tr>
                 )}
               </tbody>
             </table>
           </div>
+          {total > 0 && (
+            <Pagination page={page} pageSize={pageSize} total={total} onPageChange={setPage} onPageSizeChange={setPageSize} />
+          )}
         </div>
       )}
     </div>

@@ -33,6 +33,9 @@ class Settings(BaseSettings):
     EMSIGNER_SENDER_EMAIL: str = "sumith.gangadharan@emcure.com"
     EMSIGNER_TEMPLATE_ID: int = 1
 
+    # Vendor OData API
+    VENDOR_ODATA_URL: str = "https://mdprod-masterdata-prod.apps.emart.oneemcure.local/odata/ODataMasterService/v1/LFB1s?$expand=LFA1&$filter=%20BUKRS%20eq%20%27EPL%27%20or%20BUKRS%20eq%20%27ZHL%27%20or%20BUKRS%20eq%20%27EBT%27%20and%20LFA1/KTOKK%20eq%20%270006%27%20or%20LFA1/KTOKK%20eq%20%270007%27"
+
     class Config:
         env_file = ".env"
 

@@ -6,7 +6,8 @@ import {
   GitBranch, Settings, Workflow, KeyRound,
   ChevronDown, Building2, Network, UserRound,
   Pill, Stethoscope, FileText, UtensilsCrossed,
-  Calculator, Wallet, BarChart3, FileSpreadsheet
+  Calculator, Wallet, BarChart3, FileSpreadsheet,
+  Store, Receipt, Landmark, MapPin, Hash, Layers
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import useAuthStore from '../../store/authStore'
@@ -54,6 +55,23 @@ const navGroups = [
           { label: 'Event Report', path: '/reports/events', icon: FileSpreadsheet, pageKey: 'reports_events' },
           { label: 'CME Event Report', path: '/reports/cme-events', icon: FileSpreadsheet, pageKey: 'reports_cme_events' },
           { label: 'FMV Parameter Report', path: '/reports/fmv-parameters', icon: FileSpreadsheet, pageKey: 'reports_fmv_parameters' },
+        ]
+      },
+      {
+        label: 'Vendor',
+        icon: Store,
+        pageKey: 'vendor',
+        submenu: [
+          { label: 'Vendors', path: '/vendor/vendors', icon: Store, pageKey: 'vendor_vendors' },
+          { label: 'Order Numbers', path: '/vendor/order-numbers', icon: Receipt, pageKey: 'vendor_order_numbers' },
+          { label: 'Type of Services', path: '/vendor/type-of-services', icon: Layers, pageKey: 'vendor_type_of_services' },
+          { label: 'GL Accounts', path: '/vendor/gl-accounts', icon: Hash, pageKey: 'vendor_gl_accounts' },
+          { label: 'Withholding Tax', path: '/vendor/withholding-tax', icon: FileText, pageKey: 'vendor_withholding_tax' },
+          { label: 'Vendor WHT View', path: '/vendor/vendor-wht', icon: FileText, pageKey: 'vendor_vendor_wht' },
+          { label: 'HSN/SAC Codes', path: '/vendor/hsn-sac-codes', icon: Hash, pageKey: 'vendor_hsn_sac_codes' },
+          { label: 'Business Place', path: '/vendor/business-places', icon: Landmark, pageKey: 'vendor_business_places' },
+          { label: 'Business Area', path: '/vendor/business-areas', icon: MapPin, pageKey: 'vendor_business_areas' },
+          { label: 'Tax Codes', path: '/vendor/tax-codes', icon: Hash, pageKey: 'vendor_tax_codes' },
         ]
       },
     ]

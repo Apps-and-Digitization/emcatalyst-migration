@@ -13,6 +13,8 @@ from app.api.routers import auth, events, access, master, brs, import_mcl, repor
 from app.api.routers import rbac as rbac_router
 from app.api.routers import workflows as workflow_router
 from app.api.routers import brs_bulk
+from app.api.routers import vendor as vendor_router
+from app.api.routers import jobs as jobs_router
 
 logger = logging.getLogger(__name__)
 
@@ -31,11 +33,15 @@ def seed_rbac_data():
     from app.db.base import SessionLocal
     from app.services.rbac_service import seed_rbac
     from app.services.workflow_service import seed_workflows
+    from app.services.vendor_seed import seed_withholding_taxes
+    from app.services.gl_account_seed import seed_gl_accounts
 
     db = SessionLocal()
     try:
         seed_rbac(db)
         seed_workflows(db)
+        seed_withholding_taxes(db)
+        seed_gl_accounts(db)
     finally:
         db.close()
 
@@ -95,6 +101,8 @@ app.include_router(rbac_router.router, prefix=PREFIX)
 app.include_router(workflow_router.router, prefix=PREFIX)
 app.include_router(brs_bulk.router, prefix=PREFIX)
 app.include_router(reports.router, prefix=PREFIX)
+app.include_router(vendor_router.router, prefix=PREFIX)
+app.include_router(jobs_router.router, prefix=PREFIX)
 
 os.makedirs("uploads", exist_ok=True)
 # Uploaded files are served via authenticated endpoint below — not via StaticFiles
