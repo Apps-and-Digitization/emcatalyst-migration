@@ -162,12 +162,12 @@ export const masterApi = {
   createDivision: (data) => api.post('/master/divisions', null, { params: data }),
   updateDivision: (id, data) => api.put(`/master/divisions/${id}`, null, { params: data }),
   deleteDivision: (id) => api.delete(`/master/divisions/${id}`),
-  // Budgets
-  budgets: (params) => api.get('/master/budgets', { params }),
-  createBudget: (data) => api.post('/master/budgets', null, { params: data }),
-  updateBudget: (id, data) => api.put(`/master/budgets/${id}`, null, { params: data }),
-  deleteBudget: (id) => api.delete(`/master/budgets/${id}`),
-  budgetAuditTrail: (budgetId) => api.get(`/master/budgets/${budgetId}/audit-trail`),
+  // Budgets (Event)
+  budgets: (params) => api.get('/budget/events', { params }),
+  createBudget: (data) => api.post('/budget/events', null, { params: data }),
+  updateBudget: (id, data) => api.put(`/budget/events/${id}`, null, { params: data }),
+  deleteBudget: (id) => api.delete(`/budget/events/${id}`),
+  budgetAuditTrail: (budgetId) => api.get(`/budget/events/${budgetId}/audit-trail`),
 }
 
 // BRS Module
@@ -179,6 +179,7 @@ export const brsApi = {
   submit: (id) => api.post(`/brs/${id}/submit`),
   approve: (id, remarks) => api.post(`/brs/${id}/approve`, null, { params: { remarks } }),
   reject: (id, reason) => api.post(`/brs/${id}/reject`, null, { params: { reason } }),
+  checkBudget: (division_id, start_date) => api.get('/brs/check-budget', { params: { division_id, start_date } }),
   // Doctors within BRS
   addDoctor: (appId, data) => api.post(`/brs/${appId}/doctors`, data),
   updateDoctor: (appId, doctorId, data) => api.put(`/brs/${appId}/doctors/${doctorId}`, data),

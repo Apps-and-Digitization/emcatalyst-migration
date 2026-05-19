@@ -47,6 +47,7 @@ import BrsList from './pages/brs/BrsList'
 import BrsForm from './pages/brs/BrsForm'
 import BrsDetail from './pages/brs/BrsDetail'
 import BrsBulkUpload from './pages/brs/BrsBulkUpload'
+import BrsBudget from './pages/budget/BrsBudget'
 import SurveyBuilder from './pages/brs/SurveyBuilder'
 import SurveyPortal from './pages/brs/SurveyPortal'
 import DoctorLogin from './pages/brs/DoctorLogin'
@@ -150,6 +151,8 @@ export default function App() {
                 <Route path="masters/meals" element={<ProtectedRoute pageKey="masters_meals"><MasterMeals /></ProtectedRoute>} />
                 <Route path="masters/fmv-parameters" element={<ProtectedRoute pageKey="masters_fmv_parameters"><MasterFmvParameters /></ProtectedRoute>} />
                 <Route path="masters/budget" element={<ProtectedRoute pageKey="masters_budget"><MasterBudget /></ProtectedRoute>} />
+                <Route path="budget/events" element={<ProtectedRoute pageKey="budget_events"><MasterBudget /></ProtectedRoute>} />
+                <Route path="budget/brs" element={<ProtectedRoute pageKey="budget_brs"><BrsBudget /></ProtectedRoute>} />
                 <Route path="reports/events" element={<ProtectedRoute pageKey="reports_events"><EventReport /></ProtectedRoute>} />
                 <Route path="reports/cme-events" element={<ProtectedRoute pageKey="reports_cme_events"><CmeEventReport /></ProtectedRoute>} />
                 <Route path="reports/fmv-parameters" element={<ProtectedRoute pageKey="reports_fmv_parameters"><FmvParameterReport /></ProtectedRoute>} />

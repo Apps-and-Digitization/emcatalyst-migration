@@ -38,7 +38,6 @@ const navGroups = [
           { label: 'Document Type', path: '/masters/document-types', icon: FileText, pageKey: 'masters_document_types' },
           { label: 'Meal', path: '/masters/meals', icon: UtensilsCrossed, pageKey: 'masters_meals' },
           { label: 'FMV Parameter', path: '/masters/fmv-parameters', icon: Calculator, pageKey: 'masters_fmv_parameters' },
-          { label: 'Budget', path: '/masters/budget', icon: Wallet, pageKey: 'masters_budget' },
         ]
       },
       {
@@ -66,6 +65,15 @@ const navGroups = [
           { label: 'Business Place', path: '/vendor/business-places', icon: Landmark, pageKey: 'vendor_business_places' },
           { label: 'Business Area', path: '/vendor/business-areas', icon: MapPin, pageKey: 'vendor_business_areas' },
           { label: 'Tax Codes', path: '/vendor/tax-codes', icon: Hash, pageKey: 'vendor_tax_codes' },
+        ]
+      },
+      {
+        label: 'Budget',
+        icon: Wallet,
+        pageKey: 'budget',
+        submenu: [
+          { label: 'Event Budget', path: '/budget/events', icon: Wallet, pageKey: 'budget_events' },
+          { label: 'BRS Budget', path: '/budget/brs', icon: Wallet, pageKey: 'budget_brs' },
         ]
       },
     ]

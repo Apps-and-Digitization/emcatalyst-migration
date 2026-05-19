@@ -95,6 +95,58 @@ def _generate_password(length=8):
     return ''.join(secrets.choice(chars) for _ in range(length))
 
 
+def _deduct_brs_budget(db: Session, doc: BrsDoctor):
+    """Deduct the doctor's honorarium from the BRS budget for the application's division and current quarter."""
+    from app.models.budget import BrsBudget, BrsBudgetAuditTrail
+
+    if not doc.honorarium_amount or float(doc.honorarium_amount) <= 0:
+        return
+
+    app = doc.brs_application
+    if not app or not app.division_id:
+        return
+
+    # Determine current financial year quarter
+    # FY: Q1=Apr-Jun, Q2=Jul-Sep, Q3=Oct-Dec, Q4=Jan-Mar
+    now = datetime.now(timezone.utc)
+    month = now.month
+    if month >= 4 and month <= 6:
+        quarter = 1
+        fy_year = now.year
+    elif month >= 7 and month <= 9:
+        quarter = 2
+        fy_year = now.year
+    elif month >= 10 and month <= 12:
+        quarter = 3
+        fy_year = now.year
+    else:  # Jan-Mar
+        quarter = 4
+        fy_year = now.year - 1
+
+    # Find the budget for this division + quarter
+    budget = db.query(BrsBudget).filter(
+        BrsBudget.division_id == app.division_id,
+        BrsBudget.quarter == quarter,
+        BrsBudget.year == fy_year,
+        BrsBudget.is_active == True,
+    ).first()
+
+    if not budget:
+        return  # No budget configured — skip deduction silently
+
+    amount = float(doc.honorarium_amount)
+    budget.utilized_budget = float(budget.utilized_budget or 0) + amount
+
+    db.add(BrsBudgetAuditTrail(
+        budget_id=budget.id,
+        action="Deducted",
+        amount=amount,
+        description=f"Deducted ₹{amount:,.0f} for Dr. {doc.doctor_name} (BRS {app.brs_code})",
+        brs_code=app.brs_code,
+    ))
+    db.flush()
+
+
 # ─────────────────────────────────────────────
 #  Survey CRUD (division-scoped)
 # ─────────────────────────────────────────────
@@ -125,6 +177,7 @@ def list_surveys(approved_only: bool = False, db: Session = Depends(get_db), cur
             "approval_status": s.approval_status or "Pending Approval",
             "medical_approval_file": s.medical_approval_file,
             "ethical_approval_file": s.ethical_approval_file,
+            "compliance_approval_file": s.compliance_approval_file,
             "question_count": len(s.questions),
             "doctor_count": len(s.doctor_mappings) if s.doctor_mappings else 0,
             "created_at": s.created_at.isoformat() if s.created_at else None,
@@ -172,6 +225,7 @@ def get_survey(survey_id: int, db: Session = Depends(get_db), current_user: User
         "approval_status": s.approval_status or "Pending Approval",
         "medical_approval_file": s.medical_approval_file,
         "ethical_approval_file": s.ethical_approval_file,
+        "compliance_approval_file": s.compliance_approval_file,
         "requires_agreement_download": s.requires_agreement_download,
         "agreement_template": s.agreement_template or "",
         "questions": [
@@ -217,15 +271,15 @@ def upload_survey_approval(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Upload Medical Team Approval or Ethical Team Approval document for a survey."""
+    """Upload Medical Team Approval, Ethics Committee Approval, or Compliance Team Approval document for a survey."""
     import os, uuid, shutil
 
     s = db.query(BrsSurvey).filter(BrsSurvey.id == survey_id).first()
     if not s:
         raise HTTPException(404, "Survey not found")
 
-    if document_type not in ("medical_approval", "ethical_approval"):
-        raise HTTPException(400, "document_type must be 'medical_approval' or 'ethical_approval'")
+    if document_type not in ("medical_approval", "ethical_approval", "compliance_approval"):
+        raise HTTPException(400, "document_type must be 'medical_approval', 'ethical_approval', or 'compliance_approval'")
 
     # Save file
     upload_dir = os.path.join("uploads", "survey_approvals", str(survey_id))
@@ -240,11 +294,13 @@ def upload_survey_approval(
     # Update survey record
     if document_type == "medical_approval":
         s.medical_approval_file = file_path
-    else:
+    elif document_type == "ethical_approval":
         s.ethical_approval_file = file_path
+    else:
+        s.compliance_approval_file = file_path
 
-    # Auto-approve if both documents are uploaded
-    if s.medical_approval_file and s.ethical_approval_file:
+    # Auto-approve if all three documents are uploaded
+    if s.medical_approval_file and s.ethical_approval_file and s.compliance_approval_file:
         s.approval_status = "Approved"
 
     db.commit()
@@ -270,19 +326,27 @@ def remove_survey_approval_document(
     if not s:
         raise HTTPException(404, "Survey not found")
 
-    if document_type not in ("medical_approval", "ethical_approval"):
-        raise HTTPException(400, "document_type must be 'medical_approval' or 'ethical_approval'")
+    if document_type not in ("medical_approval", "ethical_approval", "compliance_approval"):
+        raise HTTPException(400, "document_type must be 'medical_approval', 'ethical_approval', or 'compliance_approval'")
 
     # Delete the file
-    file_path = s.medical_approval_file if document_type == "medical_approval" else s.ethical_approval_file
+    if document_type == "medical_approval":
+        file_path = s.medical_approval_file
+    elif document_type == "ethical_approval":
+        file_path = s.ethical_approval_file
+    else:
+        file_path = s.compliance_approval_file
+
     if file_path and os.path.exists(file_path):
         os.remove(file_path)
 
     # Clear the field
     if document_type == "medical_approval":
         s.medical_approval_file = None
-    else:
+    elif document_type == "ethical_approval":
         s.ethical_approval_file = None
+    else:
+        s.compliance_approval_file = None
 
     # Revert approval status since a document is now missing
     s.approval_status = "Pending Approval"
@@ -514,6 +578,65 @@ def create_application(
     db.commit()
     db.refresh(app)
     return {"id": app.id, "brs_code": app.brs_code}
+
+
+@router.get("/check-budget")
+def check_brs_budget(
+    division_id: int,
+    start_date: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Check if BRS budget exists for the given division and quarter (derived from start_date).
+    Returns budget info or error if not configured."""
+    from app.models.budget import BrsBudget
+    from datetime import datetime as dt
+
+    try:
+        parsed = dt.fromisoformat(start_date.replace('Z', '+00:00')) if 'T' in start_date else dt.strptime(start_date, "%Y-%m-%d")
+    except Exception:
+        raise HTTPException(400, "Invalid date format")
+
+    month = parsed.month
+    # Financial year quarters: Q1=Apr-Jun, Q2=Jul-Sep, Q3=Oct-Dec, Q4=Jan-Mar
+    if 4 <= month <= 6:
+        quarter = 1
+        fy_year = parsed.year
+    elif 7 <= month <= 9:
+        quarter = 2
+        fy_year = parsed.year
+    elif 10 <= month <= 12:
+        quarter = 3
+        fy_year = parsed.year
+    else:
+        quarter = 4
+        fy_year = parsed.year - 1
+
+    budget = db.query(BrsBudget).filter(
+        BrsBudget.division_id == division_id,
+        BrsBudget.quarter == quarter,
+        BrsBudget.year == fy_year,
+        BrsBudget.is_active == True,
+    ).first()
+
+    if not budget:
+        return {
+            "has_budget": False,
+            "error": f"No BRS budget configured for this division in Q{quarter} (FY {fy_year}–{str(fy_year+1)[2:]}). Please configure budget first.",
+            "quarter": quarter,
+            "fy_year": fy_year,
+        }
+
+    available = float(budget.allocated_budget) - float(budget.utilized_budget or 0)
+    return {
+        "has_budget": True,
+        "budget_id": budget.id,
+        "quarter": quarter,
+        "fy_year": fy_year,
+        "allocated": float(budget.allocated_budget),
+        "utilized": float(budget.utilized_budget or 0),
+        "available": available,
+    }
 
 
 @router.get("/dashboard")
@@ -754,6 +877,38 @@ def submit_application(app_id: int, db: Session = Depends(get_db), current_user:
                 f"Total honorarium (₹{total_honorarium:,.0f}) exceeds survey limit of ₹{float(app.survey.total_honorarium_amount):,.0f}. Please reduce doctor honorariums before submitting."
             )
 
+    # BRS Budget validation on submit
+    if app.division_id and app.start_date:
+        from app.models.budget import BrsBudget
+        fresh_doctors = db.query(BrsDoctor).filter(BrsDoctor.brs_application_id == app_id).all()
+        total_honorarium = sum(float(d.honorarium_amount or 0) for d in fresh_doctors)
+        month = app.start_date.month
+        if 4 <= month <= 6:
+            q_num, fy = 1, app.start_date.year
+        elif 7 <= month <= 9:
+            q_num, fy = 2, app.start_date.year
+        elif 10 <= month <= 12:
+            q_num, fy = 3, app.start_date.year
+        else:
+            q_num, fy = 4, app.start_date.year - 1
+
+        budget = db.query(BrsBudget).filter(
+            BrsBudget.division_id == app.division_id,
+            BrsBudget.quarter == q_num,
+            BrsBudget.year == fy,
+            BrsBudget.is_active == True,
+        ).first()
+
+        if not budget:
+            raise HTTPException(400, f"No BRS budget configured for this division in Q{q_num} FY {fy}. Please configure budget first.")
+
+        available = float(budget.allocated_budget) - float(budget.utilized_budget or 0)
+        if total_honorarium > available:
+            raise HTTPException(
+                400,
+                f"Total honorarium (₹{total_honorarium:,.0f}) exceeds available BRS budget of ₹{available:,.0f} for Q{q_num} FY {fy}."
+            )
+
     old = app.status
     app.status = BrsStatus.SUBMITTED
     _add_audit(db, app.id, "Submitted for Approval", old, BrsStatus.SUBMITTED, current_user.id)
@@ -968,6 +1123,14 @@ def doctor_verify_otp(request: Request, token: str, data: dict = Body(...), db: 
 
     # Mark as verified
     _otp_store[token]["verified"] = True
+
+    # Deduct BRS budget on first OTP verification only (check if not already deducted for this doctor)
+    if not getattr(doc, '_budget_deducted', False):
+        # Use a simple check: if doctor_status is still "Pending", budget hasn't been deducted yet
+        if doc.doctor_status == "Pending":
+            _deduct_brs_budget(db, doc)
+    db.commit()
+
     return {"ok": True, "message": "OTP verified successfully"}
 
 
@@ -982,10 +1145,14 @@ def doctor_otp_status(token: str):
 
 @router.get("/doctor-portal/{token}")
 def doctor_portal_get(token: str, db: Session = Depends(get_db)):
-    """Doctor accesses their portal via token"""
+    """Doctor accesses their portal via token. Clears OTP verification so doctor must re-verify each session."""
     doc = db.query(BrsDoctor).filter(BrsDoctor.login_token == token).first()
     if not doc:
         raise HTTPException(404, "Invalid token")
+
+    # Clear OTP verification on page load — doctor must verify each time
+    if token in _otp_store:
+        _otp_store[token]["verified"] = False
     app = doc.brs_application
     survey = app.survey
     return {

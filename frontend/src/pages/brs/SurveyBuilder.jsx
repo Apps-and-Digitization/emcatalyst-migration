@@ -501,8 +501,8 @@ function SurveyEditor({ surveyId, onBack }) {
             <h4 className="font-semibold text-sm text-gray-700">Approval Documents</h4>
             <p className="text-xs text-gray-400">
               {survey?.approval_status === 'Approved'
-                ? <span className="text-emerald-600 font-medium">✓ Approved — both documents uploaded</span>
-                : <span className="text-amber-600 font-medium">⚠ Pending — upload both documents to proceed</span>
+                ? <span className="text-emerald-600 font-medium">✓ Approved — all documents uploaded</span>
+                : <span className="text-amber-600 font-medium">⚠ Pending — upload all three approval documents to proceed</span>
               }
             </p>
           </div>
@@ -569,6 +569,35 @@ function SurveyEditor({ surveyId, onBack }) {
                 }} />
             )}
           </div>
+          <div className="border rounded-lg p-4">
+            <p className="text-xs font-medium text-gray-700 mb-2">Compliance Team Approval <span className="text-red-500">*</span></p>
+            {survey?.compliance_approval_file ? (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-emerald-600 font-medium">✓ Uploaded</span>
+                <a href={`/${survey.compliance_approval_file.replace(/\\/g, '/')}`} target="_blank" rel="noreferrer" className="text-xs text-[var(--color-primary)] hover:underline">View</a>
+                <button className="text-xs text-red-500 hover:underline" onClick={async () => {
+                  try {
+                    await brsApi.removeSurveyApproval(surveyId, 'compliance_approval')
+                    toast.success('Compliance approval removed')
+                    qc.invalidateQueries({ queryKey: ['brs-survey', surveyId] })
+                    qc.invalidateQueries({ queryKey: ['brs-surveys'] })
+                  } catch (err) { toast.error('Failed to remove') }
+                }}>Remove</button>
+              </div>
+            ) : (
+              <input type="file" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" className="text-xs"
+                onChange={async (e) => {
+                  const file = e.target.files[0]
+                  if (!file) return
+                  try {
+                    await brsApi.uploadSurveyApproval(surveyId, 'compliance_approval', file)
+                    toast.success('Compliance approval uploaded')
+                    qc.invalidateQueries({ queryKey: ['brs-survey', surveyId] })
+                    qc.invalidateQueries({ queryKey: ['brs-surveys'] })
+                  } catch (err) { toast.error(err.response?.data?.detail || 'Upload failed') }
+                }} />
+            )}
+          </div>
         </div>
       </div>
 
@@ -581,12 +610,12 @@ function SurveyEditor({ surveyId, onBack }) {
           </div>
           <button className="btn-secondary text-xs" onClick={() => setShowDoctorManager(!showDoctorManager)}
             disabled={survey?.approval_status !== 'Approved'}
-            title={survey?.approval_status !== 'Approved' ? 'Upload both approval documents first' : ''}>
+            title={survey?.approval_status !== 'Approved' ? 'Upload all approval documents first' : ''}>
             {showDoctorManager ? 'Hide' : 'Manage Doctors'}
           </button>
         </div>
         {survey?.approval_status !== 'Approved' && (
-          <p className="text-xs text-amber-600 bg-amber-50 p-2 rounded">Upload both Medical and Ethical approval documents to manage doctors.</p>
+          <p className="text-xs text-amber-600 bg-amber-50 p-2 rounded">Upload Medical, Ethics Committee, and Compliance Team approval documents to manage doctors.</p>
         )}
         {showDoctorManager && survey?.approval_status === 'Approved' && (
           <SurveyDoctorManager surveyId={surveyId} mappedDoctors={mappedDoctors} onRefresh={refetchDoctors} />

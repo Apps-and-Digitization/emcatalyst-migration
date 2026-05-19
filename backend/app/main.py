@@ -15,6 +15,7 @@ from app.api.routers import workflows as workflow_router
 from app.api.routers import brs_bulk
 from app.api.routers import vendor as vendor_router
 from app.api.routers import jobs as jobs_router
+from app.api.routers import budget as budget_router
 
 logger = logging.getLogger(__name__)
 
@@ -105,6 +106,7 @@ app.include_router(brs_bulk.router, prefix=PREFIX)
 app.include_router(reports.router, prefix=PREFIX)
 app.include_router(vendor_router.router, prefix=PREFIX)
 app.include_router(jobs_router.router, prefix=PREFIX)
+app.include_router(budget_router.router, prefix=PREFIX)
 
 os.makedirs("uploads", exist_ok=True)
 # Uploaded files are served via authenticated endpoint below — not via StaticFiles

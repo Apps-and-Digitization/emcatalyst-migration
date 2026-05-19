@@ -228,34 +228,4 @@ class MasterSponsorshipType(Base):
     is_active = Column(Boolean, default=True)
 
 
-class MasterBudget(Base):
-    __tablename__ = "master_budgets"
 
-    id = Column(Integer, primary_key=True, index=True)
-    division_id = Column(Integer, ForeignKey("divisions.id"), nullable=False)
-    budget_type = Column(String(50), nullable=False)  # "Sponsorship/Event Cost" or "Speaker Cost"
-    budget_month = Column(DateTime, nullable=True)  # Stores first day of month (e.g. 2026-05-01)
-    month = Column(Integer, nullable=True)  # Legacy
-    year = Column(Integer, nullable=True)  # Legacy
-    allocated_budget = Column(Numeric(14, 2), nullable=False)
-    utilized_budget = Column(Numeric(14, 2), default=0)
-    is_active = Column(Boolean, default=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-
-    division = relationship("Division")
-
-
-class BudgetAuditTrail(Base):
-    __tablename__ = "budget_audit_trail"
-
-    id = Column(Integer, primary_key=True, index=True)
-    budget_id = Column(Integer, ForeignKey("master_budgets.id"), nullable=False)
-    action = Column(String(50), nullable=False)  # "Created", "Updated", "Deducted", "Reversed"
-    amount = Column(Numeric(14, 2))  # Amount involved (positive for deduction, negative for reversal)
-    description = Column(Text)  # e.g. "Deducted ₹15,000 for Event EVT202605001"
-    performed_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
-    event_code = Column(String(50), nullable=True)  # Reference to event if deduction
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-
-    budget = relationship("MasterBudget")
-    performed_by = relationship("User")

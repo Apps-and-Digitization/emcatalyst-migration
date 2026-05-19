@@ -23,6 +23,8 @@ export default function BrsForm() {
   })
   const [doctors, setDoctors] = useState([])
   const [doctorSearchOpen, setDoctorSearchOpen] = useState(false)
+  const [budgetError, setBudgetError] = useState('')
+  const [budgetInfo, setBudgetInfo] = useState(null)
 
   const { data: surveys = [] } = useQuery({ queryKey: ['brs-surveys-approved'], queryFn: () => brsApi.listSurveys({ approved_only: true }).then(r => r.data) })
   const { data: divisions = [] } = useQuery({ queryKey: ['my-divisions'], queryFn: () => accessApi.listMyDivisions().then(r => r.data) })
@@ -53,6 +55,11 @@ export default function BrsForm() {
     if (!form.survey_id) { toast.error('Select a survey'); return }
     if (!form.title) { toast.error('Title is required'); return }
     if (!form.brand) { toast.error('Brand is required'); return }
+    if (!form.on_field_execution_by) { toast.error('On Field Execution By is required'); return }
+    if (!form.start_date) { toast.error('Start Date is required'); return }
+    if (!form.rationale) { toast.error('Rationale is required'); return }
+    if (!form.agenda) { toast.error('Agenda is required'); return }
+    if (budgetError) { toast.error('Cannot proceed — BRS budget not configured for selected date'); return }
     try {
       const payload = { ...form, survey_id: parseInt(form.survey_id) }
       if (payload.division_id) payload.division_id = parseInt(payload.division_id)
@@ -96,15 +103,26 @@ export default function BrsForm() {
   const submitBrs = async () => {
     if (doctors.length === 0) { toast.error('Add at least one doctor'); return }
 
-    // Frontend-side honorarium limit check
+    // Check all doctors have honorarium
+    const missingHonorarium = doctors.filter(d => !d.honorarium_amount || parseFloat(d.honorarium_amount) <= 0)
+    if (missingHonorarium.length > 0) {
+      toast.error(`Honorarium amount is required for: ${missingHonorarium.map(d => d.doctor_name).join(', ')}`)
+      return
+    }
+
+    // Frontend-side honorarium limit check (survey limit)
     const selectedSurvey = surveys.find(s => s.id === parseInt(form.survey_id))
     const surveyLimit = selectedSurvey?.total_honorarium_amount || (existingBrs?.total_honorarium_amount) || 0
-    if (surveyLimit > 0) {
-      const totalHonorarium = doctors.reduce((sum, d) => sum + (parseFloat(d.honorarium_amount) || 0), 0)
-      if (totalHonorarium > surveyLimit) {
-        toast.error(`Total honorarium (₹${totalHonorarium.toLocaleString('en-IN')}) exceeds survey limit of ₹${surveyLimit.toLocaleString('en-IN')}`)
-        return
-      }
+    const totalHonorarium = doctors.reduce((sum, d) => sum + (parseFloat(d.honorarium_amount) || 0), 0)
+    if (surveyLimit > 0 && totalHonorarium > surveyLimit) {
+      toast.error(`Total honorarium (₹${totalHonorarium.toLocaleString('en-IN')}) exceeds survey limit of ₹${surveyLimit.toLocaleString('en-IN')}`)
+      return
+    }
+
+    // Frontend-side BRS budget check
+    if (budgetInfo && totalHonorarium > budgetInfo.available) {
+      toast.error(`Total honorarium (₹${totalHonorarium.toLocaleString('en-IN')}) exceeds available BRS budget of ₹${Number(budgetInfo.available).toLocaleString('en-IN')}`)
+      return
     }
 
     // Save doctor details
@@ -211,7 +229,13 @@ export default function BrsForm() {
           </div>
           <div className="flex justify-between pt-2">
             <button className="btn-secondary" onClick={() => navigate('/brs')}>Cancel</button>
-            <button className="btn-primary" onClick={() => setStep(1)}>Next <ChevronRight size={16} /></button>
+            <button className="btn-primary" onClick={() => {
+              if (!form.division_id) { toast.error('Division is required'); return }
+              if (!form.survey_id) { toast.error('Survey is required'); return }
+              if (!form.title) { toast.error('Title of Program is required'); return }
+              if (!form.brand) { toast.error('Brand is required'); return }
+              setStep(1)
+            }}>Next <ChevronRight size={16} /></button>
           </div>
         </div>
       )}
@@ -234,15 +258,32 @@ export default function BrsForm() {
             </div>
             <div>
               <label className="label">Start Date *</label>
-              <input type="date" className="input" value={form.start_date} onChange={e => {
+              <input type="date" className="input" value={form.start_date} onChange={async e => {
                 updateField('start_date', e.target.value)
+                setBudgetError('')
+                setBudgetInfo(null)
                 // Auto-set end date to 60 days from start
                 if (e.target.value) {
                   const start = new Date(e.target.value)
                   start.setDate(start.getDate() + 60)
                   updateField('end_date', start.toISOString().split('T')[0])
+                  // Check BRS budget
+                  if (form.division_id) {
+                    try {
+                      const res = await brsApi.checkBudget(form.division_id, e.target.value)
+                      if (!res.data.has_budget) {
+                        setBudgetError(res.data.error)
+                      } else {
+                        setBudgetInfo(res.data)
+                      }
+                    } catch (err) {
+                      setBudgetError(err.response?.data?.detail || 'Budget check failed')
+                    }
+                  }
                 }
               }} />
+              {budgetError && <p className="text-xs text-red-500 mt-1">{budgetError}</p>}
+              {budgetInfo && <p className="text-xs text-emerald-600 mt-1">Budget available: ₹{Number(budgetInfo.available).toLocaleString('en-IN')} (Q{budgetInfo.quarter} FY {budgetInfo.fy_year})</p>}
             </div>
             <div>
               <label className="label">End Date (Start + 60 days)</label>
