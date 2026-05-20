@@ -188,6 +188,13 @@ export default function SurveyPortal() {
     if (existingDocs) setUploadedDocs(existingDocs)
   }, [existingDocs])
 
+  // Also initialize from master_documents in portal response (covers initial load)
+  useEffect(() => {
+    if (data?.master_documents && data.master_documents.length > 0 && uploadedDocs.length === 0) {
+      setUploadedDocs(data.master_documents)
+    }
+  }, [data])
+
   useEffect(() => {
     if (otpStatus?.verified) {
       setOtpVerified(true)

@@ -15,7 +15,7 @@ from app.models.brs import (
     BrsApplication, BrsStatus, BrsSurvey, BrsSurveyQuestion,
     BrsQuestionType, BrsAuditTrail, BrsDoctor, BrsTerritoryAssignment
 )
-from app.models.master import HcpDoctor, HcpDoctorTerritory
+from app.models.master import HcpDoctor, HcpDoctorTerritory, HcpDoctorDocument
 from app.core.security import get_password_hash
 
 router = APIRouter(prefix="/brs", tags=["BRS"])
@@ -1182,6 +1182,33 @@ def get_application(app_id: int, db: Session = Depends(get_db), current_user: Us
     a = db.query(BrsApplication).filter(BrsApplication.id == app_id).first()
     if not a:
         raise HTTPException(404, "BRS not found")
+
+    # Pre-fetch master documents for all linked doctors in one query
+    linked_hcp_ids = [d.hcp_doctor_id for d in a.doctors if d.hcp_doctor_id]
+    master_docs_map = {}
+    if linked_hcp_ids:
+        all_master_docs = db.query(HcpDoctorDocument).filter(
+            HcpDoctorDocument.hcp_doctor_id.in_(linked_hcp_ids)
+        ).all()
+        for md in all_master_docs:
+            master_docs_map.setdefault(md.hcp_doctor_id, []).append(md)
+
+    def _get_doctor_documents(d):
+        """Get documents for a doctor: master docs first, then BRS-level as fallback."""
+        docs = []
+        if d.hcp_doctor_id and d.hcp_doctor_id in master_docs_map:
+            docs.extend([
+                {"id": doc.id, "document_type": doc.document_type, "document_name": doc.document_name, "file_path": doc.file_path}
+                for doc in master_docs_map[d.hcp_doctor_id]
+            ])
+        # Also include BRS-level docs (fallback / legacy)
+        if d.documents:
+            docs.extend([
+                {"id": doc.id, "document_type": doc.document_type, "document_name": doc.document_name, "file_path": doc.file_path}
+                for doc in d.documents
+            ])
+        return docs
+
     return {
         "id": a.id, "brs_code": a.brs_code, "title": a.title,
         "status": a.status, "division_id": a.division_id,
@@ -1218,10 +1245,7 @@ def get_application(app_id: int, db: Session = Depends(get_db), current_user: Us
                 "has_signature": bool(d.agreement_signature),
                 "survey_completed_at": d.survey_completed_at.isoformat() if d.survey_completed_at else None,
                 "survey_responses": d.survey_responses,
-                "uploaded_documents": [
-                    {"id": doc.id, "document_type": doc.document_type, "document_name": doc.document_name, "file_path": doc.file_path}
-                    for doc in (d.documents or [])
-                ],
+                "uploaded_documents": _get_doctor_documents(d),
             }
             for d in a.doctors
         ],
@@ -1787,6 +1811,14 @@ def doctor_portal_get(token: str, db: Session = Depends(get_db)):
         _otp_store[token]["verified"] = False
     app = doc.brs_application
     survey = app.survey
+
+    # Fetch master-level documents if doctor is linked to HcpDoctor
+    master_docs = []
+    if doc.hcp_doctor_id:
+        master_docs = db.query(HcpDoctorDocument).filter(
+            HcpDoctorDocument.hcp_doctor_id == doc.hcp_doctor_id
+        ).all()
+
     return {
         "doctor": {
             "id": doc.id, "doctor_name": doc.doctor_name,
@@ -1810,6 +1842,10 @@ def doctor_portal_get(token: str, db: Session = Depends(get_db)):
                 for q in survey.questions
             ] if survey else []
         } if survey else None,
+        "master_documents": [
+            {"id": d.id, "document_type": d.document_type, "document_name": d.document_name, "file_path": d.file_path}
+            for d in master_docs
+        ],
     }
 
 
@@ -1878,7 +1914,9 @@ async def doctor_upload_document(
     file: UploadFile = File(...),
     db: Session = Depends(get_db)
 ):
-    """Doctor uploads a document (PAN, Cheque, Letterhead, Others)"""
+    """Doctor uploads a document (PAN, Cheque, Letterhead, Others).
+    If doctor is linked to HcpDoctor (master), saves to hcp_doctor_master_documents.
+    Otherwise falls back to brs_doctor_documents."""
     from app.models.brs import BrsDoctorDocument
     import os, uuid, shutil
 
@@ -1902,54 +1940,123 @@ async def doctor_upload_document(
     if len(contents) > MAX_SIZE_BYTES:
         raise HTTPException(400, "File must be under 5MB")
 
-    # Save file
-    upload_dir = f"uploads/brs/doctors/{doc.id}"
-    os.makedirs(upload_dir, exist_ok=True)
-    ext = os.path.splitext(file.filename)[1]
-    filename = f"{document_type}_{uuid.uuid4().hex[:8]}{ext}"
-    file_path = os.path.join(upload_dir, filename)
+    if doc.hcp_doctor_id:
+        # Save to master-level documents (HcpDoctorDocument)
+        upload_dir = f"uploads/hcp_doctors/{doc.hcp_doctor_id}"
+        os.makedirs(upload_dir, exist_ok=True)
+        ext = os.path.splitext(file.filename)[1]
+        filename = f"{document_type}_{uuid.uuid4().hex[:8]}{ext}"
+        file_path = os.path.join(upload_dir, filename)
 
-    with open(file_path, "wb") as f:
-        f.write(contents)
+        with open(file_path, "wb") as f:
+            f.write(contents)
 
-    # Save record
-    doc_record = BrsDoctorDocument(
-        brs_doctor_id=doc.id,
-        document_type=document_type,
-        document_name=file.filename,
-        file_path=file_path,
-        mime_type=file.content_type,
-    )
-    db.add(doc_record)
-    db.commit()
-    db.refresh(doc_record)
-    return {"id": doc_record.id, "document_type": document_type, "document_name": file.filename}
+        # For non-'others' types, replace existing document of same type
+        if document_type != 'others':
+            existing = db.query(HcpDoctorDocument).filter(
+                HcpDoctorDocument.hcp_doctor_id == doc.hcp_doctor_id,
+                HcpDoctorDocument.document_type == document_type
+            ).first()
+            if existing:
+                # Delete old file
+                if existing.file_path and os.path.exists(existing.file_path):
+                    os.remove(existing.file_path)
+                db.delete(existing)
+                db.flush()
+
+        doc_record = HcpDoctorDocument(
+            hcp_doctor_id=doc.hcp_doctor_id,
+            document_type=document_type,
+            document_name=file.filename,
+            file_path=file_path,
+            mime_type=file.content_type,
+        )
+        db.add(doc_record)
+        db.commit()
+        db.refresh(doc_record)
+        return {"id": doc_record.id, "document_type": document_type, "document_name": file.filename}
+    else:
+        # Fallback: save to BRS-level documents (BrsDoctorDocument)
+        upload_dir = f"uploads/brs/doctors/{doc.id}"
+        os.makedirs(upload_dir, exist_ok=True)
+        ext = os.path.splitext(file.filename)[1]
+        filename = f"{document_type}_{uuid.uuid4().hex[:8]}{ext}"
+        file_path = os.path.join(upload_dir, filename)
+
+        with open(file_path, "wb") as f:
+            f.write(contents)
+
+        doc_record = BrsDoctorDocument(
+            brs_doctor_id=doc.id,
+            document_type=document_type,
+            document_name=file.filename,
+            file_path=file_path,
+            mime_type=file.content_type,
+        )
+        db.add(doc_record)
+        db.commit()
+        db.refresh(doc_record)
+        return {"id": doc_record.id, "document_type": document_type, "document_name": file.filename}
 
 
 @router.get("/doctor-portal/{token}/documents")
 def doctor_list_documents(token: str, db: Session = Depends(get_db)):
-    """List documents uploaded by doctor"""
+    """List documents uploaded by doctor. Returns master-level docs if linked to HcpDoctor, otherwise BRS-level."""
     from app.models.brs import BrsDoctorDocument
+
     doc = db.query(BrsDoctor).filter(BrsDoctor.login_token == token).first()
     if not doc:
         raise HTTPException(404, "Invalid token")
-    return [
-        {"id": d.id, "document_type": d.document_type, "document_name": d.document_name, "file_path": d.file_path}
-        for d in doc.documents
-    ]
+
+    if doc.hcp_doctor_id:
+        # Return master-level documents
+        master_docs = db.query(HcpDoctorDocument).filter(
+            HcpDoctorDocument.hcp_doctor_id == doc.hcp_doctor_id
+        ).all()
+        return [
+            {"id": d.id, "document_type": d.document_type, "document_name": d.document_name, "file_path": d.file_path}
+            for d in master_docs
+        ]
+    else:
+        # Fallback to BRS-level documents
+        return [
+            {"id": d.id, "document_type": d.document_type, "document_name": d.document_name, "file_path": d.file_path}
+            for d in doc.documents
+        ]
 
 
 @router.delete("/doctor-portal/{token}/documents/{doc_id}")
 def doctor_delete_document(token: str, doc_id: int, db: Session = Depends(get_db)):
-    """Delete an uploaded document"""
+    """Delete an uploaded document. Deletes from master table if linked to HcpDoctor, otherwise BRS-level."""
     from app.models.brs import BrsDoctorDocument
+    import os
+
     doc = db.query(BrsDoctor).filter(BrsDoctor.login_token == token).first()
     if not doc:
         raise HTTPException(404, "Invalid token")
-    doc_record = db.query(BrsDoctorDocument).filter(BrsDoctorDocument.id == doc_id, BrsDoctorDocument.brs_doctor_id == doc.id).first()
-    if not doc_record:
-        raise HTTPException(404, "Document not found")
-    db.delete(doc_record)
+
+    if doc.hcp_doctor_id:
+        # Delete from master-level documents
+        doc_record = db.query(HcpDoctorDocument).filter(
+            HcpDoctorDocument.id == doc_id,
+            HcpDoctorDocument.hcp_doctor_id == doc.hcp_doctor_id
+        ).first()
+        if not doc_record:
+            raise HTTPException(404, "Document not found")
+        # Delete file from disk
+        if doc_record.file_path and os.path.exists(doc_record.file_path):
+            os.remove(doc_record.file_path)
+        db.delete(doc_record)
+    else:
+        # Fallback to BRS-level documents
+        doc_record = db.query(BrsDoctorDocument).filter(
+            BrsDoctorDocument.id == doc_id,
+            BrsDoctorDocument.brs_doctor_id == doc.id
+        ).first()
+        if not doc_record:
+            raise HTTPException(404, "Document not found")
+        db.delete(doc_record)
+
     db.commit()
     return {"ok": True}
 

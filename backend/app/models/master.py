@@ -126,6 +126,21 @@ class HcpDoctor(Base):
     territories = relationship("Territory", secondary="hcp_doctor_territories", backref="hcp_doctors")
 
 
+class HcpDoctorDocument(Base):
+    """Documents stored at the MCL doctor level — persists across all BRS surveys"""
+    __tablename__ = "hcp_doctor_master_documents"
+
+    id = Column(Integer, primary_key=True, index=True)
+    hcp_doctor_id = Column(Integer, ForeignKey("hcp_doctors.id", ondelete="CASCADE"), nullable=False)
+    document_type = Column(String(50), nullable=False)  # pan_copy, cancelled_cheque, letterhead, others
+    document_name = Column(String(300))
+    file_path = Column(String(500))
+    mime_type = Column(String(100))
+    uploaded_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    doctor = relationship("HcpDoctor", backref="master_documents")
+
+
 class FmvCriteria(Base):
     __tablename__ = "fmv_criteria"
 
