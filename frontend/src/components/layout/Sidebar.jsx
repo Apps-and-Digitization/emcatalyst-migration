@@ -32,6 +32,7 @@ const navGroups = [
         submenu: [
           { label: 'Entity', path: '/masters/entities', icon: Building2, pageKey: 'masters_entities' },
           { label: 'Division', path: '/masters/divisions', icon: Network, pageKey: 'masters_divisions' },
+          { label: 'Territory', path: '/masters/territories', icon: MapPin, pageKey: 'masters_territories' },
           { label: 'Doctor', path: '/masters/doctors', icon: UserRound, pageKey: 'masters_doctors' },
           { label: 'Brand', path: '/masters/brands', icon: Pill, pageKey: 'masters_brands' },
           { label: 'Therapeutical', path: '/masters/therapeutics', icon: Stethoscope, pageKey: 'masters_therapeutics' },
@@ -48,6 +49,7 @@ const navGroups = [
           { label: 'Event Report', path: '/reports/events', icon: FileSpreadsheet, pageKey: 'reports_events' },
           { label: 'CME Event Report', path: '/reports/cme-events', icon: FileSpreadsheet, pageKey: 'reports_cme_events' },
           { label: 'FMV Parameter Report', path: '/reports/fmv-parameters', icon: FileSpreadsheet, pageKey: 'reports_fmv_parameters' },
+          { label: 'Survey Analytics', path: '/reports/survey-analytics', icon: FileSpreadsheet, pageKey: 'reports_survey_analytics' },
         ]
       },
       {

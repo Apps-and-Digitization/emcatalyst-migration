@@ -30,9 +30,11 @@ import MasterDocumentTypes from './pages/masters/MasterDocumentTypes'
 import MasterMeals from './pages/masters/MasterMeals'
 import MasterFmvParameters from './pages/masters/MasterFmvParameters'
 import MasterBudget from './pages/masters/MasterBudget'
+import MasterTerritories from './pages/masters/MasterTerritories'
 import EventReport from './pages/reports/EventReport'
 import CmeEventReport from './pages/reports/CmeEventReport'
 import FmvParameterReport from './pages/reports/FmvParameterReport'
+import SurveyAnalyticsReport from './pages/reports/SurveyAnalyticsReport'
 import VendorList from './pages/vendor/VendorList'
 import VendorOrderNumbers from './pages/vendor/VendorOrderNumbers'
 import VendorTypeOfServices from './pages/vendor/VendorTypeOfServices'
@@ -151,11 +153,13 @@ export default function App() {
                 <Route path="masters/meals" element={<ProtectedRoute pageKey="masters_meals"><MasterMeals /></ProtectedRoute>} />
                 <Route path="masters/fmv-parameters" element={<ProtectedRoute pageKey="masters_fmv_parameters"><MasterFmvParameters /></ProtectedRoute>} />
                 <Route path="masters/budget" element={<ProtectedRoute pageKey="masters_budget"><MasterBudget /></ProtectedRoute>} />
+                <Route path="masters/territories" element={<ProtectedRoute pageKey="masters_territories"><MasterTerritories /></ProtectedRoute>} />
                 <Route path="budget/events" element={<ProtectedRoute pageKey="budget_events"><MasterBudget /></ProtectedRoute>} />
                 <Route path="budget/brs" element={<ProtectedRoute pageKey="budget_brs"><BrsBudget /></ProtectedRoute>} />
                 <Route path="reports/events" element={<ProtectedRoute pageKey="reports_events"><EventReport /></ProtectedRoute>} />
                 <Route path="reports/cme-events" element={<ProtectedRoute pageKey="reports_cme_events"><CmeEventReport /></ProtectedRoute>} />
                 <Route path="reports/fmv-parameters" element={<ProtectedRoute pageKey="reports_fmv_parameters"><FmvParameterReport /></ProtectedRoute>} />
+                <Route path="reports/survey-analytics" element={<ProtectedRoute pageKey="reports_survey_analytics"><SurveyAnalyticsReport /></ProtectedRoute>} />
                 <Route path="vendor/vendors" element={<ProtectedRoute pageKey="vendor_vendors"><VendorList /></ProtectedRoute>} />
                 <Route path="vendor/order-numbers" element={<ProtectedRoute pageKey="vendor_order_numbers"><VendorOrderNumbers /></ProtectedRoute>} />
                 <Route path="vendor/type-of-services" element={<ProtectedRoute pageKey="vendor_type_of_services"><VendorTypeOfServices /></ProtectedRoute>} />

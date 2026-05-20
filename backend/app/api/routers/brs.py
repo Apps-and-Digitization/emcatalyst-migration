@@ -178,6 +178,7 @@ def list_surveys(approved_only: bool = False, db: Session = Depends(get_db), cur
             "medical_approval_file": s.medical_approval_file,
             "ethical_approval_file": s.ethical_approval_file,
             "compliance_approval_file": s.compliance_approval_file,
+            "payment_method": s.payment_method,
             "question_count": len(s.questions),
             "doctor_count": len(s.doctor_mappings) if s.doctor_mappings else 0,
             "created_at": s.created_at.isoformat() if s.created_at else None,
@@ -191,6 +192,7 @@ def create_survey(
     title: str, description: str = "", total_honorarium_amount: float = 0,
     division_id: Optional[int] = None,
     agreement_template: str = "", requires_agreement_download: bool = True,
+    payment_method: Optional[str] = None,
     db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
 ):
     survey = BrsSurvey(
@@ -199,6 +201,7 @@ def create_survey(
         division_id=division_id,
         agreement_template=agreement_template,
         requires_agreement_download=requires_agreement_download,
+        payment_method=payment_method,
         created_by_id=current_user.id
     )
     db.add(survey)
@@ -226,6 +229,7 @@ def get_survey(survey_id: int, db: Session = Depends(get_db), current_user: User
         "medical_approval_file": s.medical_approval_file,
         "ethical_approval_file": s.ethical_approval_file,
         "compliance_approval_file": s.compliance_approval_file,
+        "payment_method": s.payment_method,
         "requires_agreement_download": s.requires_agreement_download,
         "agreement_template": s.agreement_template or "",
         "questions": [
@@ -245,6 +249,7 @@ def update_survey(
     survey_id: int, title: str = None, description: str = None,
     total_honorarium_amount: float = None, division_id: int = None,
     agreement_template: str = None, requires_agreement_download: bool = None,
+    payment_method: str = None,
     is_active: bool = None,
     db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
 ):
@@ -257,6 +262,7 @@ def update_survey(
     if division_id is not None: s.division_id = division_id
     if agreement_template is not None: s.agreement_template = agreement_template
     if requires_agreement_download is not None: s.requires_agreement_download = requires_agreement_download
+    if payment_method is not None: s.payment_method = payment_method
     if is_active is not None: s.is_active = is_active
     s.updated_at = datetime.now(timezone.utc)
     db.commit()
@@ -659,6 +665,251 @@ def brs_dashboard(db: Session = Depends(get_db), current_user: User = Depends(ge
         "approved": approved, "doctor_pending": doctor_pending,
         "completed": completed, "verified": verified,
     }
+
+
+# ─────────────────────────────────────────────
+#  Survey Analytics
+# ─────────────────────────────────────────────
+
+@router.get("/surveys/{survey_id}/analytics")
+def survey_analytics(survey_id: int, brs_id: Optional[int] = None, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    """Get aggregated analytics for a survey's responses. Optionally filter by a specific BRS application."""
+    survey = db.query(BrsSurvey).filter(BrsSurvey.id == survey_id).first()
+    if not survey:
+        raise HTTPException(404, "Survey not found")
+
+    # Find BRS applications using this survey (optionally filtered by brs_id)
+    app_query = db.query(BrsApplication).filter(BrsApplication.survey_id == survey_id)
+    if brs_id:
+        app_query = app_query.filter(BrsApplication.id == brs_id)
+    applications = app_query.all()
+    app_ids = [a.id for a in applications]
+
+    # Get all doctors from those applications
+    all_doctors = []
+    if app_ids:
+        all_doctors = db.query(BrsDoctor).filter(BrsDoctor.brs_application_id.in_(app_ids)).all()
+
+    total_doctors_assigned = len(all_doctors)
+    completed_doctors = [d for d in all_doctors if d.survey_completed_at is not None]
+    total_completed = len(completed_doctors)
+    completion_rate = round((total_completed / total_doctors_assigned * 100), 1) if total_doctors_assigned > 0 else 0.0
+
+    # Get survey questions
+    questions = db.query(BrsSurveyQuestion).filter(
+        BrsSurveyQuestion.survey_id == survey_id
+    ).order_by(BrsSurveyQuestion.order_no).all()
+
+    # Aggregate responses per question
+    question_analytics = []
+    for q in questions:
+        q_id_str = str(q.id)
+        q_type = q.question_type
+
+        if q_type in ("single_select", "multi_select"):
+            # Count occurrences of each option
+            option_counts = {}
+            for opt in (q.options or []):
+                option_counts[opt] = 0
+
+            total_responses = 0
+            for doc in completed_doctors:
+                responses = doc.survey_responses or {}
+                answer = None
+                if q_id_str in responses:
+                    val = responses[q_id_str]
+                    if isinstance(val, dict):
+                        answer = val.get("answer")
+                    else:
+                        answer = val
+
+                if answer is not None:
+                    total_responses += 1
+                    if q_type == "multi_select" and isinstance(answer, list):
+                        for a in answer:
+                            option_counts[a] = option_counts.get(a, 0) + 1
+                    else:
+                        option_counts[answer] = option_counts.get(answer, 0) + 1
+
+            question_analytics.append({
+                "id": q.id,
+                "question_text": q.question_text,
+                "question_type": q_type,
+                "options": q.options or [],
+                "responses": option_counts,
+                "total_responses": total_responses,
+            })
+        else:
+            # free_text / fill_in_blanks — collect all text responses
+            text_responses = []
+            for doc in completed_doctors:
+                responses = doc.survey_responses or {}
+                answer = None
+                if q_id_str in responses:
+                    val = responses[q_id_str]
+                    if isinstance(val, dict):
+                        answer = val.get("answer")
+                    else:
+                        answer = val
+
+                if answer is not None and str(answer).strip():
+                    text_responses.append(str(answer))
+
+            question_analytics.append({
+                "id": q.id,
+                "question_text": q.question_text,
+                "question_type": q_type,
+                "text_responses": text_responses,
+                "total_responses": len(text_responses),
+            })
+
+    # Build individual doctor responses
+    individual_responses = []
+    for doc in completed_doctors:
+        responses = doc.survey_responses or {}
+        doc_answers = {}
+        for q in questions:
+            q_id_str = str(q.id)
+            answer = ""
+            if q_id_str in responses:
+                val = responses[q_id_str]
+                if isinstance(val, dict):
+                    answer = val.get("answer", "")
+                else:
+                    answer = val
+                if isinstance(answer, list):
+                    answer = ", ".join(str(a) for a in answer)
+            doc_answers[str(q.id)] = str(answer) if answer else ""
+        individual_responses.append({
+            "doctor_name": doc.doctor_name,
+            "email": doc.email,
+            "speciality": doc.speciality,
+            "brs_id": doc.brs_application_id,
+            "completed_at": doc.survey_completed_at.isoformat() if doc.survey_completed_at else None,
+            "answers": doc_answers,
+        })
+
+    # Also include all assigned doctors (not just completed) for BRS-wise counts
+    all_doctor_brs_map = []
+    for doc in all_doctors:
+        all_doctor_brs_map.append({
+            "brs_id": doc.brs_application_id,
+            "completed_at": doc.survey_completed_at.isoformat() if doc.survey_completed_at else None,
+        })
+
+    return {
+        "survey_title": survey.title,
+        "total_doctors_assigned": total_doctors_assigned,
+        "total_completed": total_completed,
+        "completion_rate": completion_rate,
+        "questions": question_analytics,
+        "individual_responses": individual_responses,
+        "all_doctor_brs_map": all_doctor_brs_map,
+        "brs_applications": [
+            {"id": a.id, "brs_code": a.brs_code, "title": a.title, "status": a.status}
+            for a in db.query(BrsApplication).filter(BrsApplication.survey_id == survey_id).order_by(desc(BrsApplication.created_at)).all()
+        ],
+    }
+
+
+@router.get("/surveys/{survey_id}/analytics/export")
+def survey_analytics_export(survey_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    """Export survey responses as an Excel file with BRS summary and doctor responses."""
+    from fastapi.responses import StreamingResponse
+    from openpyxl import Workbook
+    from io import BytesIO
+
+    survey = db.query(BrsSurvey).filter(BrsSurvey.id == survey_id).first()
+    if not survey:
+        raise HTTPException(404, "Survey not found")
+
+    # Get questions
+    questions = db.query(BrsSurveyQuestion).filter(
+        BrsSurveyQuestion.survey_id == survey_id
+    ).order_by(BrsSurveyQuestion.order_no).all()
+
+    # Find all BRS applications using this survey
+    applications = db.query(BrsApplication).filter(BrsApplication.survey_id == survey_id).all()
+    app_ids = [a.id for a in applications]
+    app_map = {a.id: a for a in applications}
+
+    # Get all doctors (not just completed)
+    all_doctors = []
+    if app_ids:
+        all_doctors = db.query(BrsDoctor).filter(BrsDoctor.brs_application_id.in_(app_ids)).all()
+
+    # Build Excel
+    wb = Workbook()
+
+    # Sheet 1: BRS Summary
+    ws_summary = wb.active
+    ws_summary.title = "BRS Summary"
+    ws_summary.append(["BRS Code", "Title", "Status", "Total Doctors", "Completed", "Pending", "Completion %"])
+    for app in applications:
+        app_doctors = [d for d in all_doctors if d.brs_application_id == app.id]
+        completed = sum(1 for d in app_doctors if d.survey_completed_at)
+        pending = len(app_doctors) - completed
+        pct = round((completed / len(app_doctors) * 100), 1) if app_doctors else 0
+        ws_summary.append([app.brs_code, app.title, app.status, len(app_doctors), completed, pending, f"{pct}%"])
+
+    # Sheet 2: Doctor Responses
+    ws_responses = wb.create_sheet("Doctor Responses")
+    headers = ["BRS Code", "BRS Title", "Doctor Name", "Email", "Mobile", "Speciality", "Status", "Completed At"]
+    for q in questions:
+        headers.append(f"Q{q.order_no}: {q.question_text[:50]}")
+    ws_responses.append(headers)
+
+    for doc in all_doctors:
+        app = app_map.get(doc.brs_application_id)
+        row = [
+            app.brs_code if app else "",
+            app.title if app else "",
+            doc.doctor_name,
+            doc.email or "",
+            doc.mobile or "",
+            doc.speciality or "",
+            doc.doctor_status or "",
+            doc.survey_completed_at.strftime("%Y-%m-%d %H:%M") if doc.survey_completed_at else "",
+        ]
+        responses = doc.survey_responses or {}
+        for q in questions:
+            q_id_str = str(q.id)
+            answer = ""
+            if q_id_str in responses:
+                val = responses[q_id_str]
+                if isinstance(val, dict):
+                    answer = val.get("answer", "")
+                else:
+                    answer = val
+                if isinstance(answer, list):
+                    answer = ", ".join(str(a) for a in answer)
+            row.append(str(answer) if answer else "")
+        ws_responses.append(row)
+
+    # Auto-size columns for both sheets
+    for ws in [ws_summary, ws_responses]:
+        for col in ws.columns:
+            max_length = 0
+            col_letter = col[0].column_letter
+            for cell in col:
+                try:
+                    if cell.value:
+                        max_length = max(max_length, len(str(cell.value)))
+                except:
+                    pass
+            ws.column_dimensions[col_letter].width = min(max_length + 2, 50)
+
+    # Save to buffer
+    buffer = BytesIO()
+    wb.save(buffer)
+    buffer.seek(0)
+
+    filename = f"{survey.title[:40].replace(' ', '_')}_Analytics_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+    return StreamingResponse(
+        buffer,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'}
+    )
 
 
 @router.get("/{app_id}")

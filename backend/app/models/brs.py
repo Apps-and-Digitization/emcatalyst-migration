@@ -137,6 +137,7 @@ class BrsSurvey(Base):
     medical_approval_file = Column(String(500), nullable=True)
     ethical_approval_file = Column(String(500), nullable=True)
     compliance_approval_file = Column(String(500), nullable=True)
+    payment_method = Column(String(50), nullable=True)  # "Cheque" or "NEFT"
     created_by_id = Column(Integer, ForeignKey("users.id"))
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())

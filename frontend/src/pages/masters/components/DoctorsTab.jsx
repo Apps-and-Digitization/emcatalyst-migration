@@ -21,11 +21,12 @@ export default function DoctorsTab() {
   const qc = useQueryClient()
   const [search, setSearch] = useState('')
   const [stateFilter, setStateFilter] = useState('')
+  const [territoryFilter, setTerritoryFilter] = useState('')
   const [page, setPage] = useState(1)
   const [selectedDoc, setSelectedDoc] = useState(null)
   const [showAdd, setShowAdd] = useState(false)
   const [importing, setImporting] = useState(false)
-  const [addForm, setAddForm] = useState({ full_name: '', first_name: '', last_name: '', middle_name: '', division_ids: [], uid_number: '', qualification: '', speciality: '', email: '', pan_number: '', city: '', state: '', town_name: '', mobile_number: '', doctor_type: '', gender: '', area_of_practice: '', hourly_rate: '', max_capping: '' })
+  const [addForm, setAddForm] = useState({ full_name: '', first_name: '', last_name: '', middle_name: '', division_ids: [], territory_ids: [], uid_number: '', qualification: '', speciality: '', email: '', pan_number: '', city: '', state: '', town_name: '', mobile_number: '', doctor_type: '', gender: '', area_of_practice: '', hourly_rate: '', max_capping: '' })
 
   const { data: states = [] } = useQuery({
     queryKey: ['master-states'],
@@ -37,11 +38,17 @@ export default function DoctorsTab() {
     queryFn: () => accessApi.listDivisions().then(r => r.data),
   })
 
+  const { data: allTerritories = [] } = useQuery({
+    queryKey: ['master-territories-all'],
+    queryFn: () => masterApi.territories().then(r => r.data),
+  })
+
   const { data, isLoading } = useQuery({
-    queryKey: ['doctors-all', search, stateFilter, page],
+    queryKey: ['doctors-all', search, stateFilter, territoryFilter, page],
     queryFn: () => masterApi.hcpDoctorsAll({
       q: search || undefined,
       state: stateFilter || undefined,
+      territory_id: territoryFilter || undefined,
       skip: (page - 1) * PAGE_SIZE,
       limit: PAGE_SIZE,
     }).then(r => r.data),
@@ -53,16 +60,17 @@ export default function DoctorsTab() {
   const createDoctor = useMutation({
     mutationFn: () => {
       const payload = {}
-      for (const [k, v] of Object.entries(addForm)) { if (v && k !== 'division_ids') payload[k] = v }
+      for (const [k, v] of Object.entries(addForm)) { if (v && k !== 'division_ids' && k !== 'territory_ids') payload[k] = v }
       if (!payload.full_name) payload.full_name = `${payload.first_name || ''} ${payload.middle_name || ''} ${payload.last_name || ''}`.trim().replace(/\s+/g, ' ')
       if (!payload.full_name) payload.full_name = 'Unknown'
       if (addForm.division_ids.length > 0) payload.division_ids = addForm.division_ids.join(',')
+      if (addForm.territory_ids.length > 0) payload.territory_ids = addForm.territory_ids.join(',')
       return masterApi.createHcpDoctor(payload)
     },
     onSuccess: () => {
       qc.invalidateQueries(['doctors-all'])
       setShowAdd(false)
-      setAddForm({ full_name: '', first_name: '', last_name: '', middle_name: '', division_ids: [], uid_number: '', qualification: '', speciality: '', email: '', pan_number: '', city: '', state: '', town_name: '', mobile_number: '', doctor_type: '', gender: '', area_of_practice: '', hourly_rate: '', max_capping: '' })
+      setAddForm({ full_name: '', first_name: '', last_name: '', middle_name: '', division_ids: [], territory_ids: [], uid_number: '', qualification: '', speciality: '', email: '', pan_number: '', city: '', state: '', town_name: '', mobile_number: '', doctor_type: '', gender: '', area_of_practice: '', hourly_rate: '', max_capping: '' })
       toast.success('Doctor added')
     },
     onError: () => toast.error('Error adding doctor'),
@@ -89,6 +97,10 @@ export default function DoctorsTab() {
         <select className="input w-48" value={stateFilter} onChange={e => { setStateFilter(e.target.value); setPage(1) }}>
           <option value="">All States</option>
           {states.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
+        </select>
+        <select className="input w-48" value={territoryFilter} onChange={e => { setTerritoryFilter(e.target.value); setPage(1) }}>
+          <option value="">All Territories</option>
+          {allTerritories.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
         </select>
         {canAdd && <button className="btn-primary flex items-center gap-2 text-sm" onClick={() => setShowAdd(true)}>
           <Plus size={14} /> Add Doctor
@@ -140,6 +152,23 @@ export default function DoctorsTab() {
                 ))}
               </div>
             </div>
+            <div className="col-span-2">
+              <label className="label">Territories</label>
+              <div className="border rounded-lg p-2 max-h-24 overflow-y-auto grid grid-cols-4 gap-1">
+                {allTerritories
+                  .filter(t => addForm.division_ids.length === 0 || addForm.division_ids.includes(String(t.division_id)))
+                  .map(t => (
+                  <label key={t.id} className="flex items-center gap-1 text-xs cursor-pointer">
+                    <input type="checkbox" checked={addForm.territory_ids.includes(String(t.id))} onChange={e => {
+                      if (e.target.checked) setAddForm(p => ({...p, territory_ids: [...p.territory_ids, String(t.id)]}))
+                      else setAddForm(p => ({...p, territory_ids: p.territory_ids.filter(x => x !== String(t.id))}))
+                    }} />
+                    {t.name}
+                  </label>
+                ))}
+              </div>
+              <p className="text-xs text-gray-400 mt-1">Filtered by selected divisions</p>
+            </div>
             <input className="input" placeholder="UID Number" value={addForm.uid_number} onChange={e => setAddForm(p => ({...p, uid_number: e.target.value}))} />
             <input className="input" placeholder="Qualification" value={addForm.qualification} onChange={e => setAddForm(p => ({...p, qualification: e.target.value}))} />
             <input className="input" placeholder="Speciality" value={addForm.speciality} onChange={e => setAddForm(p => ({...p, speciality: e.target.value}))} />
@@ -171,7 +200,7 @@ export default function DoctorsTab() {
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b">
               <tr>
-                {['UID', 'Name', 'Speciality', 'City/State', 'Division', 'Mobile', 'Type', 'Actions'].map(h => (
+                {['UID', 'Name', 'Speciality', 'City/State', 'Division', 'Territory', 'Mobile', 'Type', 'Actions'].map(h => (
                   <th key={h} className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">{h}</th>
                 ))}
               </tr>
@@ -184,6 +213,7 @@ export default function DoctorsTab() {
                   <td className="px-3 py-2 text-gray-500 text-xs">{d.speciality || d.qualification || '—'}</td>
                   <td className="px-3 py-2 text-gray-500 text-xs">{[d.city, d.state].filter(Boolean).join(', ') || '—'}</td>
                   <td className="px-3 py-2 text-gray-500 text-xs">{d.divisions?.map(div => div.name).join(', ') || d.division || '—'}</td>
+                  <td className="px-3 py-2 text-gray-500 text-xs">{d.territories?.map(t => t.name).join(', ') || '—'}</td>
                   <td className="px-3 py-2 text-gray-500 text-xs">{d.mobile_number || '—'}</td>
                   <td className="px-3 py-2 text-gray-500 text-xs">{d.doctor_type || '—'}</td>
                   <td className="px-3 py-2">
@@ -239,6 +269,29 @@ export default function DoctorsTab() {
                   })}
                 </div>
               </div>
+              <div className="col-span-3">
+                <label className="label">Territories</label>
+                <div className="border rounded-lg p-2 max-h-24 overflow-y-auto grid grid-cols-4 gap-1">
+                  {(() => {
+                    const currentDivIds = selectedDoc._divIds || (selectedDoc.divisions || []).map(div => div.id)
+                    const currentTerritoryIds = selectedDoc._terrIds || (selectedDoc.territories || []).map(t => t.id)
+                    return allTerritories
+                      .filter(t => currentDivIds.length === 0 || currentDivIds.includes(t.division_id))
+                      .map(t => (
+                        <label key={t.id} className="flex items-center gap-1 text-xs cursor-pointer">
+                          <input type="checkbox" checked={currentTerritoryIds.includes(t.id)} onChange={e => {
+                            const ids = [...currentTerritoryIds]
+                            if (e.target.checked) ids.push(t.id)
+                            else ids.splice(ids.indexOf(t.id), 1)
+                            setSelectedDoc(p => ({...p, _terrIds: ids}))
+                          }} />
+                          {t.name}
+                        </label>
+                      ))
+                  })()}
+                </div>
+                <p className="text-xs text-gray-400 mt-1">Filtered by selected divisions</p>
+              </div>
               <div><label className="label">UID Number</label><input className="input" value={selectedDoc.uid_number || ''} onChange={e => setSelectedDoc(p => ({...p, uid_number: e.target.value}))} /></div>
               <div><label className="label">Qualification</label><input className="input" value={selectedDoc.qualification || ''} onChange={e => setSelectedDoc(p => ({...p, qualification: e.target.value}))} /></div>
               <div><label className="label">Speciality</label><input className="input" value={selectedDoc.speciality || ''} onChange={e => setSelectedDoc(p => ({...p, speciality: e.target.value}))} /></div>
@@ -264,11 +317,14 @@ export default function DoctorsTab() {
               <button className="btn-primary" onClick={() => {
                 const data = {}
                 for (const [k, v] of Object.entries(selectedDoc)) {
-                  if (k !== 'id' && k !== 'is_active' && k !== 'divisions' && k !== '_divIds' && v !== null && v !== undefined) data[k] = v
+                  if (k !== 'id' && k !== 'is_active' && k !== 'divisions' && k !== '_divIds' && k !== 'territories' && k !== '_terrIds' && v !== null && v !== undefined) data[k] = v
                 }
                 const divIds = selectedDoc._divIds || selectedDoc.divisions?.map(d => d.id) || []
                 if (divIds.length > 0) data.division_ids = divIds.join(',')
                 else data.division_ids = ''
+                const terrIds = selectedDoc._terrIds || selectedDoc.territories?.map(t => t.id) || []
+                if (terrIds.length > 0) data.territory_ids = terrIds.join(',')
+                else data.territory_ids = ''
                 masterApi.updateHcpDoctor(selectedDoc.id, data).then(() => {
                   qc.invalidateQueries(['doctors-all'])
                   setSelectedDoc(null)

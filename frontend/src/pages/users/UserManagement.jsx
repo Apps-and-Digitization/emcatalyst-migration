@@ -41,7 +41,9 @@ export default function UserManagement() {
   const [importModal, setImportModal] = useState(false)
   const [importIds, setImportIds] = useState('')
   const [importLoading, setImportLoading] = useState(false)
-  const { register, handleSubmit, reset } = useForm()
+  const [territoryFilter, setTerritoryFilter] = useState('')
+  const [editTerritoryId, setEditTerritoryId] = useState('')
+  const { register, handleSubmit, reset, watch } = useForm()
 
   const { data: users = [], isLoading } = useQuery({
     queryKey: ['users'],
@@ -58,10 +60,16 @@ export default function UserManagement() {
     queryFn: () => api.get('/rbac/roles/list').then(r => r.data),
   })
 
+  const { data: allTerritories = [] } = useQuery({
+    queryKey: ['master-territories'],
+    queryFn: () => masterApi.territories().then(r => r.data),
+  })
+
   // All roles come from RBAC — used for both primary and additional
   const ALL_ROLES = rbacRoles.map(r => r.name)
 
   const divisionMap = Object.fromEntries(divisions.map(d => [d.id, d.name]))
+  const territoryMap = Object.fromEntries(allTerritories.map(t => [t.id, t.name]))
 
   const createUser = useMutation({
     mutationFn: (data) => authApi.createUser(data),
@@ -75,9 +83,11 @@ export default function UserManagement() {
     onError: (e) => toast.error(e.response?.data?.detail || 'Error'),
   })
 
-  const filtered = users.filter(u =>
-    !search || `${u.first_name} ${u.last_name} ${u.email} ${u.employee_id || ''} ${u.department || ''}`.toLowerCase().includes(search.toLowerCase())
-  )
+  const filtered = users.filter(u => {
+    if (search && !`${u.first_name} ${u.last_name} ${u.email} ${u.employee_id || ''} ${u.department || ''}`.toLowerCase().includes(search.toLowerCase())) return false
+    if (territoryFilter && u.territory_id !== parseInt(territoryFilter)) return false
+    return true
+  })
 
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
@@ -96,6 +106,7 @@ export default function UserManagement() {
     setEditEmail(u.email || '')
     setEditDivisions(u.divisions || [])
     setEditValidateAd(u.validate_with_ad || false)
+    setEditTerritoryId(u.territory_id || '')
     setEditRoleModal(true)
   }
 
@@ -133,6 +144,10 @@ export default function UserManagement() {
             onChange={e => handleSearchChange(e.target.value)}
           />
         </div>
+        <select className="input w-48" value={territoryFilter} onChange={e => { setTerritoryFilter(e.target.value); setPage(1) }}>
+          <option value="">All Territories</option>
+          {allTerritories.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+        </select>
         {filtered.length !== users.length && (
           <span className="text-sm text-gray-500 self-center">{filtered.length} results</span>
         )}
@@ -143,10 +158,10 @@ export default function UserManagement() {
       ) : (
         <>
           <div className="card p-0 overflow-x-auto">
-            <table className="w-full text-sm min-w-[900px]">
+            <table className="w-full text-sm min-w-[1050px]">
               <thead className="bg-gray-50 border-b">
                 <tr>
-                  {['Emp ID', 'Name', 'Email', 'Division', 'Manager', 'Role', 'Status', ''].map(h => (
+                  {['Emp ID', 'Name', 'Email', 'Division', 'Territory', 'Manager', 'Role', 'Status', ''].map(h => (
                     <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{h}</th>
                   ))}
                 </tr>
@@ -163,6 +178,7 @@ export default function UserManagement() {
                     </td>
                     <td className="px-4 py-2.5 text-gray-500 text-xs">{u.email}</td>
                     <td className="px-4 py-2.5 text-gray-500 text-xs">{divisionMap[u.division_id] || '—'}</td>
+                    <td className="px-4 py-2.5 text-gray-500 text-xs">{u.territory_name || territoryMap[u.territory_id] || '—'}</td>
                     <td className="px-4 py-2.5 text-gray-500 text-xs">{u.manager_name || '—'}</td>
                     <td className="px-4 py-2.5">
                       <span className="text-xs px-2 py-0.5 bg-[var(--color-primary-50)] text-[var(--color-primary)] rounded-full">{u.role}</span>
@@ -332,6 +348,25 @@ export default function UserManagement() {
               <p className="text-xs text-gray-400 mt-1">L2 approver will be this manager's manager automatically.</p>
             </div>
             <div>
+              <label className="label">Territory</label>
+              <select
+                className="input"
+                value={editTerritoryId}
+                onChange={e => setEditTerritoryId(e.target.value)}
+              >
+                <option value="">— No Territory —</option>
+                {allTerritories
+                  .filter(t => {
+                    const userDivIds = [editUser?.division_id, ...(editDivisions || [])].filter(Boolean)
+                    return userDivIds.length === 0 || userDivIds.includes(t.division_id)
+                  })
+                  .map(t => (
+                    <option key={t.id} value={t.id}>{t.name}</option>
+                  ))}
+              </select>
+              <p className="text-xs text-gray-400 mt-1">Filtered by user's primary division.</p>
+            </div>
+            <div>
               <label className="label">Active</label>
               <select className="input" defaultValue={editUser.is_active ? 'true' : 'false'} id="active-select">
                 <option value="true">Active</option>
@@ -363,6 +398,7 @@ export default function UserManagement() {
                       employee_id: editEmployeeId || undefined,
                       email: editEmail || undefined,
                       manager_id: editManagerId ? parseInt(editManagerId) : null,
+                      territory_id: editTerritoryId ? parseInt(editTerritoryId) : null,
                       is_active: document.getElementById('active-select').value === 'true',
                       validate_with_ad: editValidateAd,
                     }
@@ -407,6 +443,8 @@ export default function UserManagement() {
           else delete payload.manager_id
           if (payload.division_id) payload.division_id = parseInt(payload.division_id)
           else delete payload.division_id
+          if (payload.territory_id) payload.territory_id = parseInt(payload.territory_id)
+          else delete payload.territory_id
 
           try {
             await authApi.createUser(payload)
@@ -444,6 +482,16 @@ export default function UserManagement() {
               <select className="input" {...register('division_id')}>
                 <option value="">None</option>
                 {divisions.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="label">Territory</label>
+              <select className="input" {...register('territory_id')}>
+                <option value="">None</option>
+                {allTerritories.filter(t => {
+                  const divId = watch('division_id')
+                  return !divId || t.division_id === parseInt(divId)
+                }).map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
               </select>
             </div>
             <div className="col-span-2">

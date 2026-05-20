@@ -140,6 +140,11 @@ export const masterApi = {
   createState: (name) => api.post('/master/states', null, { params: { name } }),
   updateState: (id, data) => api.put(`/master/states/${id}`, null, { params: data }),
   deleteState: (id) => api.delete(`/master/states/${id}`),
+  // Territories
+  territories: (params) => api.get('/master/territories', { params }),
+  createTerritory: (data) => api.post('/master/territories', null, { params: data }),
+  updateTerritory: (id, data) => api.put(`/master/territories/${id}`, null, { params: data }),
+  deleteTerritory: (id) => api.delete(`/master/territories/${id}`),
   brands: (q) => api.get('/master/brands', { params: { q } }),
   createBrand: (data) => api.post('/master/brands', null, { params: data }),
   updateBrand: (id, data) => api.put(`/master/brands/${id}`, null, { params: data }),
@@ -207,6 +212,9 @@ export const brsApi = {
     return api.post(`/brs/surveys/${surveyId}/questions?${url.searchParams.toString()}`)
   },
   deleteQuestion: (surveyId, questionId) => api.delete(`/brs/surveys/${surveyId}/questions/${questionId}`),
+  // Survey Analytics
+  surveyAnalytics: (surveyId, brsId) => api.get(`/brs/surveys/${surveyId}/analytics`, { params: { brs_id: brsId || undefined } }),
+  surveyAnalyticsExport: (surveyId) => api.get(`/brs/surveys/${surveyId}/analytics/export`, { responseType: 'blob' }),
   // Doctor Portal (public)
   doctorLogin: (login_id, password) => api.post('/brs/doctor-login', { login_id, password }),
   doctorSendOtp: (token) => api.post(`/brs/doctor-portal/${token}/send-otp`),

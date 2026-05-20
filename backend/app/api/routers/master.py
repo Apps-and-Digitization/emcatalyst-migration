@@ -67,6 +67,7 @@ class HcpDoctorOut(BaseModel):
     hourly_rate: Optional[Decimal] = None
     max_capping: Optional[Decimal] = None
     is_active: bool = True
+    territories: list = []
 
     class Config:
         from_attributes = True
@@ -384,10 +385,12 @@ def delete_entity(
 @router.get("/hcp-doctors")
 def search_hcp_doctors(
     q: Optional[str] = Query(None, description="Search by name, UID, pan, email, city"),
+    territory_id: Optional[int] = Query(None, description="Filter by territory"),
     limit: int = Query(50, le=200),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
+    from app.models.master import HcpDoctorTerritory
     query = db.query(HcpDoctor).filter(HcpDoctor.is_active == True)
     if q:
         like = f"%{q}%"
@@ -402,12 +405,17 @@ def search_hcp_doctors(
             HcpDoctor.city.ilike(like),
             HcpDoctor.speciality.ilike(like),
         ))
+    if territory_id:
+        query = query.join(HcpDoctorTerritory, HcpDoctorTerritory.hcp_doctor_id == HcpDoctor.id).filter(
+            HcpDoctorTerritory.territory_id == territory_id
+        )
     doctors = query.order_by(HcpDoctor.full_name).limit(limit).all()
-    # Add divisions to response
+    # Add divisions and territories to response
     result = []
     for doc in doctors:
         d = HcpDoctorOut.model_validate(doc).model_dump()
         d["divisions"] = [{"id": div.id, "name": div.name} for div in doc.divisions]
+        d["territories"] = [{"id": t.id, "name": t.name} for t in doc.territories]
         result.append(d)
     return result
 
@@ -498,6 +506,7 @@ def create_hcp_doctor(
     division: Optional[str] = None,
     division_ids: Optional[str] = None,  # comma-separated division IDs
     territory_name: Optional[str] = None,
+    territory_ids: Optional[str] = None,  # comma-separated territory IDs
     employee_code: Optional[str] = None,
     uid_number: Optional[str] = None,
     sbu_code: Optional[str] = None,
@@ -519,7 +528,7 @@ def create_hcp_doctor(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
-    from app.models.master import HcpDoctorDivision
+    from app.models.master import HcpDoctorDivision, HcpDoctorTerritory
     doc = HcpDoctor(
         full_name=full_name, first_name=first_name, last_name=last_name, middle_name=middle_name,
         division=division, territory_name=territory_name,
@@ -544,6 +553,12 @@ def create_hcp_doctor(
             did = did.strip()
             if did:
                 db.add(HcpDoctorDivision(hcp_doctor_id=doc.id, division_id=int(did)))
+    # Add territory associations
+    if territory_ids:
+        for tid in territory_ids.split(','):
+            tid = tid.strip()
+            if tid:
+                db.add(HcpDoctorTerritory(hcp_doctor_id=doc.id, territory_id=int(tid)))
     db.commit()
     db.refresh(doc)
     return doc
@@ -559,6 +574,7 @@ def update_hcp_doctor(
     division: Optional[str] = None,
     division_ids: Optional[str] = None,  # comma-separated
     territory_name: Optional[str] = None,
+    territory_ids: Optional[str] = None,  # comma-separated territory IDs
     employee_code: Optional[str] = None,
     uid_number: Optional[str] = None,
     sbu_code: Optional[str] = None,
@@ -581,7 +597,7 @@ def update_hcp_doctor(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
-    from app.models.master import HcpDoctorDivision
+    from app.models.master import HcpDoctorDivision, HcpDoctorTerritory
     doc = db.query(HcpDoctor).filter(HcpDoctor.id == doctor_id).first()
     if not doc:
         raise HTTPException(status_code=404, detail="Doctor not found")
@@ -609,6 +625,14 @@ def update_hcp_doctor(
                 did = did.strip()
                 if did:
                     db.add(HcpDoctorDivision(hcp_doctor_id=doctor_id, division_id=int(did)))
+    # Update territory associations (replace all)
+    if territory_ids is not None:
+        db.query(HcpDoctorTerritory).filter(HcpDoctorTerritory.hcp_doctor_id == doctor_id).delete()
+        if territory_ids:  # not empty string
+            for tid in territory_ids.split(','):
+                tid = tid.strip()
+                if tid:
+                    db.add(HcpDoctorTerritory(hcp_doctor_id=doctor_id, territory_id=int(tid)))
     db.commit()
     db.refresh(doc)
     return doc
@@ -1150,11 +1174,13 @@ def delete_document_type(dt_id: int, db: Session = Depends(get_db), current_user
 def list_all_hcp_doctors(
     q: Optional[str] = Query(None),
     state: Optional[str] = Query(None),
+    territory_id: Optional[int] = Query(None),
     skip: int = Query(0),
     limit: int = Query(50, le=500),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
+    from app.models.master import HcpDoctorTerritory
     query = db.query(HcpDoctor)
     if q:
         from sqlalchemy import or_
@@ -1170,12 +1196,96 @@ def list_all_hcp_doctors(
         ))
     if state:
         query = query.filter(HcpDoctor.state == state)
+    if territory_id:
+        query = query.join(HcpDoctorTerritory, HcpDoctorTerritory.hcp_doctor_id == HcpDoctor.id).filter(
+            HcpDoctorTerritory.territory_id == territory_id
+        )
     total = query.count()
     doctors = query.order_by(HcpDoctor.full_name).offset(skip).limit(limit).all()
     result = []
     for doc in doctors:
         d = HcpDoctorOut.model_validate(doc).model_dump()
         d["divisions"] = [{"id": div.id, "name": div.name} for div in doc.divisions]
+        d["territories"] = [{"id": t.id, "name": t.name} for t in doc.territories]
         result.append(d)
     return {"items": result, "total": total}
 
+
+
+# --- Territories ---
+
+@router.get("/territories")
+def list_territories(
+    division_id: Optional[int] = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    from app.models.user import Territory, Division
+    q = db.query(Territory).filter(Territory.is_active == True)
+    if division_id:
+        q = q.filter(Territory.division_id == division_id)
+    territories = q.order_by(Territory.name).all()
+    return [
+        {
+            "id": t.id,
+            "name": t.name,
+            "code": t.code,
+            "division_id": t.division_id,
+            "division_name": db.query(Division).filter(Division.id == t.division_id).first().name if t.division_id else None,
+            "is_active": t.is_active,
+        }
+        for t in territories
+    ]
+
+
+@router.post("/territories")
+def create_territory(
+    name: str,
+    division_id: int,
+    code: Optional[str] = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    from app.models.user import Territory
+    t = Territory(name=name.upper(), division_id=division_id, code=code.upper() if code else None)
+    db.add(t)
+    db.commit()
+    db.refresh(t)
+    return {"id": t.id, "name": t.name, "division_id": t.division_id}
+
+
+@router.put("/territories/{territory_id}")
+def update_territory(
+    territory_id: int,
+    name: Optional[str] = None,
+    division_id: Optional[int] = None,
+    code: Optional[str] = None,
+    is_active: Optional[bool] = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    from app.models.user import Territory
+    t = db.query(Territory).filter(Territory.id == territory_id).first()
+    if not t:
+        raise HTTPException(status_code=404, detail="Territory not found")
+    if name is not None: t.name = name
+    if division_id is not None: t.division_id = division_id
+    if code is not None: t.code = code
+    if is_active is not None: t.is_active = is_active
+    db.commit()
+    return {"ok": True}
+
+
+@router.delete("/territories/{territory_id}")
+def delete_territory(
+    territory_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    from app.models.user import Territory
+    t = db.query(Territory).filter(Territory.id == territory_id).first()
+    if not t:
+        raise HTTPException(status_code=404, detail="Territory not found")
+    t.is_active = False
+    db.commit()
+    return {"message": "Deactivated"}

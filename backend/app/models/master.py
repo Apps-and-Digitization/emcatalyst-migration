@@ -76,6 +76,15 @@ class HcpDoctorDivision(Base):
     division_id = Column(Integer, ForeignKey("divisions.id", ondelete="CASCADE"), nullable=False)
 
 
+class HcpDoctorTerritory(Base):
+    """Many-to-many: Doctor belongs to multiple territories"""
+    __tablename__ = "hcp_doctor_territories"
+
+    id = Column(Integer, primary_key=True, index=True)
+    hcp_doctor_id = Column(Integer, ForeignKey("hcp_doctors.id", ondelete="CASCADE"), nullable=False)
+    territory_id = Column(Integer, ForeignKey("territories.id", ondelete="CASCADE"), nullable=False)
+
+
 class HcpDoctor(Base):
     __tablename__ = "hcp_doctors"
 
@@ -113,6 +122,8 @@ class HcpDoctor(Base):
 
     # Many-to-many with divisions
     divisions = relationship("Division", secondary="hcp_doctor_divisions", backref="hcp_doctors")
+    # Many-to-many with territories
+    territories = relationship("Territory", secondary="hcp_doctor_territories", backref="hcp_doctors")
 
 
 class FmvCriteria(Base):

@@ -29,6 +29,7 @@ class UserOut(BaseModel):
     employee_id: Optional[str] = None
     designation_title: Optional[str] = None
     division_id: Optional[int] = None
+    territory_id: Optional[int] = None
     manager_id: Optional[int] = None
     manager_name: Optional[str] = None
     department: Optional[str] = None
@@ -54,6 +55,7 @@ class UserCreate(BaseModel):
     last_name: Optional[str] = None
     role: str = "User"
     division_id: Optional[int] = None
+    territory_id: Optional[int] = None
     designation_title: Optional[str] = None
     manager_id: Optional[int] = None
 
@@ -64,6 +66,7 @@ class UserUpdate(BaseModel):
     last_name: Optional[str] = None
     designation_title: Optional[str] = None
     division_id: Optional[int] = None
+    territory_id: Optional[int] = None
     cost_center_id: Optional[int] = None
     manager_id: Optional[int] = None
     role: Optional[str] = None

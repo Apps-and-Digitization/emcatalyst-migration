@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'react-hot-toast'
 import {
   Plus, Trash2, GripVertical, Edit3, Save, X, ChevronDown,
-  ChevronUp, List, CheckSquare, AlignLeft, ToggleLeft, ArrowLeft, FileText, Upload, Download, Search
+  ChevronUp, List, CheckSquare, AlignLeft, ToggleLeft, ArrowLeft, FileText, Upload, Download, Search, BarChart3
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { brsApi, accessApi } from '../../api/endpoints'
@@ -402,7 +402,7 @@ function SurveyEditor({ surveyId, onBack }) {
   })
 
   const [editingMeta, setEditingMeta] = useState(false)
-  const [meta, setMeta] = useState({ title: '', description: '', total_honorarium_amount: 0, division_id: '', agreement_template: '' })
+  const [meta, setMeta] = useState({ title: '', description: '', total_honorarium_amount: 0, division_id: '', agreement_template: '', payment_method: '' })
 
   const updateMeta = useMutation({
     mutationFn: () => brsApi.updateSurvey(surveyId, {
@@ -462,6 +462,11 @@ function SurveyEditor({ surveyId, onBack }) {
             <input className="input" type="number" value={meta.total_honorarium_amount}
               onChange={e => setMeta(m => ({ ...m, total_honorarium_amount: parseFloat(e.target.value) || 0 }))}
               placeholder="Total Honorarium Amount (₹)" />
+            <select className="input" value={meta.payment_method} onChange={e => setMeta(m => ({ ...m, payment_method: e.target.value }))}>
+              <option value="">Payment Method...</option>
+              <option value="Cheque">Cheque</option>
+              <option value="NEFT">NEFT</option>
+            </select>
             <div>
               <label className="label text-xs">Agreement Template</label>
               <textarea className="input font-mono text-xs" rows={8} value={meta.agreement_template}
@@ -484,10 +489,13 @@ function SurveyEditor({ surveyId, onBack }) {
               {survey?.total_honorarium_amount > 0 && (
                 <p className="text-sm text-green-700 mt-1">Total Honorarium: ₹{survey.total_honorarium_amount.toLocaleString('en-IN')}</p>
               )}
+              {survey?.payment_method && (
+                <p className="text-sm text-gray-600 mt-1">Payment Method: <span className="font-medium">{survey.payment_method}</span></p>
+              )}
               <p className="text-xs text-gray-400 mt-1">{survey?.questions?.length || 0} questions</p>
             </div>
             <button className="btn-secondary text-sm flex items-center gap-1"
-              onClick={() => { setMeta({ title: survey.title, description: survey.description || '', total_honorarium_amount: survey.total_honorarium_amount || 0, division_id: survey.division_id || '', agreement_template: survey.agreement_template || '' }); setEditingMeta(true) }}>
+              onClick={() => { setMeta({ title: survey.title, description: survey.description || '', total_honorarium_amount: survey.total_honorarium_amount || 0, division_id: survey.division_id || '', agreement_template: survey.agreement_template || '', payment_method: survey.payment_method || '' }); setEditingMeta(true) }}>
               <Edit3 size={14} /> Edit
             </button>
           </div>
@@ -696,6 +704,117 @@ function SurveyEditor({ surveyId, onBack }) {
   )
 }
 
+function SurveyAnalyticsPanel({ surveyId, onClose }) {
+  const { data: analytics, isLoading } = useQuery({
+    queryKey: ['survey-analytics', surveyId],
+    queryFn: () => brsApi.surveyAnalytics(surveyId).then(r => r.data),
+    enabled: !!surveyId,
+  })
+
+  const handleExport = async () => {
+    try {
+      const res = await brsApi.surveyAnalyticsExport(surveyId)
+      const url = window.URL.createObjectURL(new Blob([res.data]))
+      const link = document.createElement('a')
+      link.href = url
+      link.setAttribute('download', `survey_analytics_${surveyId}.xlsx`)
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.URL.revokeObjectURL(url)
+      toast.success('Export downloaded')
+    } catch (e) {
+      toast.error('Export failed')
+    }
+  }
+
+  if (isLoading) return <LoadingSpinner />
+  if (!analytics) return <p className="text-sm text-gray-500">No data available</p>
+
+  const { survey_title, total_doctors_assigned, total_completed, completion_rate, questions } = analytics
+
+  return (
+    <div className="space-y-5">
+      {/* Completion Stats */}
+      <div className="card p-5">
+        <div className="flex items-center justify-between mb-3">
+          <h4 className="font-semibold text-sm text-gray-700">Completion Stats</h4>
+          <button className="btn-primary text-xs flex items-center gap-1" onClick={handleExport}>
+            <Download size={12} /> Export to Excel
+          </button>
+        </div>
+        <div className="grid grid-cols-3 gap-4 mb-3">
+          <div className="text-center">
+            <p className="text-2xl font-bold text-gray-800">{total_doctors_assigned}</p>
+            <p className="text-xs text-gray-500">Assigned</p>
+          </div>
+          <div className="text-center">
+            <p className="text-2xl font-bold text-green-600">{total_completed}</p>
+            <p className="text-xs text-gray-500">Completed</p>
+          </div>
+          <div className="text-center">
+            <p className="text-2xl font-bold text-[var(--color-primary)]">{completion_rate}%</p>
+            <p className="text-xs text-gray-500">Completion Rate</p>
+          </div>
+        </div>
+        <div className="w-full bg-gray-200 rounded-full h-3">
+          <div
+            className="h-3 rounded-full transition-all"
+            style={{ width: `${completion_rate}%`, backgroundColor: 'var(--color-primary)' }}
+          />
+        </div>
+        <p className="text-xs text-gray-400 mt-1">{total_completed} of {total_doctors_assigned} doctors completed</p>
+      </div>
+
+      {/* Per-question breakdown */}
+      {questions.map((q, idx) => (
+        <div key={q.id} className="card p-5">
+          <div className="flex items-start gap-2 mb-3">
+            <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded font-mono">Q{idx + 1}</span>
+            <div className="flex-1">
+              <p className="text-sm font-medium text-gray-800">{q.question_text}</p>
+              <p className="text-xs text-gray-400 mt-0.5">{q.question_type.replace('_', ' ')} • {q.total_responses} response(s)</p>
+            </div>
+          </div>
+
+          {(q.question_type === 'single_select' || q.question_type === 'multi_select') && q.responses ? (
+            <div className="space-y-2">
+              {(q.options || Object.keys(q.responses)).map(opt => {
+                const count = q.responses[opt] || 0
+                const pct = q.total_responses > 0 ? Math.round((count / q.total_responses) * 100) : 0
+                return (
+                  <div key={opt}>
+                    <div className="flex items-center justify-between text-xs mb-0.5">
+                      <span className="text-gray-700">{opt}</span>
+                      <span className="text-gray-500">{count} ({pct}%)</span>
+                    </div>
+                    <div className="w-full bg-gray-100 rounded-full h-2">
+                      <div
+                        className="h-2 rounded-full transition-all"
+                        style={{ width: `${pct}%`, backgroundColor: 'var(--color-primary)' }}
+                      />
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          ) : q.text_responses ? (
+            <div className="max-h-40 overflow-y-auto space-y-1">
+              {q.text_responses.length === 0 ? (
+                <p className="text-xs text-gray-400 italic">No responses yet</p>
+              ) : q.text_responses.map((resp, i) => (
+                <div key={i} className="text-xs bg-gray-50 p-2 rounded border border-gray-100 text-gray-700">
+                  {resp}
+                </div>
+              ))}
+            </div>
+          ) : null}
+        </div>
+      ))}
+    </div>
+  )
+}
+
 export default function SurveyBuilder() {
   const navigate = useNavigate()
   const qc = useQueryClient()
@@ -707,7 +826,8 @@ export default function SurveyBuilder() {
   const [importFile, setImportFile] = useState(null)
   const [importing, setImporting] = useState(false)
   const [importResult, setImportResult] = useState(null)
-  const [newSurvey, setNewSurvey] = useState({ title: '', description: '', total_honorarium_amount: '', division_id: '' })
+  const [analyticsSurveyId, setAnalyticsSurveyId] = useState(null)
+  const [newSurvey, setNewSurvey] = useState({ title: '', description: '', total_honorarium_amount: '', division_id: '', payment_method: '' })
 
   const { data: surveys = [], isLoading } = useQuery({
     queryKey: ['brs-surveys'],
@@ -725,6 +845,7 @@ export default function SurveyBuilder() {
       description: newSurvey.description,
       total_honorarium_amount: parseFloat(newSurvey.total_honorarium_amount) || 0,
       division_id: newSurvey.division_id ? parseInt(newSurvey.division_id) : undefined,
+      payment_method: newSurvey.payment_method || undefined,
     }),
     onSuccess: (res) => {
       toast.success('Survey created!')
@@ -841,12 +962,17 @@ export default function SurveyBuilder() {
                 {s.total_honorarium_amount > 0 && (
                   <span>Limit: ₹{s.total_honorarium_amount.toLocaleString('en-IN')}</span>
                 )}
+                {s.payment_method && <span>Payment: {s.payment_method}</span>}
                 {!s.doctor_count && <span className="text-red-500 font-medium">⚠ No doctors mapped</span>}
               </div>
               <div className="flex gap-2">
                 <button className="btn-primary text-xs flex-1 flex items-center justify-center gap-1"
                   onClick={() => setActiveSurveyId(s.id)}>
                   <Edit3 size={12} /> Edit Questions
+                </button>
+                <button className="btn-secondary text-xs flex items-center gap-1"
+                  onClick={() => setAnalyticsSurveyId(s.id)}>
+                  <BarChart3 size={12} /> Analytics
                 </button>
                 <button className="btn-secondary text-xs"
                   onClick={() => toggleActiveMut.mutate({ id: s.id, is_active: !s.is_active })}>
@@ -892,6 +1018,14 @@ export default function SurveyBuilder() {
               <label className="label">Total Honorarium Amount (₹)</label>
               <input className="input" type="number" value={newSurvey.total_honorarium_amount}
                 onChange={e => setNewSurvey(s => ({ ...s, total_honorarium_amount: e.target.value }))} />
+            </div>
+            <div>
+              <label className="label">Payment Method</label>
+              <select className="input" value={newSurvey.payment_method} onChange={e => setNewSurvey(s => ({ ...s, payment_method: e.target.value }))}>
+                <option value="">Select...</option>
+                <option value="Cheque">Cheque</option>
+                <option value="NEFT">NEFT</option>
+              </select>
             </div>
             <div className="flex gap-3 justify-end">
               <button className="btn-secondary" onClick={() => setShowNewSurvey(false)}>Cancel</button>
@@ -952,6 +1086,13 @@ export default function SurveyBuilder() {
               {importing ? 'Importing…' : 'Import'}
             </button>
           </div>
+        </div>
+      </Modal>
+
+      {/* Analytics Modal */}
+      <Modal open={!!analyticsSurveyId} title="Survey Analytics" onClose={() => setAnalyticsSurveyId(null)} size="lg">
+        <div className="p-5 max-h-[70vh] overflow-y-auto">
+          {analyticsSurveyId && <SurveyAnalyticsPanel surveyId={analyticsSurveyId} onClose={() => setAnalyticsSurveyId(null)} />}
         </div>
       </Modal>
     </div>

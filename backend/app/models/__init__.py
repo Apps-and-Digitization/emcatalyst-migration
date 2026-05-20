@@ -7,7 +7,7 @@ from app.models.event import (
 from app.models.master import (
     CompanyCode, MasterDivision,
     Designation, EventType, DocumentType, Enumeration,
-    HcpDoctor, HcpDoctorDivision, FmvCriteria, FmvParameter, MasterSpeciality, MasterHcpRole,
+    HcpDoctor, HcpDoctorDivision, HcpDoctorTerritory, FmvCriteria, FmvParameter, MasterSpeciality, MasterHcpRole,
     MasterTherapeutic, MasterState,
     MasterBrand, MasterMeal, MasterCity, MasterSponsorshipType,
 )

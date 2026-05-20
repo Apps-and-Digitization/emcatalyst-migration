@@ -138,12 +138,18 @@ def process_excel_file(file_path: str, import_id: str):
 
 def _insert_chunk(db: Session, records: list):
     """Insert a chunk of records using bulk insert with upsert on uid_number"""
-    from app.models.master import HcpDoctor, HcpDoctorDivision
-    from app.models.user import Division
+    from app.models.master import HcpDoctor, HcpDoctorDivision, HcpDoctorTerritory
+    from app.models.user import Division, Territory
 
     for record in records:
         division_name = record.pop('division', None)
+        territory_name_val = record.pop('territory_name', None)
         uid = record.get('uid_number')
+
+        # Resolve division first
+        div = None
+        if division_name:
+            div = db.query(Division).filter(Division.name.ilike(f"%{division_name}%")).first()
 
         if uid:
             # Update existing by UID
@@ -155,7 +161,6 @@ def _insert_chunk(db: Session, records: list):
                 # Add division association if not exists
                 if division_name:
                     existing.division = division_name
-                    div = db.query(Division).filter(Division.name.ilike(f"%{division_name}%")).first()
                     if div:
                         exists = db.query(HcpDoctorDivision).filter(
                             HcpDoctorDivision.hcp_doctor_id == existing.id,
@@ -163,6 +168,25 @@ def _insert_chunk(db: Session, records: list):
                         ).first()
                         if not exists:
                             db.add(HcpDoctorDivision(hcp_doctor_id=existing.id, division_id=div.id))
+                # Handle territory mapping — auto-create if not exists
+                if territory_name_val:
+                    territory_names = [t.strip().upper() for t in territory_name_val.split(',') if t.strip()]
+                    for tname in territory_names:
+                        territory = db.query(Territory).filter(
+                            Territory.name == tname
+                        ).first()
+                        if not territory and div:
+                            # Auto-create territory under the resolved division
+                            territory = Territory(name=tname, division_id=div.id, is_active=True)
+                            db.add(territory)
+                            db.flush()
+                        if territory:
+                            exists_t = db.query(HcpDoctorTerritory).filter(
+                                HcpDoctorTerritory.hcp_doctor_id == existing.id,
+                                HcpDoctorTerritory.territory_id == territory.id
+                            ).first()
+                            if not exists_t:
+                                db.add(HcpDoctorTerritory(hcp_doctor_id=existing.id, territory_id=territory.id))
                 continue
 
         # Insert new
@@ -173,10 +197,22 @@ def _insert_chunk(db: Session, records: list):
         db.flush()
 
         # Link to division
-        if division_name:
-            div = db.query(Division).filter(Division.name.ilike(f"%{division_name}%")).first()
-            if div:
-                db.add(HcpDoctorDivision(hcp_doctor_id=doc.id, division_id=div.id))
+        if div:
+            db.add(HcpDoctorDivision(hcp_doctor_id=doc.id, division_id=div.id))
+
+        # Link to territories — auto-create if not exists
+        if territory_name_val:
+            territory_names = [t.strip().upper() for t in territory_name_val.split(',') if t.strip()]
+            for tname in territory_names:
+                territory = db.query(Territory).filter(
+                    Territory.name == tname
+                ).first()
+                if not territory and div:
+                    territory = Territory(name=tname, division_id=div.id, is_active=True)
+                    db.add(territory)
+                    db.flush()
+                if territory:
+                    db.add(HcpDoctorTerritory(hcp_doctor_id=doc.id, territory_id=territory.id))
 
     try:
         db.commit()

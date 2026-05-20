@@ -252,7 +252,14 @@ def list_users(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
+    from app.models.user import Territory
     users = db.query(User).order_by(User.first_name, User.last_name).offset(skip).limit(limit).all()
+    # Build territory lookup
+    territory_ids = [u.territory_id for u in users if u.territory_id]
+    territory_map = {}
+    if territory_ids:
+        territories = db.query(Territory).filter(Territory.id.in_(territory_ids)).all()
+        territory_map = {t.id: t.name for t in territories}
     result = []
     for u in users:
         user_dict = UserOut.model_validate(u).model_dump()
@@ -262,6 +269,8 @@ def list_users(
         user_dict["roles"] = [ra.role for ra in u.role_assignments] if u.role_assignments else []
         # Include additional divisions
         user_dict["divisions"] = [da.division_id for da in u.division_assignments] if u.division_assignments else []
+        # Include territory name
+        user_dict["territory_name"] = territory_map.get(u.territory_id) if u.territory_id else None
         result.append(user_dict)
     return result
 
@@ -283,6 +292,7 @@ def create_user(
         last_name=data.last_name,
         role=data.role,
         division_id=data.division_id,
+        territory_id=data.territory_id,
         designation_title=data.designation_title,
         manager_id=data.manager_id,
     )
@@ -465,6 +475,20 @@ def _user_import_task(job_id: int, employee_ids_str: str):
             division_id = div_map.get(split_dept.lower()) if split_dept else None
             is_active = emp.get("employee_status", "").strip().lower() == "active"
 
+            # Resolve territory — auto-create if not exists (uppercase)
+            split_territory = emp.get("split_territory", "").strip().upper()
+            territory_id = None
+            if split_territory and division_id:
+                from app.models.user import Territory
+                territory = db.query(Territory).filter(
+                    Territory.name == split_territory
+                ).first()
+                if not territory:
+                    territory = Territory(name=split_territory, division_id=division_id, is_active=True)
+                    db.add(territory)
+                    db.flush()
+                territory_id = territory.id
+
             mgr_emp_id = emp.get("direct_manager_employee_id", "").strip()
             if mgr_emp_id:
                 manager_assignments.append((emp_id, mgr_emp_id))
@@ -481,6 +505,8 @@ def _user_import_task(job_id: int, employee_ids_str: str):
                     existing.is_active = is_active
                     if division_id:
                         existing.division_id = division_id
+                    if territory_id:
+                        existing.territory_id = territory_id
                     updated.append(emp_id)
                 else:
                     new_user = User(
@@ -492,6 +518,7 @@ def _user_import_task(job_id: int, employee_ids_str: str):
                         last_name=emp.get("last_name", ""),
                         role="User",
                         division_id=division_id,
+                        territory_id=territory_id,
                         designation_title=emp.get("designation_title", ""),
                         department=emp.get("department", ""),
                         is_active=is_active,
