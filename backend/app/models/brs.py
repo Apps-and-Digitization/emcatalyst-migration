@@ -20,6 +20,7 @@ class BrsQuestionType(str, enum.Enum):
     MULTI_SELECT = "multi_select"
     FREE_TEXT = "free_text"
     FILL_IN_BLANKS = "fill_in_blanks"
+    RANGE = "range"
 
 
 class BrsApplication(Base):

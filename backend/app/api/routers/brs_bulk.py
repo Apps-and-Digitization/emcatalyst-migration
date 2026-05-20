@@ -498,7 +498,13 @@ def download_survey_template():
             "", "I prescribe drug X for ___ patients per month and find it most effective for ___ condition.",
             "fill_in_blanks", "", "Yes",
         ],
-        # Row 6: Another free text (optional)
+        # Row 6: Range question
+        [
+            "Cardiology Expert Survey", "", "",
+            "", "On a scale, how effective do you find drug X?",
+            "range", "1|10", "Yes",
+        ],
+        # Row 7: Another free text (optional)
         [
             "Cardiology Expert Survey", "", "",
             "", "Any additional comments or suggestions?",
@@ -548,9 +554,11 @@ def download_survey_template():
         "- single_select: Doctor picks ONE option from a list",
         "- multi_select: Doctor picks MULTIPLE options from a list",
         "- fill_in_blanks: Question with blanks (___) that the doctor fills in",
+        "- range: Doctor selects a value on a slider between min and max",
         "",
         "OPTIONS FIELD:",
         "- For single_select and multi_select: provide options separated by | (pipe)",
+        "- For range: provide min|max (e.g. 1|10)",
         "- For free_text and fill_in_blanks: leave blank",
         "",
         "IS_REQUIRED: Yes or No (default: Yes)",

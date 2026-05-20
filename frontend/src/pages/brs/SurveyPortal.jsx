@@ -516,6 +516,28 @@ export default function SurveyPortal() {
                       ))}
                     </div>
                   )}
+                  {q.question_type === 'range' && (() => {
+                    const min = parseInt(q.options?.[0] || 0)
+                    const max = parseInt(q.options?.[1] || 10)
+                    const val = responses[q.id] ?? Math.round((min + max) / 2)
+                    return (
+                      <div className="space-y-2">
+                        <input
+                          type="range"
+                          min={min}
+                          max={max}
+                          value={val}
+                          onChange={e => setResponses(r => ({...r, [q.id]: parseInt(e.target.value)}))}
+                          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[var(--color-primary,#ed1c24)]"
+                        />
+                        <div className="flex justify-between text-xs text-gray-500">
+                          <span>{min}</span>
+                          <span className="font-bold text-sm" style={{ color: 'var(--color-primary)' }}>{val}</span>
+                          <span>{max}</span>
+                        </div>
+                      </div>
+                    )
+                  })()}
                 </div>
               ))}
             </div>

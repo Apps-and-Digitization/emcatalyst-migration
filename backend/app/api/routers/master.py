@@ -420,7 +420,7 @@ def search_hcp_doctors(
     return result
 
 
-@router.get("/hcp-doctors/{doctor_id}", response_model=HcpDoctorOut)
+@router.get("/hcp-doctors/{doctor_id}")
 def get_hcp_doctor(
     doctor_id: int,
     db: Session = Depends(get_db),
@@ -497,7 +497,7 @@ def delete_fmv_parameter(param_id: int, db: Session = Depends(get_db), current_u
 
 # --- HCP Doctors CRUD ---
 
-@router.post("/hcp-doctors", response_model=HcpDoctorOut)
+@router.post("/hcp-doctors")
 def create_hcp_doctor(
     full_name: str,
     first_name: Optional[str] = None,
@@ -561,7 +561,10 @@ def create_hcp_doctor(
                 db.add(HcpDoctorTerritory(hcp_doctor_id=doc.id, territory_id=int(tid)))
     db.commit()
     db.refresh(doc)
-    return doc
+    result = HcpDoctorOut.model_validate(doc).model_dump()
+    result["territories"] = [{"id": t.id, "name": t.name} for t in doc.territories]
+    result["divisions"] = [{"id": d.id, "name": d.name} for d in doc.divisions]
+    return result
 
 
 @router.put("/hcp-doctors/{doctor_id}")

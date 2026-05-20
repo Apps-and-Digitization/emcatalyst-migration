@@ -18,6 +18,7 @@ const QUESTION_TYPES = [
   { value: 'single_select', label: 'Single Select', icon: ToggleLeft },
   { value: 'multi_select', label: 'Multi Select', icon: CheckSquare },
   { value: 'fill_in_blanks', label: 'Fill in the Blanks', icon: FileText },
+  { value: 'range', label: 'Range (Slider)', icon: GripVertical },
 ]
 
 function QuestionTypeIcon({ type, size = 14 }) {
@@ -36,6 +37,8 @@ function QuestionCard({ q, surveyId, onRefresh }) {
     min_duration_seconds: q.min_duration_seconds || 0,
     video_url: q.video_url || '',
     options_text: (q.options || []).join('\n'),
+    range_min: q.question_type === 'range' && q.options?.length >= 2 ? q.options[0] : '',
+    range_max: q.question_type === 'range' && q.options?.length >= 2 ? q.options[1] : '',
   })
   const qc = useQueryClient()
 
@@ -46,9 +49,11 @@ function QuestionCard({ q, surveyId, onRefresh }) {
       is_required: form.is_required,
       min_duration_seconds: 0,
       video_url: null,
-      options: ['single_select', 'multi_select'].includes(form.question_type)
-        ? form.options_text.split('\n').map(s => s.trim()).filter(Boolean)
-        : [],
+      options: form.question_type === 'range'
+        ? [String(form.range_min || 0), String(form.range_max || 10)]
+        : ['single_select', 'multi_select'].includes(form.question_type)
+          ? form.options_text.split('\n').map(s => s.trim()).filter(Boolean)
+          : [],
     }),
     onSuccess: () => { toast.success('Question updated'); setEditing(false); onRefresh() },
     onError: (e) => toast.error(e.response?.data?.detail || 'Update failed'),
@@ -106,6 +111,18 @@ function QuestionCard({ q, surveyId, onRefresh }) {
                     value={form.options_text}
                     onChange={e => setForm(f => ({ ...f, options_text: e.target.value }))}
                     placeholder="Option 1&#10;Option 2&#10;Option 3" />
+                </div>
+              )}
+              {form.question_type === 'range' && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="label text-xs">Min Value</label>
+                    <input type="number" className="input text-sm" value={form.range_min || ''} onChange={e => setForm(f => ({ ...f, range_min: e.target.value }))} placeholder="0" />
+                  </div>
+                  <div>
+                    <label className="label text-xs">Max Value</label>
+                    <input type="number" className="input text-sm" value={form.range_max || ''} onChange={e => setForm(f => ({ ...f, range_max: e.target.value }))} placeholder="10" />
+                  </div>
                 </div>
               )}
               <div className="flex gap-2">
@@ -383,7 +400,7 @@ function SurveyEditor({ surveyId, onBack }) {
   const [newQ, setNewQ] = useState({
     question_text: '', question_type: 'free_text',
     is_required: true, min_duration_seconds: 0,
-    video_url: '', options_text: ''
+    video_url: '', options_text: '', range_min: '', range_max: ''
   })
 
   const { data: survey, isLoading } = useQuery({
@@ -419,14 +436,16 @@ function SurveyEditor({ surveyId, onBack }) {
       is_required: newQ.is_required,
       min_duration_seconds: 0,
       video_url: null,
-      options: ['single_select', 'multi_select'].includes(newQ.question_type)
-        ? newQ.options_text.split('\n').map(s => s.trim()).filter(Boolean)
-        : [],
+      options: newQ.question_type === 'range'
+        ? [String(newQ.range_min || 0), String(newQ.range_max || 10)]
+        : ['single_select', 'multi_select'].includes(newQ.question_type)
+          ? newQ.options_text.split('\n').map(s => s.trim()).filter(Boolean)
+          : [],
     }),
     onSuccess: () => {
       toast.success('Question added')
       setAddingQuestion(false)
-      setNewQ({ question_text: '', question_type: 'free_text', is_required: true, min_duration_seconds: 0, video_url: '', options_text: '' })
+      setNewQ({ question_text: '', question_type: 'free_text', is_required: true, min_duration_seconds: 0, video_url: '', options_text: '', range_min: '', range_max: '' })
       qc.invalidateQueries({ queryKey: ['brs-survey', surveyId] })
     },
     onError: (e) => toast.error(e.response?.data?.detail || 'Failed'),
@@ -630,11 +649,34 @@ function SurveyEditor({ surveyId, onBack }) {
         )}
       </div>
 
-      {/* Questions */}
+      {/* Questions — Drag to reorder */}
       <div className="space-y-3 mb-4">
-        {(survey?.questions || []).map(q => (
-          <div key={q.id} className="flex items-start gap-2">
-            <span className="mt-4 text-xs text-gray-400 w-6 text-center shrink-0">{q.order_no}</span>
+        {(survey?.questions || []).map((q, idx) => (
+          <div
+            key={q.id}
+            className="flex items-start gap-2"
+            draggable
+            onDragStart={e => { e.dataTransfer.setData('text/plain', String(idx)); e.currentTarget.style.opacity = '0.5' }}
+            onDragEnd={e => { e.currentTarget.style.opacity = '1' }}
+            onDragOver={e => { e.preventDefault(); e.currentTarget.style.borderTop = '2px solid var(--color-primary)' }}
+            onDragLeave={e => { e.currentTarget.style.borderTop = '' }}
+            onDrop={async e => {
+              e.preventDefault()
+              e.currentTarget.style.borderTop = ''
+              const fromIdx = parseInt(e.dataTransfer.getData('text/plain'))
+              const toIdx = idx
+              if (fromIdx === toIdx) return
+              const questions = [...(survey?.questions || [])]
+              const [moved] = questions.splice(fromIdx, 1)
+              questions.splice(toIdx, 0, moved)
+              const newOrder = questions.map(q => q.id)
+              try {
+                await brsApi.reorderQuestions(surveyId, newOrder)
+                qc.invalidateQueries({ queryKey: ['brs-survey', surveyId] })
+              } catch (err) { toast.error('Reorder failed') }
+            }}
+          >
+            <span className="mt-4 text-xs text-gray-400 w-6 text-center shrink-0 cursor-grab">{q.order_no}</span>
             <div className="flex-1">
               <QuestionCard q={q} surveyId={surveyId}
                 onRefresh={() => qc.invalidateQueries({ queryKey: ['brs-survey', surveyId] })} />
@@ -676,6 +718,18 @@ function SurveyEditor({ surveyId, onBack }) {
                   value={newQ.options_text}
                   onChange={e => setNewQ(q => ({ ...q, options_text: e.target.value }))}
                   placeholder="Option 1&#10;Option 2&#10;Option 3" />
+              </div>
+            )}
+            {newQ.question_type === 'range' && (
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="label text-xs">Min Value</label>
+                  <input type="number" className="input text-sm" value={newQ.range_min} onChange={e => setNewQ(q => ({ ...q, range_min: e.target.value }))} placeholder="0" />
+                </div>
+                <div>
+                  <label className="label text-xs">Max Value</label>
+                  <input type="number" className="input text-sm" value={newQ.range_max} onChange={e => setNewQ(q => ({ ...q, range_max: e.target.value }))} placeholder="10" />
+                </div>
               </div>
             )}
             {newQ.question_type === 'fill_in_blanks' && (

@@ -233,6 +233,36 @@ export default function SurveyAnalyticsReport() {
                       )
                     })}
                   </div>
+                ) : q.question_type === 'range' ? (
+                  <div className="pl-10 space-y-3">
+                    <div className="grid grid-cols-3 gap-4 text-center">
+                      <div className="bg-blue-50 rounded-lg p-3">
+                        <p className="text-lg font-bold text-blue-700">{q.average}</p>
+                        <p className="text-xs text-gray-500">Average</p>
+                      </div>
+                      <div className="bg-gray-50 rounded-lg p-3">
+                        <p className="text-lg font-bold text-gray-700">{q.min_response ?? '—'}</p>
+                        <p className="text-xs text-gray-500">Min Response</p>
+                      </div>
+                      <div className="bg-gray-50 rounded-lg p-3">
+                        <p className="text-lg font-bold text-gray-700">{q.max_response ?? '—'}</p>
+                        <p className="text-xs text-gray-500">Max Response</p>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex justify-between text-xs text-gray-400 mb-1">
+                        <span>{q.range_min}</span>
+                        <span>{q.range_max}</span>
+                      </div>
+                      <div className="w-full bg-gray-100 rounded-full h-3 relative">
+                        <div
+                          className="h-3 rounded-full"
+                          style={{ width: `${q.range_max > q.range_min ? ((q.average - q.range_min) / (q.range_max - q.range_min)) * 100 : 0}%`, backgroundColor: 'var(--color-primary)' }}
+                        />
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1 text-center">Average position on scale ({q.range_min}–{q.range_max})</p>
+                    </div>
+                  </div>
                 ) : q.text_responses ? (
                   <div className="pl-10 max-h-60 overflow-y-auto space-y-2">
                     {q.text_responses.length === 0 ? (

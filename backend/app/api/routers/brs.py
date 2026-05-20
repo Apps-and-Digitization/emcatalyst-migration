@@ -501,6 +501,20 @@ def delete_question(survey_id: int, question_id: int, db: Session = Depends(get_
     return {"ok": True}
 
 
+@router.put("/surveys/{survey_id}/questions/reorder")
+def reorder_questions(survey_id: int, question_ids: List[int] = Body(...), db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    """Reorder questions by providing the list of question IDs in the desired order."""
+    s = db.query(BrsSurvey).filter(BrsSurvey.id == survey_id).first()
+    if not s:
+        raise HTTPException(404, "Survey not found")
+    for idx, qid in enumerate(question_ids):
+        q = db.query(BrsSurveyQuestion).filter(BrsSurveyQuestion.id == qid, BrsSurveyQuestion.survey_id == survey_id).first()
+        if q:
+            q.order_no = idx + 1
+    db.commit()
+    return {"ok": True}
+
+
 # ─────────────────────────────────────────────
 #  BRS Applications (Marketing Head creates)
 # ─────────────────────────────────────────────
@@ -738,6 +752,35 @@ def survey_analytics(survey_id: int, brs_id: Optional[int] = None, db: Session =
                 "options": q.options or [],
                 "responses": option_counts,
                 "total_responses": total_responses,
+            })
+        elif q_type == "range":
+            # Range — collect numeric values and compute stats
+            range_min = int(q.options[0]) if q.options and len(q.options) >= 1 else 0
+            range_max = int(q.options[1]) if q.options and len(q.options) >= 2 else 10
+            values = []
+            for doc in completed_doctors:
+                responses = doc.survey_responses or {}
+                if q_id_str in responses:
+                    val = responses[q_id_str]
+                    if isinstance(val, dict):
+                        val = val.get("answer")
+                    try:
+                        values.append(int(val))
+                    except (TypeError, ValueError):
+                        pass
+
+            avg_val = round(sum(values) / len(values), 1) if values else 0
+            question_analytics.append({
+                "id": q.id,
+                "question_text": q.question_text,
+                "question_type": q_type,
+                "range_min": range_min,
+                "range_max": range_max,
+                "values": values,
+                "average": avg_val,
+                "min_response": min(values) if values else None,
+                "max_response": max(values) if values else None,
+                "total_responses": len(values),
             })
         else:
             # free_text / fill_in_blanks — collect all text responses

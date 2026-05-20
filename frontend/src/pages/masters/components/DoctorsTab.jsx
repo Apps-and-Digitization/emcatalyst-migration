@@ -73,7 +73,7 @@ export default function DoctorsTab() {
       setAddForm({ full_name: '', first_name: '', last_name: '', middle_name: '', division_ids: [], territory_ids: [], uid_number: '', qualification: '', speciality: '', email: '', pan_number: '', city: '', state: '', town_name: '', mobile_number: '', doctor_type: '', gender: '', area_of_practice: '', hourly_rate: '', max_capping: '' })
       toast.success('Doctor added')
     },
-    onError: () => toast.error('Error adding doctor'),
+    onError: (e) => toast.error(e.response?.data?.detail || 'Error adding doctor'),
   })
 
   const deleteDoctor = useMutation({

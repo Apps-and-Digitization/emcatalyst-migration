@@ -212,6 +212,7 @@ export const brsApi = {
     return api.post(`/brs/surveys/${surveyId}/questions?${url.searchParams.toString()}`)
   },
   deleteQuestion: (surveyId, questionId) => api.delete(`/brs/surveys/${surveyId}/questions/${questionId}`),
+  reorderQuestions: (surveyId, questionIds) => api.put(`/brs/surveys/${surveyId}/questions/reorder`, questionIds),
   // Survey Analytics
   surveyAnalytics: (surveyId, brsId) => api.get(`/brs/surveys/${surveyId}/analytics`, { params: { brs_id: brsId || undefined } }),
   surveyAnalyticsExport: (surveyId) => api.get(`/brs/surveys/${surveyId}/analytics/export`, { responseType: 'blob' }),
