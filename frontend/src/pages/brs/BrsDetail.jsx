@@ -9,7 +9,7 @@ import PageHeader from '../../components/ui/PageHeader'
 import StatusBadge from '../../components/ui/StatusBadge'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
 import Modal from '../../components/ui/Modal'
-import { ArrowLeft, CheckCircle, XCircle, Clock, Download, Edit2 } from 'lucide-react'
+import { ArrowLeft, CheckCircle, XCircle, Clock, Download, Edit2, Send } from 'lucide-react'
 import useAuthStore from '../../store/authStore'
 
 export default function BrsDetail() {
@@ -288,6 +288,64 @@ ${docs.length > 0 ? docs.map(doc => {
           </div>
         ) : <p className="text-sm text-gray-400">No doctors added.</p>}
       </div>
+
+      {/* Territory Assignments */}
+      {brs.territory_assignments?.length > 0 && (
+        <div className="card mb-4">
+          <h3 className="font-semibold text-sm text-gray-700 mb-3 uppercase tracking-wide">Territory Assignments</h3>
+          <div className="overflow-x-auto border rounded-lg">
+            <table className="text-sm w-full">
+              <thead className="bg-gray-50 border-b">
+                <tr>
+                  {['Territory', 'Assigned To', 'Doctors', 'Email Status', 'Actions'].map(h => (
+                    <th key={h} className="px-3 py-2 text-left text-xs text-gray-500">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {brs.territory_assignments.map(ta => (
+                  <tr key={ta.id}>
+                    <td className="px-3 py-2 font-medium">{ta.territory_name}</td>
+                    <td className="px-3 py-2">{ta.assigned_user_name || '—'}</td>
+                    <td className="px-3 py-2">{ta.doctor_count}</td>
+                    <td className="px-3 py-2">
+                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
+                        ta.email_status === 'sent' ? 'bg-emerald-50 text-emerald-700' :
+                        ta.email_status === 'failed' ? 'bg-red-50 text-red-700' :
+                        'bg-gray-100 text-gray-600'
+                      }`}>
+                        {ta.email_status === 'sent' && <CheckCircle size={11} />}
+                        {ta.email_status === 'failed' && <XCircle size={11} />}
+                        {ta.email_status === 'pending' && <Clock size={11} />}
+                        {ta.email_status}
+                      </span>
+                      {ta.email_sent_at && <span className="text-xs text-gray-400 ml-2">{fmtDate(ta.email_sent_at)}</span>}
+                    </td>
+                    <td className="px-3 py-2">
+                      {ta.assigned_user_id && brs.status !== 'Draft' && brs.status !== 'Submitted' && (
+                        <button
+                          className="text-xs text-[var(--color-primary)] hover:underline flex items-center gap-1"
+                          onClick={async () => {
+                            try {
+                              await brsApi.resendTerritoryEmail(id, ta.id)
+                              toast.success('Email resent successfully')
+                              qc.invalidateQueries(['brs', id])
+                            } catch (e) {
+                              toast.error(e.response?.data?.detail || 'Error resending email')
+                            }
+                          }}
+                        >
+                          <Send size={11} /> Resend
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Application Documents (after completion) */}
       {brs.status === 'Completed' && (

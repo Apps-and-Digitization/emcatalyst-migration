@@ -316,13 +316,16 @@ export default function DoctorsTab() {
               <button className="btn-secondary" onClick={() => setSelectedDoc(null)}>Cancel</button>
               <button className="btn-primary" onClick={() => {
                 const data = {}
-                for (const [k, v] of Object.entries(selectedDoc)) {
-                  if (k !== 'id' && k !== 'is_active' && k !== 'divisions' && k !== '_divIds' && k !== 'territories' && k !== '_terrIds' && v !== null && v !== undefined) data[k] = v
+                const editableFields = ['full_name', 'first_name', 'last_name', 'middle_name', 'uid_number', 'qualification', 'speciality', 'doctor_type', 'gender', 'city', 'state', 'town_name', 'mobile_number', 'email', 'pan_number', 'area_of_practice', 'hourly_rate', 'max_capping']
+                for (const field of editableFields) {
+                  if (selectedDoc[field] !== null && selectedDoc[field] !== undefined) {
+                    data[field] = selectedDoc[field]
+                  }
                 }
-                const divIds = selectedDoc._divIds || selectedDoc.divisions?.map(d => d.id) || []
+                const divIds = selectedDoc._divIds || (selectedDoc.divisions || []).map(d => d.id)
                 if (divIds.length > 0) data.division_ids = divIds.join(',')
                 else data.division_ids = ''
-                const terrIds = selectedDoc._terrIds || selectedDoc.territories?.map(t => t.id) || []
+                const terrIds = selectedDoc._terrIds || (selectedDoc.territories || []).map(t => t.id)
                 if (terrIds.length > 0) data.territory_ids = terrIds.join(',')
                 else data.territory_ids = ''
                 masterApi.updateHcpDoctor(selectedDoc.id, data).then(() => {

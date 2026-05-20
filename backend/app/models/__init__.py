@@ -15,7 +15,7 @@ from app.models.budget import MasterBudget, BudgetAuditTrail, BrsBudget, BrsBudg
 from app.models.brs import (
     BrsApplication, BrsSurvey, BrsSurveyQuestion,
     BrsAuditTrail, BrsDoctor, BrsStatus, BrsQuestionType,
-    BrsApplicationDocument
+    BrsApplicationDocument, BrsTerritoryAssignment
 )
 from app.models.rbac import Role, Page, RolePageAccess
 from app.models.workflow import ApprovalWorkflow, ApprovalWorkflowStep

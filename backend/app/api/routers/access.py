@@ -336,6 +336,7 @@ def get_all_subordinates(
             "designation": u.designation_title,
             "email": u.email,
             "role": u.role,
+            "territory_id": u.territory_id,
             "territory_name": getattr(u, 'territory_name', None),
             "location": u.office_city or getattr(u, 'location', None),
         }

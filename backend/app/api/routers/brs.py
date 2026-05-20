@@ -10,12 +10,12 @@ from slowapi.util import get_remote_address
 
 from app.db.base import get_db
 from app.api.deps import get_current_user
-from app.models.user import User, UserRoleAssignment, Division
+from app.models.user import User, UserRoleAssignment, Division, Territory
 from app.models.brs import (
     BrsApplication, BrsStatus, BrsSurvey, BrsSurveyQuestion,
-    BrsQuestionType, BrsAuditTrail, BrsDoctor
+    BrsQuestionType, BrsAuditTrail, BrsDoctor, BrsTerritoryAssignment
 )
-from app.models.master import HcpDoctor
+from app.models.master import HcpDoctor, HcpDoctorTerritory
 from app.core.security import get_password_hash
 
 router = APIRouter(prefix="/brs", tags=["BRS"])
@@ -912,6 +912,228 @@ def survey_analytics_export(survey_id: int, db: Session = Depends(get_db), curre
     )
 
 
+# ─────────────────────────────────────────────
+#  Territory Assignments
+# ─────────────────────────────────────────────
+
+@router.get("/{app_id}/territory-assignments")
+def get_territory_assignments(app_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    """Get territory groups for a BRS — each doctor placed in ONE group (first territory)."""
+    app = db.query(BrsApplication).filter(BrsApplication.id == app_id).first()
+    if not app:
+        raise HTTPException(404, "BRS not found")
+
+    brs_doctors = db.query(BrsDoctor).filter(BrsDoctor.brs_application_id == app_id).all()
+
+    # Place each doctor in ONE group only (first territory or "No Territory")
+    territory_groups = {}  # {territory_id or None: [doctor, ...]}
+    assigned_doctors = set()  # track which doctors are already placed
+
+    for doc in brs_doctors:
+        if doc.id in assigned_doctors:
+            continue
+        if doc.hcp_doctor_id:
+            doc_territories = db.query(HcpDoctorTerritory).filter(
+                HcpDoctorTerritory.hcp_doctor_id == doc.hcp_doctor_id
+            ).order_by(HcpDoctorTerritory.id).all()
+            if doc_territories:
+                # Use FIRST territory only
+                first_territory_id = doc_territories[0].territory_id
+                territory_groups.setdefault(first_territory_id, []).append(doc)
+            else:
+                territory_groups.setdefault(None, []).append(doc)
+        else:
+            territory_groups.setdefault(None, []).append(doc)
+        assigned_doctors.add(doc.id)
+
+    # Build territory name lookup
+    territory_ids = [tid for tid in territory_groups.keys() if tid is not None]
+    territory_map = {}
+    if territory_ids:
+        territories = db.query(Territory).filter(Territory.id.in_(territory_ids)).all()
+        territory_map = {t.id: t.name for t in territories}
+
+    # Get existing assignments
+    existing_assignments = db.query(BrsTerritoryAssignment).filter(
+        BrsTerritoryAssignment.brs_application_id == app_id
+    ).all()
+    assignment_map = {a.territory_id: a for a in existing_assignments}
+
+    # Build user name lookup
+    assigned_user_ids = [a.assigned_user_id for a in existing_assignments if a.assigned_user_id]
+    user_map = {}
+    if assigned_user_ids:
+        users = db.query(User).filter(User.id.in_(assigned_user_ids)).all()
+        user_map = {u.id: f"{u.first_name or ''} {u.last_name or ''}".strip() for u in users}
+
+    result = []
+    for territory_id, docs in territory_groups.items():
+        assignment = assignment_map.get(territory_id)
+        result.append({
+            "territory_id": territory_id,
+            "territory_name": territory_map.get(territory_id, "No Territory") if territory_id else "No Territory",
+            "doctor_count": len(docs),
+            "doctors": [
+                {
+                    "id": d.id, "doctor_name": d.doctor_name,
+                    "name_as_per_pan": d.name_as_per_pan, "pan_number": d.pan_number,
+                    "email": d.email, "mobile": d.mobile, "speciality": d.speciality,
+                    "honorarium_amount": float(d.honorarium_amount or 0),
+                }
+                for d in docs
+            ],
+            "assignment_id": assignment.id if assignment else None,
+            "assigned_user_id": assignment.assigned_user_id if assignment else None,
+            "assigned_user_name": user_map.get(assignment.assigned_user_id, "") if assignment and assignment.assigned_user_id else None,
+            "email_status": assignment.email_status if assignment else "pending",
+            "email_sent_at": assignment.email_sent_at.isoformat() if assignment and assignment.email_sent_at else None,
+        })
+
+    result.sort(key=lambda x: (x["territory_id"] is None, x["territory_name"]))
+    return result
+
+
+@router.post("/{app_id}/territory-assignments")
+def save_territory_assignments(app_id: int, data: List[dict] = Body(...), db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    """Upsert territory assignments for this BRS."""
+    app = db.query(BrsApplication).filter(BrsApplication.id == app_id).first()
+    if not app:
+        raise HTTPException(404, "BRS not found")
+
+    for item in data:
+        territory_id = item.get("territory_id")  # can be None
+        assigned_user_id = item.get("assigned_user_id")
+
+        existing = db.query(BrsTerritoryAssignment).filter(
+            BrsTerritoryAssignment.brs_application_id == app_id,
+            BrsTerritoryAssignment.territory_id == territory_id,
+        ).first()
+
+        if existing:
+            existing.assigned_user_id = assigned_user_id
+        else:
+            # Count doctors for this territory
+            brs_doctors = db.query(BrsDoctor).filter(BrsDoctor.brs_application_id == app_id).all()
+            doc_count = 0
+            for doc in brs_doctors:
+                if doc.hcp_doctor_id:
+                    if territory_id is not None:
+                        has_territory = db.query(HcpDoctorTerritory).filter(
+                            HcpDoctorTerritory.hcp_doctor_id == doc.hcp_doctor_id,
+                            HcpDoctorTerritory.territory_id == territory_id,
+                        ).first()
+                        if has_territory:
+                            doc_count += 1
+                    else:
+                        # "No Territory" group: doctors with no territory mapping
+                        has_any = db.query(HcpDoctorTerritory).filter(
+                            HcpDoctorTerritory.hcp_doctor_id == doc.hcp_doctor_id
+                        ).first()
+                        if not has_any:
+                            doc_count += 1
+                else:
+                    if territory_id is None:
+                        doc_count += 1
+
+            db.add(BrsTerritoryAssignment(
+                brs_application_id=app_id,
+                territory_id=territory_id,
+                assigned_user_id=assigned_user_id,
+                doctor_count=doc_count,
+            ))
+
+    db.commit()
+    return {"ok": True}
+
+
+@router.post("/{app_id}/territory-assignments/{assignment_id}/resend-email")
+def resend_territory_email(app_id: int, assignment_id: int, background_tasks: BackgroundTasks = None, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    """Resend credentials email for a specific territory assignment."""
+    from app.core.email import send_brs_credentials_to_territory_manager
+    from app.core.config import settings
+
+    assignment = db.query(BrsTerritoryAssignment).filter(
+        BrsTerritoryAssignment.id == assignment_id,
+        BrsTerritoryAssignment.brs_application_id == app_id,
+    ).first()
+    if not assignment:
+        raise HTTPException(404, "Assignment not found")
+
+    if not assignment.assigned_user_id:
+        raise HTTPException(400, "No user assigned to this territory")
+
+    app = db.query(BrsApplication).filter(BrsApplication.id == app_id).first()
+    if not app:
+        raise HTTPException(404, "BRS not found")
+
+    tm_user = db.query(User).filter(User.id == assignment.assigned_user_id).first()
+    if not tm_user or not tm_user.email:
+        raise HTTPException(400, "Assigned user has no email address")
+
+    # Get doctors for this territory
+    brs_doctors = db.query(BrsDoctor).filter(BrsDoctor.brs_application_id == app_id).all()
+    territory_doctors = []
+    for doc in brs_doctors:
+        if doc.hcp_doctor_id:
+            if assignment.territory_id is not None:
+                has_territory = db.query(HcpDoctorTerritory).filter(
+                    HcpDoctorTerritory.hcp_doctor_id == doc.hcp_doctor_id,
+                    HcpDoctorTerritory.territory_id == assignment.territory_id,
+                ).first()
+                if has_territory:
+                    territory_doctors.append(doc)
+            else:
+                has_any = db.query(HcpDoctorTerritory).filter(
+                    HcpDoctorTerritory.hcp_doctor_id == doc.hcp_doctor_id
+                ).first()
+                if not has_any:
+                    territory_doctors.append(doc)
+        else:
+            if assignment.territory_id is None:
+                territory_doctors.append(doc)
+
+    if not territory_doctors:
+        raise HTTPException(400, "No doctors found for this territory")
+
+    # Build credentials list (use existing credentials — they were generated on approval)
+    doctor_credentials = []
+    portal_url = f"{settings.FRONTEND_URL}/brs/doctor-login"
+    for doc in territory_doctors:
+        if doc.login_id:
+            # We can't retrieve the plain password after hashing, so generate a new one
+            password = _generate_password()
+            doc.login_password = get_password_hash(password)
+            doctor_credentials.append({
+                "doctor_name": doc.doctor_name,
+                "email": doc.email,
+                "mobile": doc.mobile,
+                "speciality": doc.speciality,
+                "login_id": doc.login_id,
+                "password": password,
+            })
+
+    if not doctor_credentials:
+        raise HTTPException(400, "No credentials found. BRS may not be approved yet.")
+
+    assignment.email_status = "sent"
+    assignment.email_sent_at = datetime.now(timezone.utc)
+    db.commit()
+
+    if background_tasks:
+        background_tasks.add_task(
+            send_brs_credentials_to_territory_manager,
+            tm_email=tm_user.email,
+            tm_name=f"{tm_user.first_name or ''} {tm_user.last_name or ''}".strip(),
+            brs_code=app.brs_code,
+            brs_title=app.title,
+            survey_title=app.survey.title if app.survey else "BRS Survey",
+            doctor_credentials=doctor_credentials,
+            portal_url=portal_url,
+        )
+
+    return {"ok": True, "message": f"Email sent to {tm_user.email}"}
+
+
 @router.get("/{app_id}")
 def get_application(app_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     a = db.query(BrsApplication).filter(BrsApplication.id == app_id).first()
@@ -979,6 +1201,19 @@ def get_application(app_id: int, db: Session = Depends(get_db), current_user: Us
                 "uploaded_at": d.uploaded_at.isoformat() if d.uploaded_at else None,
             }
             for d in (a.application_documents or [])
+        ],
+        "territory_assignments": [
+            {
+                "id": ta.id,
+                "territory_id": ta.territory_id,
+                "territory_name": ta.territory.name if ta.territory else "No Territory",
+                "assigned_user_id": ta.assigned_user_id,
+                "assigned_user_name": f"{ta.assigned_user.first_name or ''} {ta.assigned_user.last_name or ''}".strip() if ta.assigned_user else None,
+                "doctor_count": ta.doctor_count,
+                "email_status": ta.email_status,
+                "email_sent_at": ta.email_sent_at.isoformat() if ta.email_sent_at else None,
+            }
+            for ta in (a.territory_assignments or [])
         ],
     }
 
@@ -1215,28 +1450,91 @@ def approve_application(app_id: int, remarks: str = "", background_tasks: Backgr
             "password": password,
         })
 
-    # Send ONE email to the Territory Manager (on_field_execution_by) with all doctor credentials
+    # Send emails per territory assignment (instead of one email to on_field_execution_by)
     from app.core.email import send_brs_credentials_to_territory_manager
 
-    tm_employee_id = app.on_field_execution_by
-    tm_user = None
-    if tm_employee_id:
-        tm_user = db.query(User).filter(User.employee_id == tm_employee_id).first()
+    # Build a map of doctor_id -> credentials for lookup
+    doctor_cred_map = {cred["login_id"]: cred for cred in doctor_credentials}
+
+    # Get territory assignments for this BRS
+    territory_assignments = db.query(BrsTerritoryAssignment).filter(
+        BrsTerritoryAssignment.brs_application_id == app.id
+    ).all()
 
     db.commit()
 
-    # Send email in background (after commit) so it doesn't block the response
-    if tm_user and tm_user.email and background_tasks:
-        background_tasks.add_task(
-            send_brs_credentials_to_territory_manager,
-            tm_email=tm_user.email,
-            tm_name=f"{tm_user.first_name or ''} {tm_user.last_name or ''}".strip(),
-            brs_code=app.brs_code,
-            brs_title=app.title,
-            survey_title=app.survey.title if app.survey else "BRS Survey",
-            doctor_credentials=doctor_credentials,
-            portal_url=portal_url,
-        )
+    # Send email per territory assignment
+    if background_tasks and territory_assignments:
+        portal_url_email = f"{settings.FRONTEND_URL}/brs/doctor-login"
+        for assignment in territory_assignments:
+            if not assignment.assigned_user_id:
+                continue
+            tm_user = db.query(User).filter(User.id == assignment.assigned_user_id).first()
+            if not tm_user or not tm_user.email:
+                continue
+
+            # Get doctors for this territory
+            territory_doc_creds = []
+            for doc in app.doctors:
+                if not doc.hcp_doctor_id:
+                    if assignment.territory_id is None:
+                        cred = next((c for c in doctor_credentials if c["login_id"] == doc.login_id), None)
+                        if cred:
+                            territory_doc_creds.append(cred)
+                    continue
+                if assignment.territory_id is not None:
+                    has_territory = db.query(HcpDoctorTerritory).filter(
+                        HcpDoctorTerritory.hcp_doctor_id == doc.hcp_doctor_id,
+                        HcpDoctorTerritory.territory_id == assignment.territory_id,
+                    ).first()
+                    if has_territory:
+                        cred = next((c for c in doctor_credentials if c["login_id"] == doc.login_id), None)
+                        if cred:
+                            territory_doc_creds.append(cred)
+                else:
+                    has_any = db.query(HcpDoctorTerritory).filter(
+                        HcpDoctorTerritory.hcp_doctor_id == doc.hcp_doctor_id
+                    ).first()
+                    if not has_any:
+                        cred = next((c for c in doctor_credentials if c["login_id"] == doc.login_id), None)
+                        if cred:
+                            territory_doc_creds.append(cred)
+
+            if territory_doc_creds:
+                background_tasks.add_task(
+                    send_brs_credentials_to_territory_manager,
+                    tm_email=tm_user.email,
+                    tm_name=f"{tm_user.first_name or ''} {tm_user.last_name or ''}".strip(),
+                    brs_code=app.brs_code,
+                    brs_title=app.title,
+                    survey_title=app.survey.title if app.survey else "BRS Survey",
+                    doctor_credentials=territory_doc_creds,
+                    portal_url=portal_url_email,
+                )
+                # Update assignment email status
+                assignment.email_status = "sent"
+                assignment.email_sent_at = datetime.now(timezone.utc)
+
+        db.commit()
+    elif background_tasks:
+        # Fallback: if no territory assignments, send to on_field_execution_by (backward compat)
+        tm_employee_id = app.on_field_execution_by
+        tm_user = None
+        if tm_employee_id:
+            tm_user = db.query(User).filter(User.employee_id == tm_employee_id).first()
+        if tm_user and tm_user.email:
+            background_tasks.add_task(
+                send_brs_credentials_to_territory_manager,
+                tm_email=tm_user.email,
+                tm_name=f"{tm_user.first_name or ''} {tm_user.last_name or ''}".strip(),
+                brs_code=app.brs_code,
+                brs_title=app.title,
+                survey_title=app.survey.title if app.survey else "BRS Survey",
+                doctor_credentials=doctor_credentials,
+                portal_url=portal_url,
+            )
+    else:
+        db.commit()
 
     return {"status": app.status, "message": "Approved. Doctor credentials generated and sent to Territory Manager."}
 

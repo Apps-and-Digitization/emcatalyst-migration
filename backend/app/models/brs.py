@@ -65,6 +65,7 @@ class BrsApplication(Base):
     doctors = relationship("BrsDoctor", back_populates="brs_application", cascade="all, delete-orphan")
     audit_trail = relationship("BrsAuditTrail", back_populates="application", order_by="BrsAuditTrail.created_at", cascade="all, delete-orphan")
     application_documents = relationship("BrsApplicationDocument", back_populates="application", cascade="all, delete-orphan")
+    territory_assignments = relationship("BrsTerritoryAssignment", back_populates="application", cascade="all, delete-orphan")
 
 
 class BrsDoctor(Base):
@@ -210,3 +211,21 @@ class BrsApplicationDocument(Base):
 
     application = relationship("BrsApplication", back_populates="application_documents")
     uploaded_by = relationship("User")
+
+
+class BrsTerritoryAssignment(Base):
+    """Territory-wise user assignment for credential distribution"""
+    __tablename__ = "brs_territory_assignments"
+
+    id = Column(Integer, primary_key=True, index=True)
+    brs_application_id = Column(Integer, ForeignKey("brs_applications.id", ondelete="CASCADE"), nullable=False)
+    territory_id = Column(Integer, ForeignKey("territories.id"), nullable=True)  # NULL = "No Territory" group
+    assigned_user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    doctor_count = Column(Integer, default=0)
+    email_status = Column(String(20), default="pending")  # pending, sent, failed
+    email_sent_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    application = relationship("BrsApplication", back_populates="territory_assignments")
+    territory = relationship("Territory")
+    assigned_user = relationship("User")

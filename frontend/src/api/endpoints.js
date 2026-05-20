@@ -235,6 +235,10 @@ export const brsApi = {
     return api.post(`/brs/${appId}/documents`, formData, { headers: { 'Content-Type': 'multipart/form-data' } })
   },
   deleteAppDocument: (appId, docId) => api.delete(`/brs/${appId}/documents/${docId}`),
+  // Territory Assignments
+  getTerritoryAssignments: (appId) => api.get(`/brs/${appId}/territory-assignments`),
+  saveTerritoryAssignments: (appId, data) => api.post(`/brs/${appId}/territory-assignments`, data),
+  resendTerritoryEmail: (appId, assignmentId) => api.post(`/brs/${appId}/territory-assignments/${assignmentId}/resend-email`),
 }
 
 // Event Agreements (nested under events)

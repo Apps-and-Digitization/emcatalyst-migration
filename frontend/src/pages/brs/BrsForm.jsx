@@ -14,17 +14,20 @@ export default function BrsForm() {
   const isEditMode = !!editId
   const qc = useQueryClient()
   const { user } = useAuthStore()
-  const [step, setStep] = useState(isEditMode ? 2 : 0) // edit mode goes straight to doctors
+  const [step, setStep] = useState(0) // always start at step 0, even in edit mode
   const [brsId, setBrsId] = useState(editId ? parseInt(editId) : null)
   const [form, setForm] = useState({
     survey_id: '', title: '', therapeutic_area: '', brand: '',
-    topic: '', on_field_execution_by: '', start_date: '', end_date: '',
+    topic: '', start_date: '', end_date: '',
     rationale: '', agenda: '', cost_center: '', remarks: '', division_id: '',
   })
   const [doctors, setDoctors] = useState([])
   const [doctorSearchOpen, setDoctorSearchOpen] = useState(false)
   const [budgetError, setBudgetError] = useState('')
   const [budgetInfo, setBudgetInfo] = useState(null)
+  const [territoryAssignments, setTerritoryAssignments] = useState([])
+  const [savingAssignments, setSavingAssignments] = useState(false)
+  const [perDoctorHonorarium, setPerDoctorHonorarium] = useState('')
 
   const { data: surveys = [] } = useQuery({ queryKey: ['brs-surveys-approved'], queryFn: () => brsApi.listSurveys({ approved_only: true }).then(r => r.data) })
   const { data: divisions = [] } = useQuery({ queryKey: ['my-divisions'], queryFn: () => accessApi.listMyDivisions().then(r => r.data) })
@@ -42,9 +45,34 @@ export default function BrsForm() {
     enabled: isEditMode,
   })
 
+  // Load territory assignments when brsId is available
+  const { data: fetchedAssignments = [], refetch: refetchAssignments } = useQuery({
+    queryKey: ['territory-assignments', brsId, doctors.length],
+    queryFn: () => brsApi.getTerritoryAssignments(brsId).then(r => r.data),
+    enabled: !!brsId && step === 2 && doctors.length > 0,
+  })
+
+  useEffect(() => {
+    setTerritoryAssignments(fetchedAssignments)
+  }, [fetchedAssignments])
+
   useEffect(() => {
     if (existingBrs && isEditMode) {
       setDoctors(existingBrs.doctors || [])
+      setForm({
+        survey_id: existingBrs.survey_id ? String(existingBrs.survey_id) : '',
+        title: existingBrs.title || '',
+        therapeutic_area: existingBrs.therapeutic_area || '',
+        brand: existingBrs.brand || '',
+        topic: existingBrs.topic || '',
+        start_date: existingBrs.start_date ? existingBrs.start_date.slice(0, 10) : '',
+        end_date: existingBrs.end_date ? existingBrs.end_date.slice(0, 10) : '',
+        rationale: existingBrs.rationale || '',
+        agenda: existingBrs.agenda || '',
+        cost_center: existingBrs.cost_center || '',
+        remarks: existingBrs.remarks || '',
+        division_id: existingBrs.division_id ? String(existingBrs.division_id) : '',
+      })
     }
   }, [existingBrs, isEditMode])
 
@@ -55,7 +83,6 @@ export default function BrsForm() {
     if (!form.survey_id) { toast.error('Select a survey'); return }
     if (!form.title) { toast.error('Title is required'); return }
     if (!form.brand) { toast.error('Brand is required'); return }
-    if (!form.on_field_execution_by) { toast.error('On Field Execution By is required'); return }
     if (!form.start_date) { toast.error('Start Date is required'); return }
     if (!form.rationale) { toast.error('Rationale is required'); return }
     if (!form.agenda) { toast.error('Agenda is required'); return }
@@ -85,15 +112,30 @@ export default function BrsForm() {
         pan_number: doc.pan_number || '',
         mobile: doc.mobile_number || '',
         speciality: doc.qualification || '',
+        honorarium_amount: perDoctorHonorarium ? parseFloat(perDoctorHonorarium) : undefined,
       })
-      setDoctors(prev => [...prev, { id: res.data.id, ...res.data, doctor_name: doc.full_name || `${doc.first_name || ''} ${doc.last_name || ''}`.trim(), email: doc.email, pan_number: doc.pan_number }])
+      setDoctors(prev => [...prev, {
+        id: res.data.id, ...res.data,
+        doctor_name: doc.full_name || `${doc.first_name || ''} ${doc.last_name || ''}`.trim(),
+        email: doc.email, pan_number: doc.pan_number,
+        honorarium_amount: perDoctorHonorarium ? parseFloat(perDoctorHonorarium) : '',
+      }])
+      // Refetch territory assignments after adding doctor
+      refetchAssignments()
     } catch (e) {
       toast.error(e.response?.data?.detail || 'Error adding doctor')
     }
     setDoctorSearchOpen(false)
   }
 
-  const updateDoctorField = (doctorId, field, value) => setDoctors(prev => prev.map(d => d.id === doctorId ? { ...d, [field]: value } : d))
+  const updateDoctorField = (doctorId, field, value) => {
+    setDoctors(prev => prev.map(d => d.id === doctorId ? { ...d, [field]: value } : d))
+    // Also update in territory assignments
+    setTerritoryAssignments(prev => prev.map(ta => ({
+      ...ta,
+      doctors: (ta.doctors || []).map(d => d.id === doctorId ? { ...d, [field]: value } : d)
+    })))
+  }
 
   const removeDoctor = async (doctorId) => {
     try { await brsApi.removeDoctor(brsId, doctorId); setDoctors(prev => prev.filter(d => d.id !== doctorId)); toast.success('Removed') } catch (e) { toast.error('Error') }
@@ -102,6 +144,13 @@ export default function BrsForm() {
   // Submit
   const submitBrs = async () => {
     if (doctors.length === 0) { toast.error('Add at least one doctor'); return }
+
+    // Check all territory groups have a user assigned
+    const unassignedTerritories = territoryAssignments.filter(ta => !ta.assigned_user_id)
+    if (unassignedTerritories.length > 0) {
+      toast.error(`Assign a user to all territory groups: ${unassignedTerritories.map(ta => ta.territory_name).join(', ')}`)
+      return
+    }
 
     // Check all doctors have honorarium
     const missingHonorarium = doctors.filter(d => !d.honorarium_amount || parseFloat(d.honorarium_amount) <= 0)
@@ -135,6 +184,20 @@ export default function BrsForm() {
         return // Stop submission if any doctor update fails
       }
     }
+
+    // Auto-save territory assignments before submitting
+    const assignmentPayload = territoryAssignments
+      .filter(ta => ta.assigned_user_id)
+      .map(ta => ({ territory_id: ta.territory_id, assigned_user_id: ta.assigned_user_id }))
+    if (assignmentPayload.length > 0) {
+      try {
+        await brsApi.saveTerritoryAssignments(brsId, assignmentPayload)
+      } catch (e) {
+        toast.error('Error saving territory assignments')
+        return
+      }
+    }
+
     try {
       await brsApi.submit(brsId)
       qc.invalidateQueries(['brs-list'])
@@ -244,18 +307,7 @@ export default function BrsForm() {
       {step === 1 && (
         <div className="card space-y-5">
           <h3 className="text-lg font-bold">Event Information</h3>
-          <div className="grid grid-cols-3 gap-4">
-            <div>
-              <label className="label">On Field Execution By *</label>
-              <select className="input" value={form.on_field_execution_by} onChange={e => updateField('on_field_execution_by', e.target.value)}>
-                <option value="">Select User</option>
-                {territoryManagers.map(tm => (
-                  <option key={tm.id} value={tm.employee_id}>
-                    {tm.name} {tm.employee_id ? `(${tm.employee_id})` : ''} {tm.designation ? `– ${tm.designation}` : ''}
-                  </option>
-                ))}
-              </select>
-            </div>
+          <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="label">Start Date *</label>
               <input type="date" className="input" value={form.start_date} onChange={async e => {
@@ -306,59 +358,170 @@ export default function BrsForm() {
           </div>
           <div className="flex justify-between pt-2">
             <button className="btn-secondary" onClick={() => setStep(0)}><ChevronLeft size={16} /> Previous</button>
-            <button className="btn-primary" onClick={createBrs}>Create & Add Doctors <ChevronRight size={16} /></button>
+            <button className="btn-primary" onClick={isEditMode ? () => setStep(2) : createBrs}>
+              {isEditMode ? 'Next' : 'Create & Add Doctors'} <ChevronRight size={16} />
+            </button>
           </div>
         </div>
       )}
 
-      {/* Step 3: Add Doctors */}
+      {/* Step 3: Doctors grouped by Territory */}
       {step === 2 && (
         <div className="space-y-6">
           <div className="card space-y-4">
             <div className="flex justify-between items-center">
-              <h3 className="font-semibold text-lg">Add Doctors</h3>
+              <h3 className="font-semibold text-lg">Doctors & Territory Assignments</h3>
               <button className="btn-primary flex items-center gap-1 text-sm" onClick={() => setDoctorSearchOpen(true)}>
-                <Search size={14} /> Search MCL
+                <Search size={14} /> Add Doctor from MCL
               </button>
             </div>
 
-            {doctors.length > 0 ? (
-              <div className="overflow-x-auto border rounded-lg">
-                <table className="text-sm w-full" style={{ minWidth: '900px' }}>
-                  <thead className="bg-gray-50 border-b">
-                    <tr>
-                      {['Doctor Name', 'Name As Per PAN *', 'PAN Number *', 'Email *', 'Honorarium (₹)', ''].map(h => (
-                        <th key={h} className="px-3 py-2 text-left text-xs text-gray-500">{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y">
-                    {doctors.map(d => (
-                      <tr key={d.id}>
-                        <td className="px-3 py-2 font-medium">{d.doctor_name}</td>
-                        <td className="px-3 py-2"><input className="input py-1 text-sm" value={d.name_as_per_pan || ''} onChange={e => updateDoctorField(d.id, 'name_as_per_pan', e.target.value)} /></td>
-                        <td className="px-3 py-2"><input className="input py-1 text-sm w-28" value={d.pan_number || ''} onChange={e => updateDoctorField(d.id, 'pan_number', e.target.value)} /></td>
-                        <td className="px-3 py-2"><input className="input py-1 text-sm" value={d.email || ''} onChange={e => updateDoctorField(d.id, 'email', e.target.value)} /></td>
-                        <td className="px-3 py-2"><input type="number" className="input py-1 text-sm w-24" value={d.honorarium_amount || ''} onChange={e => updateDoctorField(d.id, 'honorarium_amount', e.target.value)} /></td>
-                        <td className="px-3 py-2"><button className="text-red-400 hover:text-red-600" onClick={() => removeDoctor(d.id)}><Trash2 size={14} /></button></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+            {/* Per Doctor Honorarium & Total Survey Cost */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs font-medium text-gray-600 block mb-1">Per Doctor Honorarium (₹)</label>
+                <input
+                  type="number"
+                  className="input"
+                  placeholder="e.g. 5000"
+                  value={perDoctorHonorarium}
+                  onChange={e => {
+                    const val = e.target.value
+                    setPerDoctorHonorarium(val)
+                    if (val) {
+                      // Apply to all doctors
+                      const amount = parseFloat(val)
+                      setDoctors(prev => prev.map(d => ({ ...d, honorarium_amount: amount })))
+                      setTerritoryAssignments(prev => prev.map(ta => ({
+                        ...ta,
+                        doctors: (ta.doctors || []).map(d => ({ ...d, honorarium_amount: amount }))
+                      })))
+                    }
+                  }}
+                />
+                <p className="text-xs text-gray-400 mt-1">Applies to all doctors. Individual amounts can be edited below.</p>
               </div>
+              <div>
+                <label className="text-xs font-medium text-gray-600 block mb-1">Total Survey Cost (₹)</label>
+                <input
+                  type="text"
+                  className="input bg-gray-50 font-semibold"
+                  value={`₹${doctors.reduce((sum, d) => sum + (parseFloat(d.honorarium_amount) || 0), 0).toLocaleString('en-IN')}`}
+                  disabled
+                />
+              </div>
+            </div>
+
+            {territoryAssignments.length > 0 ? (
+              <div className="space-y-5">
+                {territoryAssignments.map((ta, groupIdx) => (
+                  <div key={ta.territory_id ?? 'none'} className="border rounded-xl overflow-hidden shadow-sm">
+                    {/* Territory Header */}
+                    <div className="px-5 py-4 flex items-center justify-between" style={{ background: 'var(--color-primary-50)', borderBottom: '2px solid var(--color-primary-100)' }}>
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--color-primary)', color: '#fff' }}>
+                          <span className="text-xs font-bold">{ta.doctor_count}</span>
+                        </div>
+                        <div>
+                          <p className="font-semibold text-sm" style={{ color: 'var(--color-neutral-900)' }}>{ta.territory_name}</p>
+                          <p className="text-xs" style={{ color: 'var(--color-neutral-500)' }}>{ta.doctor_count} doctor{ta.doctor_count !== 1 ? 's' : ''} in this territory</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-medium" style={{ color: 'var(--color-neutral-600)' }}>Assign to:</span>
+                        <select
+                          className="input w-56 text-sm py-1.5"
+                          value={ta.assigned_user_id || ''}
+                          onChange={e => {
+                            const newAssignments = [...territoryAssignments]
+                            newAssignments[groupIdx] = { ...newAssignments[groupIdx], assigned_user_id: e.target.value ? parseInt(e.target.value) : null }
+                            setTerritoryAssignments(newAssignments)
+                          }}
+                        >
+                          <option value="">Select User…</option>
+                          {territoryManagers
+                            .filter(tm => !ta.territory_id || tm.territory_id === ta.territory_id || !tm.territory_id)
+                            .map(tm => (
+                              <option key={tm.id} value={tm.id}>
+                                {tm.name} {tm.employee_id ? `(${tm.employee_id})` : ''}
+                              </option>
+                            ))}
+                        </select>
+                      </div>
+                    </div>
+                    {/* Doctor rows */}
+                    <div className="overflow-x-auto">
+                      <table className="text-sm w-full" style={{ minWidth: '800px' }}>
+                        <thead className="bg-white border-b">
+                          <tr>
+                            {['Doctor Name', 'Name As Per PAN', 'PAN Number', 'Email', 'Honorarium (₹)', ''].map(h => (
+                              <th key={h} className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y">
+                          {(ta.doctors || []).map(d => (
+                            <tr key={d.id} className="hover:bg-gray-50">
+                              <td className="px-4 py-2.5 font-medium text-sm text-gray-800">{d.doctor_name}</td>
+                              <td className="px-4 py-2.5"><input className="input py-1 text-sm" value={d.name_as_per_pan || ''} onChange={e => updateDoctorField(d.id, 'name_as_per_pan', e.target.value)} /></td>
+                              <td className="px-4 py-2.5"><input className="input py-1 text-sm w-28" value={d.pan_number || ''} onChange={e => updateDoctorField(d.id, 'pan_number', e.target.value)} /></td>
+                              <td className="px-4 py-2.5"><input className="input py-1 text-sm" value={d.email || ''} onChange={e => updateDoctorField(d.id, 'email', e.target.value)} /></td>
+                              <td className="px-4 py-2.5"><input type="number" className="input py-1 text-sm w-24" value={d.honorarium_amount || ''} onChange={e => updateDoctorField(d.id, 'honorarium_amount', e.target.value)} /></td>
+                              <td className="px-4 py-2.5"><button className="text-red-400 hover:text-red-600 p-1 rounded hover:bg-red-50" onClick={() => removeDoctor(d.id)}><Trash2 size={14} /></button></td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : doctors.length > 0 ? (
+              <p className="text-sm text-gray-400 text-center py-4">Loading territory groups...</p>
             ) : (
               <div className="text-center py-8 text-gray-400 text-sm border-2 border-dashed rounded-lg">
-                No doctors added. Click "Search MCL" to add doctors.
+                No doctors added. Click "Add Doctor from MCL" to get started.
               </div>
             )}
           </div>
 
-          <div className="flex justify-between">
-            <button className="btn-secondary" onClick={() => navigate('/brs')}>Cancel</button>
-            <button className="btn-primary" onClick={submitBrs}>
-              ✓ Submit for Approval
-            </button>
-          </div>
+          {/* Save & Submit */}
+          {territoryAssignments.length > 0 && (
+            <div className="flex justify-between items-center">
+              <button className="btn-secondary" onClick={() => navigate('/brs')}>Cancel</button>
+              <div className="flex gap-2">
+                <button
+                  className="btn-secondary"
+                  disabled={savingAssignments}
+                  onClick={async () => {
+                    setSavingAssignments(true)
+                    try {
+                      const payload = territoryAssignments
+                        .filter(ta => ta.assigned_user_id)
+                        .map(ta => ({ territory_id: ta.territory_id, assigned_user_id: ta.assigned_user_id }))
+                      await brsApi.saveTerritoryAssignments(brsId, payload)
+                      toast.success('Assignments saved')
+                      refetchAssignments()
+                    } catch (e) {
+                      toast.error(e.response?.data?.detail || 'Error')
+                    }
+                    setSavingAssignments(false)
+                  }}
+                >
+                  {savingAssignments ? 'Saving...' : 'Save Assignments'}
+                </button>
+                <button className="btn-primary" onClick={submitBrs}>
+                  ✓ Submit for Approval
+                </button>
+              </div>
+            </div>
+          )}
+
+          {!territoryAssignments.length && doctors.length === 0 && (
+            <div className="flex justify-between">
+              <button className="btn-secondary" onClick={() => navigate('/brs')}>Cancel</button>
+            </div>
+          )}
 
           <DoctorSearchModal open={doctorSearchOpen} onClose={() => setDoctorSearchOpen(false)} onSelect={addDoctorFromMcl} surveyId={form.survey_id} />
         </div>

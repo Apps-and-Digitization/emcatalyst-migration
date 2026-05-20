@@ -564,7 +564,7 @@ def create_hcp_doctor(
     return doc
 
 
-@router.put("/hcp-doctors/{doctor_id}", response_model=HcpDoctorOut)
+@router.put("/hcp-doctors/{doctor_id}")
 def update_hcp_doctor(
     doctor_id: int,
     full_name: Optional[str] = None,
@@ -635,7 +635,10 @@ def update_hcp_doctor(
                     db.add(HcpDoctorTerritory(hcp_doctor_id=doctor_id, territory_id=int(tid)))
     db.commit()
     db.refresh(doc)
-    return doc
+    result = HcpDoctorOut.model_validate(doc).model_dump()
+    result["territories"] = [{"id": t.id, "name": t.name} for t in doc.territories]
+    result["divisions"] = [{"id": d.id, "name": d.name} for d in doc.divisions]
+    return result
 
 
 @router.delete("/hcp-doctors/{doctor_id}")
